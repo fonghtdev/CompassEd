@@ -3,7 +3,7 @@ import requests
 
 app = Flask(__name__)
 
-GOOGLE_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY"
+GOOGLE_API_KEY = "AIzaSyCRV6fc7mPh4mkMd5RscLCh1szQV_ueK4g"
 
 def get_google_reviews(place_id):
     url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={place_id}&fields=name,rating,reviews,geometry&key={GOOGLE_API_KEY}"
