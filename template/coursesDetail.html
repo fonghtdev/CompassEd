@@ -1056,29 +1056,29 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-4 mb-4 mb-md-0">
-                    <h5 class="fw-bold mb-3">
+                    <h5 class="fw-bold mb-3 text-white">
                         <i class="fas fa-compass me-2"></i>CompassED
                     </h5>
-                    <p class="text-muted">Nền tảng học trực tuyến hàng đầu Việt Nam, mang đến hàng nghìn khóa học chất lượng cao.</p>
+                    <p style="color: rgba(255, 255, 255, 0.7);">Nền tảng học trực tuyến hàng đầu Việt Nam, mang đến hàng nghìn khóa học chất lượng cao.</p>
                     <div class="social-links mt-3">
-                        <a href="#" class="text-white me-3"><i class="fab fa-facebook fa-lg"></i></a>
-                        <a href="#" class="text-white me-3"><i class="fab fa-youtube fa-lg"></i></a>
-                        <a href="#" class="text-white me-3"><i class="fab fa-instagram fa-lg"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-linkedin fa-lg"></i></a>
+                        <a href="#" class="text-white me-3" style="transition: color 0.3s;"><i class="fab fa-facebook fa-lg"></i></a>
+                        <a href="#" class="text-white me-3" style="transition: color 0.3s;"><i class="fab fa-youtube fa-lg"></i></a>
+                        <a href="#" class="text-white me-3" style="transition: color 0.3s;"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="#" class="text-white" style="transition: color 0.3s;"><i class="fab fa-linkedin fa-lg"></i></a>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4 mb-md-0">
-                    <h5 class="fw-bold mb-3">Liên Kết</h5>
+                    <h5 class="fw-bold mb-3 text-white">Liên Kết</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2"><a href="home.html" class="text-muted text-decoration-none"><i class="fas fa-chevron-right me-2"></i>Trang Chủ</a></li>
-                        <li class="mb-2"><a href="courses.html" class="text-muted text-decoration-none"><i class="fas fa-chevron-right me-2"></i>Khóa Học</a></li>
-                        <li class="mb-2"><a href="survey.html" class="text-muted text-decoration-none"><i class="fas fa-chevron-right me-2"></i>Khảo Sát</a></li>
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none"><i class="fas fa-chevron-right me-2"></i>Về Chúng Tôi</a></li>
+                        <li class="mb-2"><a href="home.html" class="text-decoration-none" style="color: rgba(255, 255, 255, 0.7); transition: color 0.3s;"><i class="fas fa-chevron-right me-2"></i>Trang Chủ</a></li>
+                        <li class="mb-2"><a href="courses.html" class="text-decoration-none" style="color: rgba(255, 255, 255, 0.7); transition: color 0.3s;"><i class="fas fa-chevron-right me-2"></i>Khóa Học</a></li>
+                        <li class="mb-2"><a href="survey.html" class="text-decoration-none" style="color: rgba(255, 255, 255, 0.7); transition: color 0.3s;"><i class="fas fa-chevron-right me-2"></i>Khảo Sát</a></li>
+                        <li class="mb-2"><a href="#" class="text-decoration-none" style="color: rgba(255, 255, 255, 0.7); transition: color 0.3s;"><i class="fas fa-chevron-right me-2"></i>Về Chúng Tôi</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4">
-                    <h5 class="fw-bold mb-3">Liên Hệ</h5>
-                    <ul class="list-unstyled text-muted">
+                    <h5 class="fw-bold mb-3 text-white">Liên Hệ</h5>
+                    <ul class="list-unstyled" style="color: rgba(255, 255, 255, 0.7);">
                         <li class="mb-2"><i class="fas fa-map-marker-alt me-2"></i>Hà Nội, Việt Nam</li>
                         <li class="mb-2"><i class="fas fa-phone me-2"></i>+84 123 456 789</li>
                         <li class="mb-2"><i class="fas fa-envelope me-2"></i>contact@compassed.vn</li>
@@ -1086,7 +1086,7 @@
                 </div>
             </div>
             <hr class="my-4" style="border-color: rgba(255, 255, 255, 0.1);">
-            <div class="text-center text-muted">
+            <div class="text-center" style="color: rgba(255, 255, 255, 0.6);">
                 <p class="mb-0">&copy; 2025 CompassED. All Rights Reserved.</p>
             </div>
         </div>
@@ -1127,6 +1127,20 @@
         document.querySelectorAll('.related-course-item').forEach(item => {
             item.addEventListener('click', function() {
                 alert('Chuyển đến khóa học: ' + this.querySelector('h6').textContent);
+            });
+        });
+
+        // Footer links hover effect
+        document.querySelectorAll('footer a').forEach(link => {
+            link.addEventListener('mouseenter', function() {
+                this.style.color = '#ff3d00';
+            });
+            link.addEventListener('mouseleave', function() {
+                if (this.classList.contains('text-white')) {
+                    this.style.color = 'white';
+                } else {
+                    this.style.color = 'rgba(255, 255, 255, 0.7)';
+                }
             });
         });
     </script>
