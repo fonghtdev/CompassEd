@@ -629,5 +629,302 @@ function restartQuiz() {
     window.location.href = 'survey.html';
 }
 
+    // Create hero section
+    const hero = document.createElement('div');
+    hero.className = 'mb-5';
+    hero.innerHTML = `
+        <div style="text-align: center; padding: 3rem 2rem; background: linear-gradient(135deg, ${careerGroups[topGroup].color}15, ${careerGroups[topGroup].color}05); border-radius: 20px; margin-bottom: 3rem;">
+            <div style="width: 100px; height: 100px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, ${careerGroups[topGroup].color}, ${careerGroups[topGroup].color}cc); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px ${careerGroups[topGroup].color}40;">
+                <i class="fas ${careerGroups[topGroup].icon}" style="color: white; font-size: 3rem;"></i>
+            </div>
+            <h2 style="color: #2d2d2d; font-weight: 800; margin-bottom: 0.5rem;">Kết Quả Khảo Sát Nghề Nghiệp</h2>
+            <p style="color: #6c757d; font-size: 1.1rem; margin-bottom: 1rem;">Nghề nghiệp phù hợp nhất với bạn là</p>
+            <h3 style="color: ${careerGroups[topGroup].color}; font-weight: 800; font-size: 1.8rem; margin-bottom: 1rem;">${careerGroups[topGroup].name}</h3>
+            <div style="display: inline-block; padding: 0.75rem 2rem; background: ${careerGroups[topGroup].color}; color: white; border-radius: 50px; font-size: 1.5rem; font-weight: 800; box-shadow: 0 4px 15px ${careerGroups[topGroup].color}50;">
+                ${Math.round((groupScores[topGroup] / total) * 100)}% phù hợp
+            </div>
+        </div>
+    `;
+    resultsContent.appendChild(hero);
+
+    // Create chart section
+    const chartSection = document.createElement('div');
+    chartSection.className = 'mb-5';
+    chartSection.innerHTML = `
+        <div style="background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);">
+            <h3 style="color: #2d2d2d; font-weight: 800; margin-bottom: 1.5rem; text-align: center;">
+                <i class="fas fa-chart-bar me-2" style="color: #ff3d00;"></i>
+                Biểu Đồ Phân Tích Các Nhóm Nghề
+            </h3>
+            <div style="position: relative; height: 350px;">
+                <canvas id="resultsChart"></canvas>
+            </div>
+        </div>
+    `;
+    resultsContent.appendChild(chartSection);
+
+    // Create detailed results section
+    const detailsSection = document.createElement('div');
+    detailsSection.className = 'mb-5';
+    detailsSection.innerHTML = `
+        <h3 style="color: #2d2d2d; font-weight: 800; margin-bottom: 1.5rem; text-align: center;">
+            <i class="fas fa-star me-2" style="color: #ff3d00;"></i>
+            Chi Tiết Các Nhóm Nghề Phù Hợp
+        </h3>
+    `;
+    resultsContent.appendChild(detailsSection);
+
+    // Create result cards for all groups
+    sortedGroups.forEach((groupKey, index) => {
+        const group = careerGroups[groupKey];
+        const score = groupScores[groupKey];
+        const percentage = Math.round((score / total) * 100);
+        const topBadge = index < 3 ? `<div style="position: absolute; top: 1.5rem; right: 1.5rem; background: ${group.color}; color: white; padding: 0.5rem 1rem; border-radius: 50px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 12px ${group.color}50;">Top ${index + 1}</div>` : '';
+
+        const card = document.createElement('div');
+        card.style.cssText = `
+            position: relative;
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            border-left: 5px solid ${group.color};
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            animation: slideInUp 0.6s ease-out;
+            animation-delay: ${index * 0.1}s;
+            animation-fill-mode: both;
+        `;
+        
+        card.innerHTML = `
+            ${topBadge}
+            <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="width: 70px; height: 70px; background: ${group.color}20; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas ${group.icon}" style="color: ${group.color}; font-size: 2rem;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <h4 style="color: #2d2d2d; font-weight: 800; margin-bottom: 0.75rem;">${group.name}</h4>
+                    <div style="background: #f5f5f5; height: 30px; border-radius: 15px; position: relative; overflow: hidden;">
+                        <div style="position: absolute; top: 0; left: 0; height: 100%; width: ${percentage}%; background: linear-gradient(90deg, ${group.color}, ${group.color}dd); border-radius: 15px; transition: width 1s ease-out;"></div>
+                        <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; color: #2d2d2d; font-size: 0.9rem;">${percentage}% phù hợp</span>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="color: #6c757d; margin-bottom: 1.5rem; line-height: 1.8;">${group.description}</p>
+            
+            <div style="margin-bottom: 1.25rem;">
+                <h5 style="color: ${group.color}; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center;">
+                    <i class="fas fa-bullseye me-2"></i> Thế Mạnh
+                </h5>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    ${group.strengths.map(strength => `
+                        <li style="padding: 0.5rem 0; color: #495057; display: flex; align-items: start;">
+                            <i class="fas fa-check-circle me-2" style="color: ${group.color}; margin-top: 0.25rem;"></i>
+                            <span>${strength}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+            
+            <div style="margin-bottom: 1.25rem;">
+                <h5 style="color: ${group.color}; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center;">
+                    <i class="fas fa-briefcase me-2"></i> Ngành Nghề Phù Hợp
+                </h5>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    ${group.careers.map(career => `
+                        <span style="background: ${group.color}20; color: ${group.color}; padding: 0.5rem 1rem; border-radius: 50px; font-weight: 600; font-size: 0.85rem; border: 1px solid ${group.color}40;">${career}</span>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 1.25rem;">
+                <h5 style="color: ${group.color}; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center;">
+                    <i class="fas fa-university me-2"></i> Trường Đào Tạo
+                </h5>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    ${group.universities.map(uni => `
+                        <li style="padding: 0.5rem 0; color: #495057; display: flex; align-items: start;">
+                            <i class="fas fa-graduation-cap me-2" style="color: ${group.color}; margin-top: 0.25rem;"></i>
+                            <span>${uni}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+            
+            <div>
+                <h5 style="color: ${group.color}; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center;">
+                    <i class="fas fa-compass me-2"></i> Bạn Nên Thử
+                </h5>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    ${group.suggestions.map(suggestion => `
+                        <li style="padding: 0.5rem 0; color: #495057; display: flex; align-items: start;">
+                            <i class="fas fa-arrow-right me-2" style="color: ${group.color}; margin-top: 0.25rem;"></i>
+                            <span>${suggestion}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        `;
+
+        resultsContent.appendChild(card);
+    });
+
+
+
+    // Action buttons
+    const actions = document.createElement('div');
+    actions.className = 'text-center mt-5 pt-4';
+    actions.style.cssText = 'border-top: 2px solid #f0f0f0; padding-top: 2rem;';
+    actions.innerHTML = `
+        <p style="color: #6c757d; margin-bottom: 2rem; font-size: 1.05rem;">
+            <i class="fas fa-lightbulb me-2" style="color: #ffc107;"></i>
+            Bạn có thể lưu lại kết quả này hoặc thực hiện khảo sát lại để có thêm thông tin
+        </p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <button onclick="downloadResults()" class="btn btn-outline-primary btn-lg" style="border-radius: 50px; padding: 0.875rem 2.5rem; font-weight: 600;">
+                <i class="fas fa-download me-2"></i>Tải Kết Quả (PDF)
+            </button>
+            <button onclick="window.print()" class="btn btn-outline-danger btn-lg" style="border-radius: 50px; padding: 0.875rem 2.5rem; font-weight: 600;">
+                <i class="fas fa-print me-2"></i>In Kết Quả
+            </button>
+            <button onclick="restartQuiz()" class="btn btn-danger btn-lg" style="border-radius: 50px; padding: 0.875rem 2.5rem; font-weight: 600; background: linear-gradient(135deg, #ff3d00 0%, #ff5722 100%); border: none;">
+                <i class="fas fa-redo me-2"></i>Làm Lại Khảo Sát
+            </button>
+            <a href="courses.html" class="btn btn-success btn-lg" style="border-radius: 50px; padding: 0.875rem 2.5rem; font-weight: 600; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none;">
+                <i class="fas fa-book me-2"></i>Xem Khóa Học
+            </a>
+        </div>
+    `;
+    resultsContent.appendChild(actions);
+
+    // Update progress bar to 100%
+    document.getElementById('progressBar').style.width = '100%';
+    document.getElementById('progressPercentage').textContent = '100%';
+
+    // Scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Create chart after DOM is ready
+    setTimeout(() => createResultsChart(groupScores, sortedGroups, total), 300);
+}
+
+// Create Chart.js visualization
+function createResultsChart(groupScores, sortedGroups, total) {
+    const ctx = document.getElementById('resultsChart');
+    if (!ctx) return;
+    
+    // Destroy previous chart if exists
+    if (resultChart) {
+        resultChart.destroy();
+    }
+    
+    const labels = sortedGroups.map(key => careerGroups[key].name);
+    const data = sortedGroups.map(key => Math.round((groupScores[key] / total) * 100));
+    const colors = sortedGroups.map(key => careerGroups[key].color);
+    
+    resultChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Độ Phù Hợp (%)',
+                data: data,
+                backgroundColor: colors.map(c => c + '40'),
+                borderColor: colors,
+                borderWidth: 3,
+                borderRadius: 10,
+                barThickness: 60
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            return `Độ phù hợp: ${context.parsed.y}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        },
+                        font: {
+                            size: 12,
+                            weight: '600'
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 11,
+                            weight: '600'
+                        },
+                        callback: function(value, index) {
+                            const label = this.getLabelForValue(value);
+                            return label.length > 25 ? label.substr(0, 25) + '...' : label;
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Download results as PDF (placeholder)
+function downloadResults() {
+    alert('Tính năng tải PDF đang được phát triển. Hiện tại bạn có thể sử dụng chức năng In (Ctrl+P / Cmd+P) để lưu kết quả dưới dạng PDF!');
+}
+
+// Restart Quiz
+function restartQuiz() {
+    currentQuestionIndex = 0;
+    currentSectionIndex = 0;
+    answers = {};
+    scores = {
+        analytical: 0,
+        collaborative: 0,
+        creative: 0,
+        practical: 0,
+        communicative: 0,
+        leadership: 0,
+        technical: 0,
+        reflective: 0,
+        introverted: 0
+    };
+
+    document.getElementById('questionContainer').classList.remove('d-none');
+    document.getElementById('resultsSection').classList.add('d-none');
+    document.getElementById('progressSection').classList.remove('d-none');
+    
+    initQuiz();
+}
+
 // Initialize on page load
 window.addEventListener('DOMContentLoaded', initQuiz);

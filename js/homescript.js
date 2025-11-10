@@ -72,32 +72,39 @@ function initCourses() {
             slideHTML += `
                 <div class="col-lg-4">
                     <div class="course-card">
-                        <div class="card-img-wrapper">
-                            <img src="${course.image}" alt="${course.title}">
-                            <div class="price-badge">$${course.price}</div>
-                            <div class="category-badge">${course.category}</div>
-                        </div>
-                        <div class="card-body p-4">
-                            <h5 class="fw-bold mb-3">${course.title}</h5>
-                            <div class="d-flex align-items-center gap-2 mb-3">
-                                <div class="stars">${stars}</div>
-                                <small class="text-muted">${course.reviews} Reviews</small>
+                        <a href="coursesDetail.html?id=${course.id || course.title.replace(/\s+/g, '-').toLowerCase()}" class="text-decoration-none text-dark">
+                            <div class="card-img-wrapper">
+                                <img src="${course.image}" alt="${course.title}">
+                                <div class="price-badge">$${course.price}</div>
+                                <div class="category-badge">${course.category}</div>
                             </div>
-                            <p class="text-muted mb-3">${course.description}</p>
-                            <div class="course-meta">
-                                <div>
-                                    <small>Course Time</small>
-                                    <div class="fw-semibold">${course.courseTime}</div>
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold mb-3">${course.title}</h5>
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <div class="stars">${stars}</div>
+                                    <small class="text-muted">${course.reviews} Đánh giá</small>
                                 </div>
-                                <div>
-                                    <small>Students</small>
-                                    <div class="fw-semibold">${course.students}</div>
-                                </div>
-                                <div>
-                                    <small>Duration</small>
-                                    <div class="fw-semibold">${course.duration}</div>
+                                <p class="text-muted mb-3">${course.description}</p>
+                                <div class="course-meta">
+                                    <div>
+                                        <small>Thời gian</small>
+                                        <div class="fw-semibold">${course.courseTime}</div>
+                                    </div>
+                                    <div>
+                                        <small>Học viên</small>
+                                        <div class="fw-semibold">${course.students}</div>
+                                    </div>
+                                    <div>
+                                        <small>Thời lượng</small>
+                                        <div class="fw-semibold">${course.duration}</div>
+                                    </div>
                                 </div>
                             </div>
+                        </a>
+                        <div class="card-footer bg-white border-0 p-3">
+                            <a href="coursesDetail.html?id=${course.id || course.title.replace(/\s+/g, '-').toLowerCase()}" class="btn btn-danger w-100">
+                                <i class="fas fa-eye me-2"></i>Xem chi tiết
+                            </a>
                         </div>
                     </div>
                 </div>
