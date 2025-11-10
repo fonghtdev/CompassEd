@@ -3,175 +3,1132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chi tiết Khóa học - Clone</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/CompassEd/css/courses.css">
+    <title>Chi Tiết Khóa Học - CompassED</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        /* CSS Tùy chỉnh từ mục 1 phải được đặt ở đây */
-        /* ... (Paste phần CSS Tùy chỉnh vào đây) ... */
-        .text-primary-custom {
-            color: #3f6eb7 !important;
+        :root {
+            --primary-red: #ff3d00;
+            --primary-red-light: #ff5722;
+            --primary-red-dark: #e63600;
+            --gradient-primary: linear-gradient(135deg, #ff3d00 0%, #ff5722 100%);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+            --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.20);
         }
-        .bg-primary-custom {
-            background-color: #3f6eb7 !important;
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
         }
+
+        /* Header */
+        .course-detail-header {
+            background: linear-gradient(135deg, rgba(45, 45, 45, 0.95) 0%, rgba(26, 26, 26, 0.95) 100%);
+            padding: 6rem 0 4rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .course-detail-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .course-badge-tag {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 0.5rem 1.25rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(255, 61, 0, 0.4);
+        }
+
+        .rating-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .rating-stars {
+            color: #ffc107;
+            font-size: 1.2rem;
+        }
+
+        .rating-number {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+
+        .instructor-link {
+            color: var(--primary-red-light);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .instructor-link:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        /* Video Section */
+        .video-container {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-xl);
+            background: #000;
+            margin-bottom: 2rem;
+        }
+
+        .video-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .video-play-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(255, 61, 0, 0.5);
+        }
+
+        .video-play-btn:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .video-play-btn i {
+            color: white;
+            font-size: 2rem;
+            margin-left: 5px;
+        }
+
+        /* Tabs */
+        .nav-tabs {
+            border: none;
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+        }
+
+        .nav-tabs .nav-link {
+            color: #6c757d;
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 0 0.25rem;
+        }
+
+        .nav-tabs .nav-link:hover {
+            background: rgba(255, 61, 0, 0.05);
+            color: var(--primary-red);
+        }
+
+        .nav-tabs .nav-link.active {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 61, 0, 0.3);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .tab-content h3 {
+            color: #2d2d2d;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .tab-content h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: var(--gradient-primary);
+            border-radius: 4px;
+        }
+
+        .requirement-item {
+            background: linear-gradient(135deg, rgba(255, 61, 0, 0.05) 0%, rgba(255, 87, 34, 0.02) 100%);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-red);
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .requirement-item:hover {
+            transform: translateX(8px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .requirement-item i {
+            color: var(--primary-red);
+            margin-right: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        /* Accordion */
+        .accordion-item {
+            border: none;
+            margin-bottom: 1rem;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .accordion-button {
+            background: linear-gradient(135deg, rgba(255, 61, 0, 0.05) 0%, rgba(255, 87, 34, 0.02) 100%);
+            color: #2d2d2d;
+            font-weight: 700;
+            padding: 1.25rem 1.5rem;
+            border: none;
+        }
+
+        .accordion-button:not(.collapsed) {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: none;
+        }
+
+        .accordion-button:focus {
+            box-shadow: none;
+            border: none;
+        }
+
+        .accordion-button::after {
+            filter: brightness(0) invert(1);
+        }
+
+        .accordion-button:not(.collapsed)::after {
+            filter: brightness(0) invert(1);
+        }
+
+        .lesson-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .lesson-item:last-child {
+            border-bottom: none;
+        }
+
+        .lesson-item:hover {
+            background: rgba(255, 61, 0, 0.02);
+            padding-left: 2rem;
+        }
+
+        .lesson-item i {
+            color: var(--primary-red);
+            margin-right: 0.75rem;
+        }
+
+        .free-badge {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 0.35rem 1rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* Instructor Card */
+        .instructor-card {
+            background: linear-gradient(135deg, rgba(255, 61, 0, 0.05) 0%, rgba(255, 87, 34, 0.02) 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            border: 2px solid rgba(255, 61, 0, 0.1);
+        }
+
+        .instructor-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 8px 24px rgba(255, 61, 0, 0.2);
+        }
+
+        .instructor-info h5 {
+            color: #2d2d2d;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .instructor-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #6c757d;
+        }
+
+        .stat-item i {
+            color: var(--primary-red);
+        }
+
+        /* Review Card */
+        .review-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 2px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+
+        .review-card:hover {
+            border-color: var(--primary-red);
+            box-shadow: var(--shadow-md);
+        }
+
+        .review-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .review-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid var(--primary-red);
+        }
+
+        /* Sidebar Card */
         .sticky-box {
             position: sticky;
-            top: 20px;
+            top: 100px;
         }
-        .nav-tabs .nav-link {
-            color: #555;
+
+        .pricing-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-xl);
+            border: 2px solid rgba(255, 61, 0, 0.1);
+        }
+
+        .price-tag {
+            font-size: 3rem;
+            font-weight: 900;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .course-info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 0;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .course-info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #6c757d;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-label i {
+            color: var(--primary-red);
+        }
+
+        .info-value {
+            color: #2d2d2d;
+            font-weight: 700;
+        }
+
+        .enroll-btn {
+            background: var(--gradient-primary);
             border: none;
-            border-bottom: 3px solid transparent;
-            padding-bottom: 0.75rem;
+            color: white;
+            padding: 1.25rem 2rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            width: 100%;
+            margin: 2rem 0 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(255, 61, 0, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .nav-tabs .nav-link.active {
-            color: #3f6eb7;
-            border-bottom-color: #3f6eb7;
-            font-weight: bold;
+
+        .enroll-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(255, 61, 0, 0.5);
         }
-        .detail-info-box {
-            background-color: #f7f9fa;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-left: 3px solid #3f6eb7;
+
+        .money-back {
+            text-align: center;
+            color: #28a745;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        /* Related Courses */
+        .related-courses {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            margin-top: 2rem;
+        }
+
+        .related-courses h5 {
+            color: #2d2d2d;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .related-courses h5 i {
+            color: var(--primary-red);
+        }
+
+        .related-course-item {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            border: 2px solid #f0f0f0;
+            cursor: pointer;
+        }
+
+        .related-course-item:hover {
+            background: linear-gradient(135deg, rgba(255, 61, 0, 0.05) 0%, rgba(255, 87, 34, 0.02) 100%);
+            border-color: var(--primary-red);
+            transform: translateX(8px);
+        }
+
+        .related-course-item h6 {
+            color: #2d2d2d;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .related-course-price {
+            color: var(--primary-red);
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .course-detail-header {
+                padding: 4rem 0 3rem;
+            }
+
+            .tab-content {
+                padding: 1.5rem;
+            }
+
+            .instructor-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .instructor-stats {
+                justify-content: center;
+            }
+
+            .pricing-card {
+                padding: 2rem;
+            }
+
+            .price-tag {
+                font-size: 2.5rem;
+            }
         }
     </style>
 </head>
 <body>
 
-    <header>
-        </header>
-
-    <section class="bg-light py-4">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background: rgba(45, 45, 45, 0.95); backdrop-filter: blur(10px);">
         <div class="container">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="#" class="text-decoration-none">Trang chủ</a></li>
-                    <li class="breadcrumb-item"><a href="courses.html" class="text-decoration-none">Khóa học</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Chi tiết</li>
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="home.html">
+                <i class="fas fa-compass me-2"></i>
+                CompassED
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="home.html">
+                            <i class="fas fa-home me-1"></i>Trang Chủ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="courses.html">
+                            <i class="fas fa-book me-1"></i>Khóa Học
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="survey.html">
+                            <i class="fas fa-clipboard-list me-1"></i>Khảo Sát
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Course Header -->
+    <section class="course-detail-header">
+        <div class="container" style="position: relative; z-index: 1;">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb" style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 0.75rem 1.5rem; border-radius: 50px; display: inline-flex;">
+                    <li class="breadcrumb-item"><a href="home.html" style="color: rgba(255, 255, 255, 0.9);"><i class="fas fa-home me-1"></i>Trang Chủ</a></li>
+                    <li class="breadcrumb-item"><a href="courses.html" style="color: rgba(255, 255, 255, 0.9);">Khóa Học</a></li>
+                    <li class="breadcrumb-item active" style="color: white;">Chi Tiết</li>
                 </ol>
             </nav>
             
-            <h1 class="mt-3 display-5 fw-bold">Khóa học Lập trình Web Toàn diện 2025</h1>
+            <div class="mb-3">
+                <span class="course-badge-tag"><i class="fas fa-code me-2"></i>LẬP TRÌNH WEB</span>
+            </div>
             
-            <div class="d-flex align-items-center mt-3">
-                <span class="text-warning h5 me-3">★ ★ ★ ★ ☆</span>
-                <span class="text-muted me-3">(4.5 Đánh giá)</span>
-                <span class="text-muted me-3">|</span>
-                <span class="text-muted">Giảng viên: <a href="#" class="text-primary-custom text-decoration-none fw-bold">John Doe</a></span>
+            <h1 class="display-4 fw-bold mb-4">Khóa Học Lập Trình Web Toàn Diện 2025</h1>
+            <p class="lead mb-4" style="opacity: 0.9;">
+                Trở thành Full-Stack Developer chuyên nghiệp với khóa học từ cơ bản đến nâng cao
+            </p>
+            
+            <div class="rating-section">
+                <div class="rating-stars">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star-half-alt"></i>
+                </div>
+                <span class="rating-number">4.8 (1.245 đánh giá)</span>
+                <span style="opacity: 0.7;">|</span>
+                <span><i class="fas fa-users me-2"></i>5.230 học viên</span>
+                <span style="opacity: 0.7;">|</span>
+                <span>Giảng viên: <a href="#" class="instructor-link">Nguyễn Văn A</a></span>
             </div>
         </div>
     </section>
 
-    <main class="py-5">
+    <!-- Main Content -->
+    <main class="py-5" style="margin-top: 60px;">
         <div class="container">
             <div class="row">
 
+                <!-- Left Column - Course Content -->
                 <div class="col-lg-8">
                     
-                    <div class="mb-4 ratio ratio-16x9 border rounded">
-                         
-                        <img src="https://via.placeholder.com/800x450/3f6eb7/FFFFFF?text=Video+Giới+thiệu+Khóa+học" class="img-fluid rounded" alt="Video Giới thiệu">
+                    <!-- Video Preview -->
+                    <div class="video-container">
+                        <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=450&fit=crop" alt="Video Giới thiệu">
+                        <div class="video-play-btn">
+                            <i class="fas fa-play"></i>
+                        </div>
                     </div>
                     
-                    <ul class="nav nav-tabs mb-4" id="courseTabs" role="tablist">
+                    <!-- Course Tabs -->
+                    <ul class="nav nav-tabs" id="courseTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="desc-tab" data-bs-toggle="tab" data-bs-target="#desc" type="button" role="tab">Mô tả</button>
+                            <button class="nav-link active" id="desc-tab" data-bs-toggle="tab" data-bs-target="#desc" type="button" role="tab">
+                                <i class="fas fa-info-circle me-2"></i>Mô Tả
+                            </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="curri-tab" data-bs-toggle="tab" data-bs-target="#curri" type="button" role="tab">Giáo trình</button>
+                            <button class="nav-link" id="curri-tab" data-bs-toggle="tab" data-bs-target="#curri" type="button" role="tab">
+                                <i class="fas fa-book-open me-2"></i>Giáo Trình
+                            </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="instr-tab" data-bs-toggle="tab" data-bs-target="#instr" type="button" role="tab">Giảng viên</button>
+                            <button class="nav-link" id="instr-tab" data-bs-toggle="tab" data-bs-target="#instr" type="button" role="tab">
+                                <i class="fas fa-user-tie me-2"></i>Giảng Viên
+                            </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab">Đánh giá</button>
+                            <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab">
+                                <i class="fas fa-star me-2"></i>Đánh Giá
+                            </button>
                         </li>
                     </ul>
 
+                    <!-- Tab Content -->
                     <div class="tab-content" id="courseTabsContent">
                         
+                        <!-- Description Tab -->
                         <div class="tab-pane fade show active" id="desc" role="tabpanel" aria-labelledby="desc-tab">
-                            <h3 class="mb-3">Khóa học này sẽ dạy gì?</h3>
-                            <p>Đây là một khóa học toàn diện giúp bạn trở thành nhà phát triển web. Chúng tôi sẽ đi từ cơ bản HTML/CSS đến các framework hiện đại như React/Angular/Vue.</p>
+                            <h3><i class="fas fa-graduation-cap me-2" style="color: var(--primary-red);"></i>Bạn Sẽ Học Được Gì?</h3>
+                            <p style="color: #6c757d; line-height: 1.8; font-size: 1.05rem;">
+                                Đây là một khóa học toàn diện giúp bạn trở thành nhà phát triển web Full-Stack chuyên nghiệp. 
+                                Chúng tôi sẽ bắt đầu từ những kiến thức cơ bản về HTML, CSS và JavaScript, sau đó tiến tới 
+                                các framework và thư viện hiện đại như React, Vue.js, Node.js và nhiều công nghệ khác.
+                            </p>
+
+                            <div class="row mt-4">
+                                <div class="col-md-6 mb-3">
+                                    <div class="requirement-item">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Xây dựng website responsive hoàn chỉnh</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="requirement-item">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Làm chủ HTML5, CSS3 và JavaScript ES6+</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="requirement-item">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Phát triển ứng dụng với React & Vue.js</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="requirement-item">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Xây dựng API với Node.js & Express</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="requirement-item">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Quản lý database với MongoDB & MySQL</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="requirement-item">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Deploy ứng dụng lên production</span>
+                                    </div>
+                                </div>
+                            </div>
                             
-                            <h4 class="mt-4">Yêu cầu</h4>
-                            <ul class="list-unstyled row">
-                                <li class="col-md-6 mb-2">✅ Máy tính kết nối internet</li>
-                                <li class="col-md-6 mb-2">✅ Tư duy logic cơ bản</li>
-                                <li class="col-md-6 mb-2">✅ Sẵn sàng dành thời gian học tập</li>
-                            </ul>
+                            <h3 class="mt-5"><i class="fas fa-clipboard-check me-2" style="color: var(--primary-red);"></i>Yêu Cầu</h3>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="requirement-item">
+                                        <i class="fas fa-laptop"></i>
+                                        <span>Máy tính kết nối internet</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="requirement-item">
+                                        <i class="fas fa-brain"></i>
+                                        <span>Tư duy logic cơ bản</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="requirement-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Sẵn sàng dành thời gian học tập</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="requirement-item">
+                                        <i class="fas fa-heart"></i>
+                                        <span>Đam mê với lập trình</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
+                        <!-- Curriculum Tab -->
                         <div class="tab-pane fade" id="curri" role="tabpanel" aria-labelledby="curri-tab">
+                            <h3><i class="fas fa-list-alt me-2" style="color: var(--primary-red);"></i>Nội Dung Khóa Học</h3>
+                            <p style="color: #6c757d; margin-bottom: 2rem;">
+                                <strong>85 bài học</strong> • <strong>15 giờ</strong> video • <strong>12 dự án</strong> thực hành
+                            </p>
+
                             <div class="accordion" id="curriculumAccordion">
+                                <!-- Section 1 -->
                                 <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingOne">
-                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
-                                            Phần 1: Giới thiệu về HTML5 (5 bài học)
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#section1">
+                                            <i class="fas fa-play-circle me-2"></i>
+                                            Phần 1: Giới Thiệu Về HTML5 (8 bài học • 1.5 giờ)
                                         </button>
                                     </h2>
-                                    <div id="collapseOne" class="accordion-collapse collapse show">
-                                        <div class="accordion-body">
-                                            <ul class="list-group list-group-flush">
-                                                <li class="list-group-item d-flex justify-content-between">Bắt đầu khóa học (Video: 10 phút) <span class="badge bg-success">Miễn phí</span></li>
-                                                <li class="list-group-item">Cấu trúc cơ bản của tài liệu HTML</li>
-                                            </ul>
+                                    <div id="section1" class="accordion-collapse collapse show">
+                                        <div class="accordion-body p-0">
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-video"></i>Bắt đầu khóa học</span>
+                                                <div>
+                                                    <span class="free-badge">Miễn phí</span>
+                                                    <small class="text-muted ms-2">10 phút</small>
+                                                </div>
+                                            </div>
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-video"></i>Cấu trúc cơ bản của HTML</span>
+                                                <small class="text-muted">15 phút</small>
+                                            </div>
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-video"></i>Các thẻ HTML quan trọng</span>
+                                                <small class="text-muted">20 phút</small>
+                                            </div>
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-file-alt"></i>Bài tập: Tạo trang HTML đầu tiên</span>
+                                                <small class="text-muted">30 phút</small>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Section 2 -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#section2">
+                                            <i class="fas fa-play-circle me-2"></i>
+                                            Phần 2: CSS3 Và Styling (12 bài học • 2.5 giờ)
+                                        </button>
+                                    </h2>
+                                    <div id="section2" class="accordion-collapse collapse">
+                                        <div class="accordion-body p-0">
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-video"></i>Giới thiệu về CSS</span>
+                                                <small class="text-muted">12 phút</small>
+                                            </div>
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-video"></i>CSS Selectors và Properties</span>
+                                                <small class="text-muted">18 phút</small>
+                                            </div>
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-video"></i>Flexbox Layout</span>
+                                                <small class="text-muted">25 phút</small>
+                                            </div>
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-video"></i>CSS Grid System</span>
+                                                <small class="text-muted">30 phút</small>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+
+                                <!-- Section 3 -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#section3">
+                                            <i class="fas fa-play-circle me-2"></i>
+                                            Phần 3: JavaScript ES6+ (15 bài học • 3 giờ)
+                                        </button>
+                                    </h2>
+                                    <div id="section3" class="accordion-collapse collapse">
+                                        <div class="accordion-body p-0">
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-video"></i>JavaScript cơ bản</span>
+                                                <small class="text-muted">20 phút</small>
+                                            </div>
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-video"></i>DOM Manipulation</span>
+                                                <small class="text-muted">25 phút</small>
+                                            </div>
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-video"></i>ES6 Features</span>
+                                                <small class="text-muted">30 phút</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Section 4 -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#section4">
+                                            <i class="fas fa-play-circle me-2"></i>
+                                            Phần 4: React Framework (20 bài học • 4 giờ)
+                                        </button>
+                                    </h2>
+                                    <div id="section4" class="accordion-collapse collapse">
+                                        <div class="accordion-body p-0">
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-video"></i>Giới thiệu React</span>
+                                                <small class="text-muted">15 phút</small>
+                                            </div>
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-video"></i>Components và Props</span>
+                                                <small class="text-muted">25 phút</small>
+                                            </div>
+                                            <div class="lesson-item">
+                                                <span><i class="fas fa-video"></i>State và Lifecycle</span>
+                                                <small class="text-muted">30 phút</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
+                        <!-- Instructor Tab -->
                         <div class="tab-pane fade" id="instr" role="tabpanel" aria-labelledby="instr-tab">
-                            <div class="d-flex align-items-center">
-                                <img src="https://via.placeholder.com/100" class="rounded-circle me-3" alt="Ảnh Giảng viên">
-                                <div>
-                                    <h5>John Doe</h5>
-                                    <p class="text-muted mb-0">Chuyên gia Phát triển Web, hơn 10 năm kinh nghiệm.</p>
+                            <h3><i class="fas fa-chalkboard-teacher me-2" style="color: var(--primary-red);"></i>Về Giảng Viên</h3>
+                            
+                            <div class="instructor-card">
+                                <img src="https://i.pravatar.cc/150?img=33" class="instructor-avatar" alt="Giảng viên">
+                                <div class="instructor-info">
+                                    <h5>Nguyễn Văn A</h5>
+                                    <p style="color: #6c757d; margin-bottom: 0.5rem;">
+                                        <i class="fas fa-briefcase me-2" style="color: var(--primary-red);"></i>
+                                        Senior Full-Stack Developer tại Tech Corp
+                                    </p>
+                                    <p style="color: #6c757d; line-height: 1.8;">
+                                        Với hơn 10 năm kinh nghiệm trong lĩnh vực phát triển web, tôi đã làm việc với nhiều 
+                                        công ty công nghệ hàng đầu và tham gia xây dựng các sản phẩm được hàng triệu người sử dụng.
+                                    </p>
+                                    
+                                    <div class="instructor-stats">
+                                        <div class="stat-item">
+                                            <i class="fas fa-users"></i>
+                                            <span><strong>12.500+</strong> học viên</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i class="fas fa-book"></i>
+                                            <span><strong>8</strong> khóa học</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i class="fas fa-star"></i>
+                                            <span><strong>4.9</strong> đánh giá</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Reviews Tab -->
                         <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
-                            <p>Phần này sẽ chứa danh sách các đánh giá từ học viên.</p>
+                            <h3><i class="fas fa-comments me-2" style="color: var(--primary-red);"></i>Đánh Giá Từ Học Viên</h3>
+                            <p style="color: #6c757d; margin-bottom: 2rem;">
+                                Tổng số <strong>1.245 đánh giá</strong> • Điểm trung bình <strong style="color: var(--primary-red);">4.8/5</strong>
+                            </p>
+
+                            <!-- Review 1 -->
+                            <div class="review-card">
+                                <div class="review-header">
+                                    <img src="https://i.pravatar.cc/50?img=1" class="review-avatar" alt="User">
+                                    <div>
+                                        <h6 style="margin: 0; font-weight: 700;">Trần Thị B</h6>
+                                        <div class="rating-stars" style="font-size: 0.9rem;">
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p style="color: #6c757d; line-height: 1.8; margin: 0;">
+                                    Khóa học rất chi tiết và dễ hiểu. Giảng viên giải thích rất rõ ràng, từng bước một. 
+                                    Sau khi hoàn thành khóa học, tôi đã tự tin làm được nhiều dự án web thực tế. Rất đáng tiền!
+                                </p>
+                                <small class="text-muted"><i class="fas fa-clock me-1"></i>2 tuần trước</small>
+                            </div>
+
+                            <!-- Review 2 -->
+                            <div class="review-card">
+                                <div class="review-header">
+                                    <img src="https://i.pravatar.cc/50?img=12" class="review-avatar" alt="User">
+                                    <div>
+                                        <h6 style="margin: 0; font-weight: 700;">Lê Văn C</h6>
+                                        <div class="rating-stars" style="font-size: 0.9rem;">
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star-half-alt"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p style="color: #6c757d; line-height: 1.8; margin: 0;">
+                                    Nội dung khóa học rất phong phú và cập nhật. Các bài tập thực hành giúp tôi nắm vững kiến thức. 
+                                    Giảng viên nhiệt tình, luôn sẵn sàng trả lời câu hỏi. Highly recommended!
+                                </p>
+                                <small class="text-muted"><i class="fas fa-clock me-1"></i>3 tuần trước</small>
+                            </div>
+
+                            <!-- Review 3 -->
+                            <div class="review-card">
+                                <div class="review-header">
+                                    <img src="https://i.pravatar.cc/50?img=25" class="review-avatar" alt="User">
+                                    <div>
+                                        <h6 style="margin: 0; font-weight: 700;">Phạm Thị D</h6>
+                                        <div class="rating-stars" style="font-size: 0.9rem;">
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p style="color: #6c757d; line-height: 1.8; margin: 0;">
+                                    Đây là khóa học web development tốt nhất mà tôi từng tham gia. Video chất lượng cao, 
+                                    giảng viên truyền đạt dễ hiểu. Sau khóa học, tôi đã apply được vào vị trí Junior Developer.
+                                </p>
+                                <small class="text-muted"><i class="fas fa-clock me-1"></i>1 tháng trước</small>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <!-- Right Column - Pricing Card -->
                 <div class="col-lg-4">
-                    <div class="card p-3 shadow sticky-box"> 
-                        <h2 class="mb-3 text-center">
-                            <span class="text-success fw-bold display-6">$49.00</span>
-                        </h2>
+                    <div class="sticky-box">
+                        <!-- Pricing Card -->
+                        <div class="pricing-card">
+                            <div class="price-tag">1.299.000₫</div>
 
-                        <div class="detail-info-box">
-                            <p class="mb-1 fw-bold text-primary-custom">Thời lượng: <span class="float-end fw-normal text-muted">15 giờ</span></p>
-                            <p class="mb-1 fw-bold text-primary-custom">Bài học: <span class="float-end fw-normal text-muted">85</span></p>
-                            <p class="mb-1 fw-bold text-primary-custom">Mức độ: <span class="float-end fw-normal text-muted">Mọi cấp độ</span></p>
-                            <p class="mb-1 fw-bold text-primary-custom">Hạn dùng: <span class="float-end fw-normal text-muted">Trọn đời</span></p>
-                            <p class="mb-0 fw-bold text-primary-custom">Chứng chỉ: <span class="float-end fw-normal text-muted">Có</span></p>
+                            <div class="course-info-item">
+                                <span class="info-label">
+                                    <i class="fas fa-clock"></i>Thời Lượng
+                                </span>
+                                <span class="info-value">15 giờ</span>
+                            </div>
+
+                            <div class="course-info-item">
+                                <span class="info-label">
+                                    <i class="fas fa-book"></i>Bài Học
+                                </span>
+                                <span class="info-value">85 bài</span>
+                            </div>
+
+                            <div class="course-info-item">
+                                <span class="info-label">
+                                    <i class="fas fa-signal"></i>Mức Độ
+                                </span>
+                                <span class="info-value">Mọi cấp độ</span>
+                            </div>
+
+                            <div class="course-info-item">
+                                <span class="info-label">
+                                    <i class="fas fa-infinity"></i>Truy Cập
+                                </span>
+                                <span class="info-value">Trọn đời</span>
+                            </div>
+
+                            <div class="course-info-item">
+                                <span class="info-label">
+                                    <i class="fas fa-certificate"></i>Chứng Chỉ
+                                </span>
+                                <span class="info-value">Có</span>
+                            </div>
+
+                            <div class="course-info-item">
+                                <span class="info-label">
+                                    <i class="fas fa-mobile-alt"></i>Thiết Bị
+                                </span>
+                                <span class="info-value">Mobile & PC</span>
+                            </div>
+
+                            <button class="enroll-btn">
+                                <i class="fas fa-shopping-cart me-2"></i>Đăng Ký Ngay
+                            </button>
+
+                            <div class="money-back">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Hoàn tiền 100% trong 30 ngày</span>
+                            </div>
                         </div>
 
-                        <button class="btn btn-lg bg-primary-custom text-white fw-bold my-3">Đăng ký Ngay</button>
-                        <p class="text-center small text-muted">Đảm bảo hoàn tiền trong 30 ngày.</p>
-                    </div>
+                        <!-- Related Courses -->
+                        <div class="related-courses">
+                            <h5>
+                                <i class="fas fa-th-large"></i>
+                                Khóa Học Liên Quan
+                            </h5>
+                            
+                            <div class="related-course-item">
+                                <h6>Thiết Kế UI/UX Với Figma</h6>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="rating-stars" style="font-size: 0.85rem;">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star-half-alt"></i>
+                                    </div>
+                                    <span class="related-course-price">999.000₫</span>
+                                </div>
+                            </div>
 
-                    <div class="sidebar-widget mt-4">
-                        <h5 class="mb-3 text-primary-custom">Khóa học Liên quan</h5>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item px-0">Thiết kế UI/UX với Figma</li>
-                            <li class="list-group-item px-0">Làm chủ JavaScript hiện đại</li>
-                        </ul>
+                            <div class="related-course-item">
+                                <h6>Làm Chủ JavaScript Hiện Đại</h6>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="rating-stars" style="font-size: 0.85rem;">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <span class="related-course-price">1.499.000₫</span>
+                                </div>
+                            </div>
+
+                            <div class="related-course-item">
+                                <h6>Node.js & Express Backend</h6>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="rating-stars" style="font-size: 0.85rem;">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                    </div>
+                                    <span class="related-course-price">1.799.000₫</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                </div>
+            </div>
         </div>
     </main>
 
-    <footer>
-        </footer>
+    <!-- Footer -->
+    <footer style="background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%); color: white; padding: 3rem 0; margin-top: 5rem;">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fas fa-compass me-2"></i>CompassED
+                    </h5>
+                    <p class="text-muted">Nền tảng học trực tuyến hàng đầu Việt Nam, mang đến hàng nghìn khóa học chất lượng cao.</p>
+                    <div class="social-links mt-3">
+                        <a href="#" class="text-white me-3"><i class="fab fa-facebook fa-lg"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-youtube fa-lg"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-linkedin fa-lg"></i></a>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5 class="fw-bold mb-3">Liên Kết</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="home.html" class="text-muted text-decoration-none"><i class="fas fa-chevron-right me-2"></i>Trang Chủ</a></li>
+                        <li class="mb-2"><a href="courses.html" class="text-muted text-decoration-none"><i class="fas fa-chevron-right me-2"></i>Khóa Học</a></li>
+                        <li class="mb-2"><a href="survey.html" class="text-muted text-decoration-none"><i class="fas fa-chevron-right me-2"></i>Khảo Sát</a></li>
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none"><i class="fas fa-chevron-right me-2"></i>Về Chúng Tôi</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="fw-bold mb-3">Liên Hệ</h5>
+                    <ul class="list-unstyled text-muted">
+                        <li class="mb-2"><i class="fas fa-map-marker-alt me-2"></i>Hà Nội, Việt Nam</li>
+                        <li class="mb-2"><i class="fas fa-phone me-2"></i>+84 123 456 789</li>
+                        <li class="mb-2"><i class="fas fa-envelope me-2"></i>contact@compassed.vn</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4" style="border-color: rgba(255, 255, 255, 0.1);">
+            <div class="text-center text-muted">
+                <p class="mb-0">&copy; 2025 CompassED. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom Scripts -->
+    <script>
+        // Video play button
+        document.querySelector('.video-play-btn')?.addEventListener('click', function() {
+            alert('Video player sẽ được mở tại đây!');
+        });
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Enroll button
+        document.querySelector('.enroll-btn')?.addEventListener('click', function() {
+            this.innerHTML = '<i class="fas fa-check-circle me-2"></i>Đã Thêm Vào Giỏ Hàng';
+            this.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+            setTimeout(() => {
+                this.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>Đăng Ký Ngay';
+                this.style.background = 'var(--gradient-primary)';
+            }, 2000);
+        });
+
+        // Related course items click
+        document.querySelectorAll('.related-course-item').forEach(item => {
+            item.addEventListener('click', function() {
+                alert('Chuyển đến khóa học: ' + this.querySelector('h6').textContent);
+            });
+        });
+    </script>
 </body>
 </html>

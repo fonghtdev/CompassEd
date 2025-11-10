@@ -331,7 +331,10 @@ function getTotalQuestions() {
 
 // Initialize Quiz
 function initQuiz() {
-    document.getElementById('totalQuestions').textContent = getTotalQuestions();
+    const totalQuestionsEl = document.getElementById('totalQuestions');
+    if (totalQuestionsEl) {
+        totalQuestionsEl.textContent = getTotalQuestions();
+    }
     loadQuestion();
 }
 
@@ -342,7 +345,7 @@ function loadQuestion() {
 
     // Update section badge
     const badge = document.getElementById('sectionBadge');
-    badge.className = `section-badge section-${section.section}`;
+    badge.className = 'section-badge';
     badge.textContent = section.sectionTitle;
 
     // Update question text
@@ -351,12 +354,25 @@ function loadQuestion() {
     // Update question number
     const globalQuestionNumber = quizData.slice(0, currentSectionIndex)
         .reduce((sum, s) => sum + s.questions.length, 0) + currentQuestionIndex + 1;
-    document.getElementById('questionNumber').textContent = globalQuestionNumber;
+    
+    const questionNumberEl = document.getElementById('questionNumber');
+    if (questionNumberEl) {
+        questionNumberEl.textContent = globalQuestionNumber;
+    }
 
     // Update progress bar
     const totalQuestions = getTotalQuestions();
-    const progressPercent = (globalQuestionNumber / totalQuestions) * 100;
-    document.getElementById('progressBar').style.width = progressPercent + '%';
+    const progressPercent = Math.round((globalQuestionNumber / totalQuestions) * 100);
+    
+    const progressBar = document.getElementById('progressBar');
+    const progressPercentage = document.getElementById('progressPercentage');
+    
+    if (progressBar) {
+        progressBar.style.width = progressPercent + '%';
+    }
+    if (progressPercentage) {
+        progressPercentage.textContent = progressPercent + '%';
+    }
 
     // Load options
     loadOptions(question.options);
@@ -371,36 +387,37 @@ function loadOptions(options) {
     container.innerHTML = '';
 
     options.forEach((option, index) => {
-        const label = document.createElement('label');
-        label.className = 'option-label';
+        const card = document.createElement('div');
+        card.className = 'option-card';
 
-        const input = document.createElement('input');
-        input.type = 'radio';
-        input.name = 'answer';
-        input.value = option.value;
+        const content = document.createElement('div');
+        content.className = 'option-content';
 
-        const text = document.createElement('span');
+        const radio = document.createElement('div');
+        radio.className = 'option-radio';
+
+        const text = document.createElement('div');
         text.className = 'option-text';
         text.textContent = option.text;
 
-        label.appendChild(input);
-        label.appendChild(text);
+        content.appendChild(radio);
+        content.appendChild(text);
+        card.appendChild(content);
 
         // Check if this option was previously selected
         const answerKey = `${currentSectionIndex}-${currentQuestionIndex}`;
         if (answers[answerKey] && answers[answerKey] === option.value) {
-            input.checked = true;
-            label.classList.add('selected');
+            card.classList.add('selected');
         }
 
-        // Add event listener for selection
-        input.addEventListener('change', function() {
-            document.querySelectorAll('.option-label').forEach(l => l.classList.remove('selected'));
-            label.classList.add('selected');
+        // Add click event
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
             answers[answerKey] = option.value;
         });
 
-        container.appendChild(label);
+        container.appendChild(card);
     });
 }
 
@@ -415,15 +432,17 @@ function updateButtons() {
     const submitBtn = document.getElementById('submitBtn');
 
     // Previous button
-    prevBtn.disabled = globalQuestionNumber === 1;
+    if (prevBtn) {
+        prevBtn.disabled = globalQuestionNumber === 1;
+    }
 
     // Next button and submit button
     if (globalQuestionNumber === totalQuestions) {
-        nextBtn.classList.add('d-none');
-        submitBtn.classList.remove('d-none');
+        if (nextBtn) nextBtn.classList.add('d-none');
+        if (submitBtn) submitBtn.classList.remove('d-none');
     } else {
-        nextBtn.classList.remove('d-none');
-        submitBtn.classList.add('d-none');
+        if (nextBtn) nextBtn.classList.remove('d-none');
+        if (submitBtn) submitBtn.classList.add('d-none');
     }
 }
 
@@ -478,76 +497,136 @@ function submitQuiz() {
         }
     });
 
-    // Show results
-    showResults();
+    // Calculate group scores
+    const groupScores = calculateGroupScores();
+    const total = Object.values(groupScores).reduce((a, b) => a + b, 0);
+    const sortedGroups = Object.keys(groupScores).sort((a, b) => groupScores[b] - groupScores[a]);
+
+    // Save to localStorage
+    const resultsData = {
+        groupScores: groupScores,
+        sortedGroups: sortedGroups,
+        total: total,
+        timestamp: new Date().toISOString()
+    };
+    
+    localStorage.setItem('surveyResults', JSON.stringify(resultsData));
+
+    // Redirect to results page
+    window.location.href = 'result.html';
 }
 
-// Show Results
-function showResults() {
-    document.getElementById('questionContainer').classList.add('d-none');
-    document.getElementById('resultsSection').classList.remove('d-none');
+// Career Groups
+const careerGroups = {
+    A: {
+        name: 'Nhóm A: Kinh Tế - Kinh Doanh',
+        traits: ['analytical', 'leadership', 'practical'],
+        description: 'Bạn có khả năng phân tích, lãnh đạo và định hướng kinh doanh tốt. Phù hợp với các ngành quản lý, tài chính, marketing.',
+        careers: ['Quản Trị Kinh Doanh', 'Tài Chính - Ngân Hàng', 'Marketing', 'Kế Toán', 'Kinh Tế Học'],
+        universities: ['ĐH Kinh Tế Quốc Dân', 'ĐH Ngoại Thương', 'ĐH Kinh Tế TP.HCM'],
+        color: '#22c55e',
+        icon: 'fa-chart-line',
+        strengths: ['Tư duy phân tích chiến lược', 'Kỹ năng lãnh đạo và quản lý', 'Định hướng mục tiêu rõ ràng'],
+        suggestions: ['Tham gia câu lạc bộ khởi nghiệp', 'Học các khóa Marketing & Business', 'Thực tập tại các công ty kinh doanh']
+    },
+    B: {
+        name: 'Nhóm B: Kỹ Thuật - Công Nghệ',
+        traits: ['analytical', 'technical', 'practical'],
+        description: 'Bạn có tư duy logic, giỏi công nghệ và kỹ thuật. Phù hợp với các ngành lập trình, kỹ sư, khoa học máy tính.',
+        careers: ['Công Nghệ Thông Tin', 'Khoa Học Máy Tính', 'Kỹ Thuật Điện - Điện Tử', 'Cơ Khí', 'Xây Dựng'],
+        universities: ['ĐH Bách Khoa Hà Nội', 'ĐH Bách Khoa TP.HCM', 'ĐH Công Nghệ - ĐHQGHN'],
+        color: '#3b82f6',
+        icon: 'fa-laptop-code',
+        strengths: ['Tư duy logic và kỹ thuật', 'Ham học hỏi công nghệ mới', 'Giải quyết vấn đề sáng tạo'],
+        suggestions: ['Tham gia CLB STEM / Robotics', 'Tự học lập trình (FreeCodeCamp, W3Schools)', 'Tìm hiểu về AI, Machine Learning']
+    },
+    C: {
+        name: 'Nhóm C: Ngôn Ngữ - Truyền Thông',
+        traits: ['communicative', 'creative', 'collaborative'],
+        description: 'Bạn có khả năng giao tiếp tốt, sáng tạo trong ngôn từ. Phù hợp với các ngành báo chí, ngoại ngữ, quan hệ công chúng.',
+        careers: ['Báo Chí - Truyền Thông', 'Ngôn Ngữ Anh', 'Quan Hệ Công Chúng', 'Biên - Phiên Dịch', 'Ngôn Ngữ Học'],
+        universities: ['ĐH Khoa Học Xã Hội và Nhân Văn', 'ĐH Ngoại Ngữ - ĐHQGHN', 'Học Viện Báo Chí'],
+        color: '#eab308',
+        icon: 'fa-comments',
+        strengths: ['Giao tiếp và diễn đạt xuất sắc', 'Sáng tạo nội dung hấp dẫn', 'Kỹ năng làm việc nhóm tốt'],
+        suggestions: ['Viết blog hoặc chia sẻ nội dung sáng tạo', 'Tham gia CLB diễn thuyết', 'Luyện kỹ năng ngoại ngữ']
+    },
+    D: {
+        name: 'Nhóm D: Nghệ Thuật - Thiết Kế',
+        traits: ['creative', 'reflective', 'introverted'],
+        description: 'Bạn có tư duy sáng tạo, nhạy cảm nghệ thuật. Phù hợp với các ngành thiết kế, nghệ thuật, kiến trúc.',
+        careers: ['Thiết Kế Đồ Họa', 'Kiến Trúc', 'Mỹ Thuật', 'Thiết Kế Thời Trang', 'Nhiếp Ảnh - Quay Phim'],
+        universities: ['ĐH Kiến Trúc Hà Nội', 'ĐH Mỹ Thuật Công Nghiệp', 'ĐH Sân Khấu - Điện Ảnh'],
+        color: '#f97316',
+        icon: 'fa-palette',
+        strengths: ['Tư duy sáng tạo độc đáo', 'Cảm nhận thẩm mỹ tinh tế', 'Khả năng biểu đạt nghệ thuật'],
+        suggestions: ['Thực hành vẽ và thiết kế hàng ngày', 'Học các công cụ Adobe (Photoshop, Illustrator)', 'Tham gia triển lãm nghệ thuật']
+    },
+    E: {
+        name: 'Nhóm E: Giáo Dục - Tâm Lý',
+        traits: ['collaborative', 'communicative', 'reflective'],
+        description: 'Bạn có khả năng thấu hiểu con người, hỗ trợ và giáo dục. Phù hợp với các ngành giáo dục, tâm lý, xã hội học.',
+        careers: ['Sư Phạm', 'Tâm Lý Học', 'Công Tác Xã Hội', 'Giáo Dục Mầm Non', 'Tư Vấn Học Đường'],
+        universities: ['ĐH Sư Phạm Hà Nội', 'ĐH Sư Phạm TP.HCM', 'ĐH Giáo Dục - ĐHQGHN'],
+        color: '#a855f7',
+        icon: 'fa-user-graduate',
+        strengths: ['Thấu hiểu và đồng cảm cao', 'Kỹ năng hỗ trợ và giảng dạy', 'Kiên nhẫn và tận tâm'],
+        suggestions: ['Tham gia hoạt động tình nguyện', 'Học về tâm lý học và kỹ năng mềm', 'Thử làm gia sư hoặc dạy kèm']
+    },
+    F: {
+        name: 'Nhóm F: Nông - Lâm - Ngư - Y',
+        traits: ['practical', 'analytical', 'reflective'],
+        description: 'Bạn quan tâm đến môi trường, sức khỏe và thực hành. Phù hợp với các ngành y dược, nông nghiệp, môi trường.',
+        careers: ['Y Khoa', 'Dược Học', 'Nông Nghiệp', 'Môi Trường', 'Thú Y'],
+        universities: ['ĐH Y Hà Nội', 'ĐH Y Dược TP.HCM', 'ĐH Nông Lâm TP.HCM'],
+        color: '#ef4444',
+        icon: 'fa-seedling',
+        strengths: ['Quan tâm đến sức khỏe cộng đồng', 'Tư duy khoa học thực nghiệm', 'Tinh thần trách nhiệm cao'],
+        suggestions: ['Tham gia các hoạt động bảo vệ môi trường', 'Tìm hiểu về y học và khoa học sức khỏe', 'Tham quan các cơ sở y tế, nông trại']
+    }
+};
 
-    // Hide navigation buttons
-    document.querySelector('.button-group').classList.add('d-none');
+// Calculate Group Scores
+function calculateGroupScores() {
+    const groupScores = {};
 
-    const resultsContent = document.getElementById('resultsContent');
-    resultsContent.innerHTML = '';
+    Object.keys(careerGroups).forEach(groupKey => {
+        const group = careerGroups[groupKey];
+        let score = 0;
 
-    // Create category results
-    const categories = [
-        { label: 'Tư Duy Phân Tích', key: 'analytical', careers: 'Lập Trình, Khoa Học, Tài Chính' },
-        { label: 'Hợp Tác & Giao Tiếp', key: 'collaborative', careers: 'Quản Lý, Nhân Sự, Giáo Dục' },
-        { label: 'Sáng Tạo', key: 'creative', careers: 'Thiết Kế, Nghệ Thuật, Quảng Cáo' },
-        { label: 'Thực Hành', key: 'practical', careers: 'Kỹ Thuật, Xây Dựng, Bán Lẻ' },
-        { label: 'Truyền Thông', key: 'communicative', careers: 'Nhà Báo, Marketing, PR' },
-        { label: 'Lãnh Đạo', key: 'leadership', careers: 'Lãnh Đạo, Khởi Nghiệp, Quản Lý' },
-        { label: 'Công Nghệ', key: 'technical', careers: 'IT, Web Dev, Data Science' }
-    ];
+        group.traits.forEach(trait => {
+            score += scores[trait] || 0;
+        });
 
-    const total = Object.values(scores).reduce((a, b) => a + b, 0);
-
-    categories.forEach(category => {
-        const score = scores[category.key];
-        const percentage = Math.round((score / total) * 100);
-
-        const item = document.createElement('div');
-        item.className = 'result-item';
-        item.innerHTML = `
-            <div class="result-label">${category.label}</div>
-            <div class="result-value">${category.careers}
-                <span class="result-percentage">${percentage}%</span>
-            </div>
-        `;
-        resultsContent.appendChild(item);
+        groupScores[groupKey] = score;
     });
 
-    // Add message for AI analysis
-    const aiMessage = document.createElement('div');
-    aiMessage.style.marginTop = '20px';
-    aiMessage.style.padding = '16px';
-    aiMessage.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
-    aiMessage.style.borderRadius = '12px';
-    aiMessage.style.borderLeft = '4px solid #6366f1';
-    // aiMessage.innerHTML = `
-    //     <p style="margin: 0; color: #4f46e5; font-size: 14px; font-weight: 600;">
-    //         💡 Gợi Ý: Bạn có thể sử dụng kết quả này để nhập vào AI để nhận được phân tích chi tiết về ngành phù hợp
-    //     </p>
-    // `;
-    resultsContent.appendChild(aiMessage);
+    return groupScores;
+}
 
-    // Add result data for copying
-    const resultData = JSON.stringify(scores);
-    const dataItem = document.createElement('div');
-    dataItem.style.marginTop = '16px';
-    dataItem.style.padding = '12px';
-    dataItem.style.backgroundColor = '#f8fafc';
-    dataItem.style.borderRadius = '8px';
-    dataItem.style.fontSize = '12px';
-    dataItem.style.color = '#64748b';
-    dataItem.style.fontFamily = 'monospace';
-    dataItem.style.wordBreak = 'break-all';
-    dataItem.innerHTML = `<strong>Dữ liệu phân tích:</strong><br/>${resultData}`;
-    resultsContent.appendChild(dataItem);
+// Restart Quiz (clears survey and starts over)
+function restartQuiz() {
+    // Clear localStorage
+    localStorage.removeItem('surveyResults');
+    
+    // Reset survey state
+    currentQuestionIndex = 0;
+    currentSectionIndex = 0;
+    answers = {};
+    scores = {
+        analytical: 0,
+        collaborative: 0,
+        creative: 0,
+        practical: 0,
+        communicative: 0,
+        leadership: 0,
+        technical: 0,
+        reflective: 0,
+        introverted: 0
+    };
+    
+    // Reload page to restart
+    window.location.href = 'survey.html';
 }
 
 // Initialize on page load
