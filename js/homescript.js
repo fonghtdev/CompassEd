@@ -87,15 +87,15 @@ function initCourses() {
                                 <p class="text-muted mb-3">${course.description}</p>
                                 <div class="course-meta">
                                     <div>
-                                        <small>Thời gian</small>
+                                        <small>Thời Gian</small>
                                         <div class="fw-semibold">${course.courseTime}</div>
                                     </div>
                                     <div>
-                                        <small>Học viên</small>
+                                        <small>Học Viên</small>
                                         <div class="fw-semibold">${course.students}</div>
                                     </div>
                                     <div>
-                                        <small>Thời lượng</small>
+                                        <small>Thời Lượng</small>
                                         <div class="fw-semibold">${course.duration}</div>
                                     </div>
                                 </div>
@@ -103,7 +103,7 @@ function initCourses() {
                         </a>
                         <div class="card-footer bg-white border-0 p-3">
                             <a href="coursesDetail.html?id=${course.id || course.title.replace(/\s+/g, '-').toLowerCase()}" class="btn btn-danger w-100">
-                                <i class="fas fa-eye me-2"></i>Xem chi tiết
+                                <i class="fas fa-eye me-2"></i>Xem Chi Tiết
                             </a>
                         </div>
                     </div>
