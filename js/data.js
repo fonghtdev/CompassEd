@@ -5,23 +5,23 @@ const data = {
         {
             id: 1,
             image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1920&h=800&fit=crop",
-            title: "WELCOME TO OUR UNIVERSITY",
-            description1: "Fusce sem dolor, interdum in efficitur at, faucibus nec lorem.Sed nec molestie justo.",
-            description2: "Nunc quis sapien in arcu pharetra volutpat.Morbi nec vulputate dolor."
+            title: "WELCOME TO OUR NEW-GEN PLATFORM",
+            description1: "--Description--",
+            description2: "--Description--"
         },
         {
             id: 2,
             image: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1920&h=800&fit=crop",
-            title: "ARE YOU READY TO APPLY?",
-            description1: "Fusce sem dolor, interdum in efficitur at, faucibus nec lorem.Sed nec molestie justo.",
-            description2: "Nunc quis sapien in arcu pharetra volutpat.Morbi nec vulputate dolor."
+            title: "DO YOU WANT TO LEARN IN A NEW WAY?",
+            description1: "--Description--",
+            description2: "--Description--"
         },
         {
             id: 3,
             image: "https://images.unsplash.com/photo-1562774053-701939374585?w=1920&h=800&fit=crop",
-            title: "ARE YOU READY TO APPLY?",
-            description1: "Fusce sem dolor, interdum in efficitur at, faucibus nec lorem.Sed nec molestie justo.",
-            description2: "Nunc quis sapien in arcu pharetra volutpat.Morbi nec vulputate dolor."
+            title: "ALREADY TO START YOUR JOURNEY?",
+            description1: "--Description--",
+            description2: "--Description--"
         }
     ],
 
@@ -30,25 +30,25 @@ const data = {
             id: 1,
             icon: "fa-chart-line",
             title: "Trending Courses",
-            description: "Lorem ipsum dolor sit amet Sed nec molestie justo"
+            description: "--Description--"
         },
         {
             id: 2,
             icon: "fa-book-open",
             title: "Books & Liberary",
-            description: "Lorem ipsum dolor sit amet Sed nec molestie justo"
+            description: "--Description--"
         },
         {
             id: 3,
             icon: "fa-users",
             title: "Certified Teachers",
-            description: "Lorem ipsum dolor sit amet Sed nec molestie justo"
+            description: "--Description--"
         },
         {
             id: 4,
             icon: "fa-award",
             title: "Certification",
-            description: "Lorem ipsum dolor sit amet Sed nec molestie justo"
+            description: "--Description--"
         }
     ],
 
@@ -62,7 +62,7 @@ const data = {
             reviews: 39,
             rating: 4.5,
             description: "Cras ultricies lacus consectetur, consectetur scelerisque arcu curabitur",
-            courseTime: "4 Years",
+            courseTime: "4 Năm",
             students: 99,
             duration: "8:30-4:00"
         },
@@ -75,7 +75,7 @@ const data = {
             reviews: 22,
             rating: 4,
             description: "Cras ultricies lacus consectetur, consectetur scelerisque arcu curabitur",
-            courseTime: "3.5 Years",
+            courseTime: "3.5 Năm",
             students: 80,
             duration: "8:30-4:00"
         },
@@ -88,43 +88,43 @@ const data = {
             reviews: 25,
             rating: 4.5,
             description: "Cras ultricies lacus consectetur, consectetur scelerisque arcu curabitur",
-            courseTime: "3 Year",
+            courseTime: "3 Năm",
             students: 95,
             duration: "8:30-4:00"
         }
     ],
 
     stats: [
-        { id: 1, number: 10, label: "TEACHERS" },
-        { id: 2, number: 6, label: "COURSES" },
-        { id: 3, number: 156, label: "STUDENTS" },
-        { id: 4, number: 637, label: "Satisfied Client" }
+        { id: 1, number: 10, label: "GIẢNG VIÊN" },
+        { id: 2, number: 6, label: "KHÓA HỌC" },
+        { id: 3, number: 156, label: "HỌC VIÊN" },
+        { id: 4, number: 637, label: "PHẢN HỒI" }
     ],
 
     events: [
         {
             id: 1,
             image: "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=600&h=400&fit=crop",
-            date: "28 April 2017",
-            title: "CAMPUS EXAMINATION ROOM",
-            time: "10.30AM-03.30PM",
-            venue: "Venue A, Main Campus"
+            date: "28/07/2025",
+            title: "Cóc Vàng FPT",
+            time: "10:30SA - 03:30CH",
+            venue: "Đại Học FPT, Hà Nội"
         },
         {
             id: 2,
             image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=600&h=400&fit=crop",
-            date: "28 June 2017",
-            title: "BEST GRADUATION CEREMONY",
-            time: "10.30AM-03.30PM",
-            venue: "Venue A, Main Campus"
+            date: "01/10/2025",
+            title: "Sinh Viên Xuất Sắc",
+            time: "10:30SA - 03:30CH",
+            venue: "Đại Học FPT, Hà Nội"
         },
         {
             id: 3,
             image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=600&h=400&fit=crop",
-            date: "28 June 2017",
-            title: "PRACTICE WORKSHOP 2018",
-            time: "12.30AM-05.30PM",
-            venue: "Venue A, Main Campus"
+            date: "10/11/2025",
+            title: "Sinh Viên Xuất Sắc",
+            time: "10:30SA - 03:30CH",
+            venue: "Đại Học FPT, Hà Nội"
         }
     ],
 
@@ -207,20 +207,26 @@ const data = {
         {
             id: 1,
             image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop",
-            name: "Luise Henrikes",
-            text: "Etiam non elit nec augue tempor gravida et sed velit. Aliquam tempus eget lorem ut malesuada. Phasellus dictum est sed libero posuere dignissim."
+            name: "Nguyễn Thị Minh Ánh",
+            text: "Từ lộ trình cho đến tư vấn đều quá tốt!"
         },
         {
             id: 2,
             image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop",
-            name: "Aliana D'suza",
-            text: "Tempor non elit nec augue nec gravida et sed velit. Aliquam tempus eget lorem ut malesuada. Phasellus dictum est sed libero posuere dignissim."
+            name: "Phùng Mai Phương",
+            text: "Mình đã đạt được mục tiêu khi tham gia nền tảng này. Cảm ơn ạ."
         },
         {
             id: 3,
             image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop",
-            name: "John Smith",
-            text: "Tempor non elit nec augue nec gravida et sed velit. Aliquam tempus eget lorem ut malesuada. Phasellus dictum est sed libero posuere dignissim."
+            name: "Bùi Vĩnh Tùng",
+            text: "Nền tảng tốt, phù hợp với mọi người."
+        },
+        {
+            id: 4,
+            image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop",
+            name: "Nguyễn Bá Khánh",
+            text: "Tham gia nền tảng được 1 thời gian ngắn nhưng cảm thất rất bổ ích."
         }
     ],
 
