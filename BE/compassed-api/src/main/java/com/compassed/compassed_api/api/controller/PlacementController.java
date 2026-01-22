@@ -1,0 +1,43 @@
+package com.compassed.compassed_api.api.controller;
+
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.compassed.compassed_api.api.dto.PlacementStartResponse;
+import com.compassed.compassed_api.api.dto.PlacementSubmitRequest;
+import com.compassed.compassed_api.api.dto.PlacementSubmitResponse;
+import com.compassed.compassed_api.service.PlacementService;
+
+@RestController
+@RequestMapping("/api")
+public class PlacementController {
+
+    private final PlacementService placementService;
+
+    public PlacementController(PlacementService placementService) {
+        this.placementService = placementService;
+    }
+
+    // Start placement
+    @PostMapping("/subjects/{subjectId}/placement-tests")
+    public PlacementStartResponse start(
+            @RequestHeader("X-USER-ID") Long userId,
+            @PathVariable Long subjectId
+    ) {
+        return placementService.startPlacement(userId, subjectId);
+    }
+
+    // Submit placement
+    @PostMapping("/placement-attempts/{attemptId}/submit")
+    public PlacementSubmitResponse submit(
+            @RequestHeader("X-USER-ID") Long userId,
+            @PathVariable Long attemptId,
+            @RequestBody PlacementSubmitRequest request
+    ) {
+        return placementService.submitPlacement(userId, attemptId, request);
+    }
+}
