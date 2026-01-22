@@ -385,55 +385,129 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 });
 
 // AI EDUADVISOR MODULE
-document.getElementById('aiSearch').addEventListener('click', async () => {
-    const keyword = document.getElementById('careerInput').value.trim();
-    if (!keyword) return alert('Vui lòng nhập ngành nghề!');
-
-    const res = await fetch(`http://127.0.0.1:5000/api/universities?keyword=${encodeURIComponent(keyword)}`);
-    const data = await res.json();
+(() => {
+    const btn = document.getElementById('aiSearch');
+    const inputEl = document.getElementById('careerInput');
     const container = document.getElementById('universityList');
-    container.innerHTML = '';
+    if (!btn || !inputEl || !container) return;
 
-    data.forEach((school, index) => {
-        const mapId = `map_${index}`;
-        const reviewsHtml = school.reviews.map(r => `
-      <div class="border rounded p-2 mb-2 bg-light">
-        <strong>${r.author}</strong>: ${r.text}
-        <div class="rating">⭐ ${r.rating}</div>
-      </div>`).join('');
+    let isSearching = false;
 
-        const score2023 = school.admission_scores?.["2023"] || {};
-        const score2024 = school.admission_scores?.["2024"] || {};
-        const scoreHtml = Object.keys(score2024).map(major => `
-      <li>${major}: ${score2023[major] || '-'} → ${score2024[major]}</li>`).join('');
+    function showSpinner(message) {
+        container.innerHTML = `
+            <div class="text-center p-4 text-muted w-100">
+                <div class="spinner-border text-secondary mb-2" role="status" style="width:2rem;height:2rem;"></div>
+                <div>${message}</div>
+            </div>`;
+    }
 
-        container.insertAdjacentHTML('beforeend', `
-      <div class="col-md-4">
-        <div class="card p-3 shadow-sm">
-          <h5 class="fw-bold">${school.school}</h5>
-          <div>⭐ ${school.rating}</div>
-          <ul>${scoreHtml}</ul>
-          <div><strong>Đánh giá từ Google Maps:</strong>${reviewsHtml}</div>
-          <div id="${mapId}" style="height:200px;border-radius:10px;margin-top:10px;"></div>
-        </div>
-      </div>`);
+    function renderResults(results) {
+        container.innerHTML = '<div class="row g-3" id="universityResultsRow"></div>';
+        const row = document.getElementById('universityResultsRow');
+        results.forEach((school, index) => {
+            const mapId = `map_${Date.now()}_${Math.random().toString(36).slice(2,6)}_${index}`;
+            const reviews = Array.isArray(school.reviews) ? school.reviews : [];
+            const reviewsHtml = reviews.length > 0
+                ? reviews.map(r => `
+                    <div class="border rounded p-2 mb-2 bg-light">
+                        <strong>${r.author || 'Người dùng'}</strong>: ${r.text || ''}
+                        <div class="rating">⭐ ${r.rating || 'N/A'}</div>
+                    </div>`).join('')
+                : '<div class="text-muted small">Chưa có đánh giá.</div>';
 
-        // Hiển thị bản đồ
-        setTimeout(() => {
-            if (school.location) {
-                const map = new google.maps.Map(document.getElementById(mapId), {
-                    center: school.location,
-                    zoom: 15
-                });
-                new google.maps.Marker({
-                    position: school.location,
-                    map,
-                    title: school.school
-                });
+            const score2023 = school.admission_scores?.['2023'] || {};
+            const score2024 = school.admission_scores?.['2024'] || {};
+            const majors = Array.from(new Set([...Object.keys(score2023), ...Object.keys(score2024)]));
+            const scoreHtml = majors.length > 0
+                ? majors.map(major => `<li>${major}: ${score2023[major] || '-'} → ${score2024[major] || '-'}</li>`).join('')
+                : '<li>Chưa cập nhật điểm chuẩn.</li>';
+
+            row.insertAdjacentHTML('beforeend', `
+                <div class="col-md-4 mb-3">
+                    <div class="card p-3 shadow-sm h-100">
+                        <h5 class="fw-bold">${school.school || 'Không tên'}</h5>
+                        <div class="mb-2">⭐ ${school.rating || 'N/A'}</div>
+                        <ul class="small text-muted mb-2">${scoreHtml}</ul>
+                        <div><strong>Đánh giá từ Google Maps:</strong>${reviewsHtml}</div>
+                        <div id="${mapId}" style="height:200px;border-radius:10px;margin-top:10px;"></div>
+                    </div>
+                </div>
+            `);
+
+            // Init map safely
+            setTimeout(() => {
+                try {
+                    const el = document.getElementById(mapId);
+                    if (!el) return;
+                    const loc = school.location;
+                    const hasCoords = loc && typeof loc === 'object' && typeof loc.lat === 'number' && typeof loc.lng === 'number';
+                    if (typeof google !== 'undefined' && hasCoords) {
+                        const center = { lat: loc.lat, lng: loc.lng };
+                        const map = new google.maps.Map(el, { center, zoom: 14, disableDefaultUI: true });
+                        new google.maps.Marker({ position: center, map, title: school.school });
+                    } else {
+                        el.innerHTML = '<div class="text-center small text-muted p-3" style="line-height: 160px;">Không có dữ liệu bản đồ.</div>';
+                    }
+                } catch (e) {
+                    console.error('Lỗi khởi tạo bản đồ:', e);
+                    const el = document.getElementById(mapId);
+                    if (el) el.innerHTML = '<div class="text-center small text-danger p-3" style="line-height: 160px;">Lỗi tải bản đồ.</div>';
+                }
+            }, 300);
+        });
+    }
+
+    async function performSearch(keyword) {
+        if (!keyword) return alert('Vui lòng nhập ngành nghề!');
+        if (isSearching) return;
+        isSearching = true;
+        btn.disabled = true;
+        showSpinner(`Đang tìm kiếm kết quả cho "${keyword}"...`);
+
+        try {
+            let results = null;
+            try {
+                const res = await fetch(`http://127.0.0.1:5000/api/universities?keyword=${encodeURIComponent(keyword)}`);
+                if (!res.ok) throw new Error(`Server responded ${res.status}`);
+                const json = await res.json();
+                if (Array.isArray(json)) results = json;
+            } catch (e) {
+                console.warn('API fetch failed, will fallback to local data if available.', e);
             }
-        }, 300);
+
+            // Fallback to local mock data (if available) and simple filter
+            if (!Array.isArray(results) || results.length === 0) {
+                const local = (window.data && Array.isArray(window.data.universities)) ? window.data.universities : (typeof data !== 'undefined' ? data.universities || [] : []);
+                const kw = keyword.toLowerCase();
+                results = local.filter(s => (s.school || '').toLowerCase().includes(kw) || (s.description || '').toLowerCase().includes(kw));
+            }
+
+            if (!results || results.length === 0) {
+                container.innerHTML = '<div class="text-center p-4 text-muted">Không tìm thấy kết quả phù hợp.</div>';
+                return;
+            }
+
+            renderResults(results);
+        } catch (err) {
+            console.error('AI Search error:', err);
+            container.innerHTML = '<div class="text-center p-4 text-danger">Lỗi khi tìm kiếm, vui lòng thử lại sau.</div>';
+        } finally {
+            isSearching = false;
+            btn.disabled = false;
+        }
+    }
+
+    // Click handler
+    btn.addEventListener('click', () => performSearch(inputEl.value.trim()));
+
+    // Enter key support
+    inputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performSearch(inputEl.value.trim());
+        }
     });
-});
+})();
 
 // // TOP UNIVERSITIES
 // document.addEventListener('DOMContentLoaded', () => {
@@ -489,22 +563,29 @@ document.getElementById('aiSearch').addEventListener('click', async () => {
 
 
 // LOAD TOP UNIVERSITIES
-function initUniversities() {
+async function initUniversities() {
     const container = document.getElementById('universitiesSlides');
     if (!container) return;
 
-    const allSchools = data.universities;
-    const chunkSize = 3;
+    // Prefer backend API (Google Places + mock admission scores)
+    let allSchools = [];
+    try {
+        const res = await fetch('http://127.0.0.1:5000/api/universities');
+        allSchools = await res.json();
+    } catch (e) {
+        console.warn('Không gọi được API backend, fallback sang dữ liệu mock.', e);
+        allSchools = data.universities || [];
+    }
 
+    const chunkSize = 3;
     for (let i = 0; i < allSchools.length; i += chunkSize) {
         const slideSchools = allSchools.slice(i, i + chunkSize);
-
         const isActive = (i === 0) ? 'active' : '';
-        let cardsHtml = ''; 
-        let mapInfos = []; 
+        let cardsHtml = '';
+        const mapInfos = [];
 
         slideSchools.forEach((school, indexInSlide) => {
-            const globalIndex = i + indexInSlide; 
+            const globalIndex = i + indexInSlide;
 
             const reviews = school.reviews || [];
             const reviewsHtml = reviews.length > 0
@@ -516,34 +597,27 @@ function initUniversities() {
             const majors = Array.from(new Set([...Object.keys(score2023), ...Object.keys(score2024)]));
 
             const scoreHtml = majors.length > 0
-                ? majors.map(major => `
-                    <li>${major}: ${score2023[major] || 'N/A'} → ${score2024[major] || 'N/A'}</li>`).join('')
+                ? majors.map(major => `<li>${major}: ${score2023[major] || 'N/A'} → ${score2024[major] || 'N/A'}</li>`).join('')
                 : '<li>Chưa cập nhật điểm chuẩn.</li>';
 
             const mapId = `slider_map_${globalIndex}`;
+            mapInfos.push({ mapId, location: school.location });
 
-            mapInfos.push({
-                mapId: mapId,
-                location: school.location
-            });
-
+            // Card clickable to open modal with details
             cardsHtml += `
-                <div class="col-md-6 col-lg-4"> <div class="card shadow-sm p-3 h-100">
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-sm p-3 h-100 university-card" data-uni-index="${globalIndex}">
                         <h5 class="fw-bold mb-2">${school.school}</h5>
-                        <div class="rating text-warning mb-2">⭐ ${school.rating}</div>
-                        
+                        <div class="rating text-warning mb-2">⭐ ${school.rating || 'N/A'}</div>
                         <strong class="small">Điểm chuẩn (2023 → 2024):</strong>
                         <ul class="small text-muted mb-2" style="padding-left: 1.2rem; max-height: 80px; overflow-y: auto;">
                             ${scoreHtml}
                         </ul>
-                        
                         <strong class="small">Đánh giá:</strong>
                         <div class="small text-muted mb-3" style="max-height: 70px; overflow-y: auto;">
                             ${reviewsHtml}
                         </div>
-                        
-                        <div id="${mapId}" style="height:150px; border-radius:10px; background: #f0f0f0;">
-                            </div>
+                        <div id="${mapId}" style="height:150px; border-radius:10px; background: #f0f0f0;"></div>
                     </div>
                 </div>
             `;
@@ -551,44 +625,93 @@ function initUniversities() {
 
         const slideHTML = `
             <div class="carousel-item ${isActive}">
-                <div class="row g-4 justify-content-center"> ${cardsHtml}
-                </div>
+                <div class="row g-4 justify-content-center">${cardsHtml}</div>
             </div>
         `;
         container.insertAdjacentHTML('beforeend', slideHTML);
 
-        // API gg map
+        // Init maps
         setTimeout(() => {
             mapInfos.forEach(info => {
                 try {
+                    const el = document.getElementById(info.mapId);
+                    if (!el) return;
                     if (info.location && info.location.lat && info.location.lng) {
-                        const mapEl = document.getElementById(info.mapId);
-                        if (!mapEl) return;
-
-                        const map = new google.maps.Map(mapEl, {
+                        const map = new google.maps.Map(el, {
                             center: { lat: info.location.lat, lng: info.location.lng },
                             zoom: 15,
                             disableDefaultUI: true
                         });
                         new google.maps.Marker({
                             position: { lat: info.location.lat, lng: info.location.lng },
-                            map: map,
+                            map
                         });
                     } else {
-                        const mapEl = document.getElementById(info.mapId);
-                        if (mapEl) mapEl.innerHTML = '<div class="text-center small text-muted p-3" style="line-height: 130px;">Không có dữ liệu bản đồ.</div>';
+                        el.innerHTML = '<div class="text-center small text-muted p-3" style="line-height: 130px;">Không có dữ liệu bản đồ.</div>';
                     }
                 } catch (e) {
-                    console.error("Lỗi tải Google Map cho slider: ", e);
-                    const mapEl = document.getElementById(info.mapId);
-                    if (mapEl) {
-                        mapEl.innerHTML = '<div class="text-center small text-danger p-3" style="line-height: 130px;">Lỗi tải bản đồ.</div>';
-                    }
+                    console.error('Lỗi tải Google Map cho slider: ', e);
+                    const el = document.getElementById(info.mapId);
+                    if (el) el.innerHTML = '<div class="text-center small text-danger p-3" style="line-height: 130px;">Lỗi tải bản đồ.</div>';
                 }
             });
-        }, 500); 
+        }, 500);
+    }
 
-    } 
+    // Attach click handlers for modal after DOM built
+    document.querySelectorAll('.university-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            const idx = Number(card.getAttribute('data-uni-index'));
+            const school = allSchools[idx];
+            if (school) openUniversityModal(school);
+        });
+    });
+}
+
+function openUniversityModal(school) {
+    const modalEl = document.getElementById('universityModal');
+    if (!modalEl) return;
+
+    const nameEl = document.getElementById('uniName');
+    const ratingEl = document.getElementById('uniRating');
+    const scoresEl = document.getElementById('uniScores');
+    const reviewsEl = document.getElementById('uniReviews');
+
+    nameEl.textContent = school.school || '';
+    ratingEl.textContent = school.rating ? `⭐ ${school.rating}` : '';
+
+    // Render scores by year
+    const scores = school.admission_scores || {};
+    const years = Object.keys(scores).sort(); // asc order
+    if (years.length === 0) {
+        scoresEl.innerHTML = '<div class="text-muted">Chưa có dữ liệu điểm chuẩn.</div>';
+    } else {
+        scoresEl.innerHTML = years.map(year => {
+            const majors = scores[year] || {};
+            const list = Object.keys(majors).map(major => `<li>${major}: ${majors[major]}</li>`).join('');
+            return `
+                <div class="mb-2">
+                    <div class="fw-semibold">${year}</div>
+                    <ul class="mb-0" style="padding-left:1.2rem">${list}</ul>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Render latest reviews (up to 3 from API)
+    const reviews = school.reviews || [];
+    if (reviews.length === 0) {
+        reviewsEl.innerHTML = '<div class="text-muted">Chưa có đánh giá.</div>';
+    } else {
+        reviewsEl.innerHTML = reviews.map(r => `
+            <div class="border rounded p-2 mb-2 bg-light">
+                <strong>${r.author}</strong> - ⭐ ${r.rating}<br>${r.text}
+            </div>
+        `).join('');
+    }
+
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
 }
 
 document.addEventListener('DOMContentLoaded', initUniversities);

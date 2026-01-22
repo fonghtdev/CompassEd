@@ -9,19 +9,19 @@
     --white: #ffffff;
     --text-dark: #212529;
     --text-muted: #6c757d;
-    
+
     /* Modern Gradients */
     --gradient-primary: linear-gradient(135deg, #ff3d00 0%, #ff5722 100%);
     --gradient-dark: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
     --gradient-overlay: linear-gradient(135deg, rgba(255, 61, 0, 0.9) 0%, rgba(255, 87, 34, 0.9) 100%);
-    
+
     /* Shadows */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
     --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
     --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
     --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.20);
     --shadow-primary: 0 8px 24px rgba(255, 61, 0, 0.3);
-    
+
     /* Transitions */
     --transition-fast: all 0.2s ease;
     --transition-base: all 0.3s ease;
@@ -612,8 +612,8 @@ html {
     right: 0;
     bottom: 0;
     background: linear-gradient(
-        to top, 
-        rgba(255, 61, 0, 0.9) 0%, 
+        to top,
+        rgba(255, 61, 0, 0.9) 0%,
         rgba(0, 0, 0, 0.6) 50%,
         transparent 100%
     );
@@ -679,7 +679,7 @@ html {
 
 /* CTA Banner - Enhanced */
 .cta-banner {
-    background: linear-gradient(135deg, rgba(255, 61, 0, 0.9) 0%, rgba(255, 87, 34, 0.8) 100%), 
+    background: linear-gradient(135deg, rgba(255, 61, 0, 0.9) 0%, rgba(255, 87, 34, 0.8) 100%),
                 url('https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1920&h=400&fit=crop');
     background-size: cover;
     background-position: center;
@@ -1155,7 +1155,7 @@ html {
     .hero-slider .carousel-caption h1 {
         font-size: 3rem;
     }
-    
+
     .course-card .card-img-wrapper {
         height: 220px;
     }
@@ -1166,15 +1166,15 @@ html {
     .hero-slider .carousel-item {
         height: 550px;
     }
-    
+
     .hero-slider .carousel-caption h1 {
         font-size: 2.5rem;
     }
-    
+
     .stats-section .stat-number {
         font-size: 3.5rem;
     }
-    
+
     .feature-card {
         padding: 2rem 1.5rem;
     }
@@ -1185,37 +1185,37 @@ html {
     .hero-slider .carousel-item {
         height: 450px;
     }
-    
+
     .hero-slider .carousel-caption h1 {
         font-size: 2rem;
     }
-    
+
     .hero-slider .carousel-caption {
         padding: 0 1rem;
         max-width: 90%;
     }
-    
+
     .hero-slider .carousel-caption p {
         font-size: 1rem;
     }
-    
+
     .stats-section .stat-number {
         font-size: 2.5rem;
     }
-    
+
     .feature-card {
         margin-bottom: 1rem;
     }
-    
+
     .navbar-dark .navbar-nav .nav-link {
         padding: 0.75rem 1rem;
     }
-    
+
     .contact-bar .icon-box {
         width: 40px;
         height: 40px;
     }
-    
+
     .btn {
         padding: 0.6rem 1.5rem;
         font-size: 0.9rem;
@@ -1227,28 +1227,28 @@ html {
     .hero-slider .carousel-item {
         height: 400px;
     }
-    
+
     .hero-slider .carousel-caption h1 {
         font-size: 1.75rem;
     }
-    
+
     .stats-section .stat-number {
         font-size: 2rem;
     }
-    
+
     .feature-card .icon-circle {
         width: 70px;
         height: 70px;
     }
-    
+
     .feature-card .icon-circle i {
         font-size: 2rem;
     }
-    
+
     .course-card .card-img-wrapper {
         height: 200px;
     }
-    
+
     section h2 {
         font-size: 1.75rem !important;
     }
@@ -1511,7 +1511,7 @@ section .border-danger {
     left: 0;
     right: 0;
     bottom: 0;
-    background-image: 
+    background-image:
         repeating-linear-gradient(
             45deg,
             transparent,
@@ -1601,6 +1601,22 @@ a:focus {
     outline-offset: 5px;
 }
 
+/* AI input focus & accessibility */
+#careerInput:focus,
+#aiSearch:focus,
+#openQuickSignup:focus {
+    box-shadow: 0 6px 18px rgba(255, 61, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
 /* Print Styles */
 @media print {
     .navbar,
@@ -1609,7 +1625,7 @@ a:focus {
     .btn {
         display: none !important;
     }
-    
+
     body {
         color: black;
         background: white;

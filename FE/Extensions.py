@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, render_template
 import requests
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='template')
 
 GOOGLE_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY"
 
@@ -32,7 +32,7 @@ def get_admission_scores(school_name):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('home.html')
 
 @app.route('/api/universities')
 def universities():

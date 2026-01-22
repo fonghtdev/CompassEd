@@ -4,51 +4,51 @@ const data = {
     slides: [
         {
             id: 1,
-            image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1920&h=800&fit=crop",
-            title: "WELCOME TO OUR NEW-GEN PLATFORM",
-            description1: "--Description--",
-            description2: "--Description--"
+            image: "https://images.unsplash.com/photo-1555949963-aa79dcee981d?w=1920&h=800&fit=crop",
+            title: "Lộ trình học AI cá nhân hoá cho tương lai của bạn",
+            description1: "AI phân tích kỹ năng, mục tiêu và lịch sử học tập để xây dựng lộ trình cá nhân.",
+            description2: "Bắt đầu với bài kiểm tra ngắn — nhận lộ trình, khóa học và mốc tiến độ ngay lập tức."
         },
         {
             id: 2,
-            image: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1920&h=800&fit=crop",
-            title: "DO YOU WANT TO LEARN IN A NEW WAY?",
-            description1: "--Description--",
-            description2: "--Description--"
+            image: "https://images.unsplash.com/photo-1503264116251-35a269479413?w=1920&h=800&fit=crop",
+            title: "Từ kỹ năng đến cơ hội nghề nghiệp",
+            description1: "Định vị skill-gap, gợi ý khóa học phù hợp và hành trình chuyển đổi nghề nghiệp.",
+            description2: "Theo dõi tiến trình, điểm mạnh và nhận cập nhật lộ trình theo thời gian thực."
         },
         {
             id: 3,
-            image: "https://images.unsplash.com/photo-1562774053-701939374585?w=1920&h=800&fit=crop",
-            title: "ALREADY TO START YOUR JOURNEY?",
-            description1: "--Description--",
-            description2: "--Description--"
+            image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1920&h=800&fit=crop",
+            title: "Học tập hiệu quả — tối ưu theo bạn",
+            description1: "Nội dung được ưu tiên theo phong cách học và thời gian rảnh của bạn.",
+            description2: "Tối ưu hoá tiến độ bằng đề xuất hàng ngày và báo cáo tiến bộ trực quan."
         }
     ],
 
     features: [
         {
             id: 1,
-            icon: "fa-chart-line",
-            title: "Trending Courses",
-            description: "--Description--"
+            icon: "fa-robot",
+            title: "AI cá nhân hoá",
+            description: "Mô hình AI xây dựng lộ trình dựa trên mục tiêu, điểm mạnh và lịch sử học tập của bạn."
         },
         {
             id: 2,
-            icon: "fa-book-open",
-            title: "Books & Liberary",
-            description: "--Description--"
+            icon: "fa-route",
+            title: "Lộ trình theo năng lực",
+            description: "Các bước hành động rõ ràng: khóa học, dự án, đánh giá năng lực và mốc tiến độ."
         },
         {
             id: 3,
-            icon: "fa-users",
-            title: "Certified Teachers",
-            description: "--Description--"
+            icon: "fa-chart-simple",
+            title: "Theo dõi tiến độ",
+            description: "Báo cáo trực quan, nhắc nhở thông minh và điều chỉnh lộ trình theo tiến trình thực tế."
         },
         {
             id: 4,
-            icon: "fa-award",
-            title: "Certification",
-            description: "--Description--"
+            icon: "fa-briefcase",
+            title: "Kết nối cơ hội",
+            description: "Gợi ý nghề nghiệp và kết nối với đối tác tuyển dụng phù hợp năng lực của bạn."
         }
     ],
 
