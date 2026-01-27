@@ -19,3 +19,8 @@ openai:
     key: ${OPENAI_API_KEY:}
   model: gpt-5
 
+logging:
+  level:
+    com.zaxxer.hikari: DEBUG
+    org.hibernate.engine.jdbc.env.internal: DEBUG
+
