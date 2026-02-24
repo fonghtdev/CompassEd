@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.compassed.compassed_api.api.dto.PlacementStartResponse;
@@ -31,6 +32,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
+@Profile("db")
 public class PlacementServiceImpl implements PlacementService {
 
     private final SubjectRepository subjectRepository;

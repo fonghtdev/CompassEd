@@ -1,3 +1,4 @@
 window.APP_CONFIG = {
-  API_BASE: "https://api.compassed.yourdomain.com"
+  API_BASE: "http://localhost:8080",
+  GOOGLE_CLIENT_ID: ""
 };

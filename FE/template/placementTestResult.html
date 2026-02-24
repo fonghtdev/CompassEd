@@ -1,0 +1,271 @@
+﻿<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Placement Results &amp; Level Analysis - CompassED</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="../css/placementTestResult.css" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d7ff2",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<!-- Top Navigation -->
+<header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1a2632] px-10 py-3 shadow-sm">
+<div class="flex items-center gap-4">
+<div class="size-8 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-3xl">school</span>
+</div>
+<h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">CompassED</h2>
+</div>
+<div class="flex flex-1 justify-end gap-8 items-center">
+<nav class="flex items-center gap-9 hidden md:flex">
+<a class="text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Dashboard</a>
+<a class="text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Courses</a>
+<a class="text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Practice</a>
+<a class="text-slate-900 dark:text-white text-sm font-bold leading-normal border-b-2 border-primary" href="#">Results</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-sm font-bold transition-colors">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+<span class="hidden sm:inline">Log Out</span>
+</button>
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-10 border-2 border-white dark:border-slate-700 shadow-sm" data-alt="User profile avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDb6vdJ2xYFA_ebyj9CytRqNZdObWtKfZj76JTNC087jxLlWz0d26uvIAs8VIZaooPFRG8VX7xGcj9XpNAaCVGr-dyFJRHVzSmwj3__ERG59QToEiqas6_F3BI8xhlSHhqCINGlMms98Y9gTfSjXk7SXeTNE1mxRtFGhXhahoBCfLw4tkaGvaHdi_2ZM0YAHNqHwwgk3sltBI1MvmECyrmNDbrrf3f4rqNxya0BhSoFZ7yrueFvesvcNMxK7rnW9iNmoi_gmzkrLVXP");'></div>
+</div>
+</div>
+</header>
+<main class="flex-grow w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<!-- Header Section -->
+<div class="mb-10 text-center">
+<h1 class="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white mb-3">Placement Test Results</h1>
+<p class="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto">Great job completing the assessment! Based on your performance, our AI has analyzed your strengths and created a personalized learning path.</p>
+</div>
+<!-- Key Metrics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+<!-- Total Score -->
+<div class="bg-white dark:bg-[#1a2632] rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center justify-center relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-8xl text-primary">emoji_events</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider mb-2">Total Score</p>
+<div class="flex items-baseline gap-1">
+<span id="result-score" class="text-5xl font-black text-slate-900 dark:text-white">0</span>
+<span class="text-xl font-bold text-slate-400">/1000</span>
+</div>
+<div class="mt-4 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> Top 15%
+                </div>
+</div>
+<!-- Assigned Level -->
+<div class="bg-primary/5 dark:bg-primary/10 rounded-xl p-6 border border-primary/20 dark:border-primary/20 shadow-sm flex flex-col items-center justify-center relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
+<p class="text-primary text-sm font-bold uppercase tracking-wider mb-2 z-10">Assigned Level</p>
+<h3 id="result-level" class="text-3xl font-black text-slate-900 dark:text-white z-10 text-center">Level -</h3>
+<p class="text-lg font-medium text-slate-600 dark:text-slate-300 z-10">Intermediate</p>
+<div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full mt-4 max-w-[200px] z-10 overflow-hidden">
+<div id="result-level-progress" class="bg-primary h-full rounded-full" style="width: 0%"></div>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-2 z-10">Next level at 900 pts</p>
+</div>
+<!-- Focus Area -->
+<div class="bg-white dark:bg-[#1a2632] rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center justify-center relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-8xl text-primary">target</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider mb-2">Primary Focus</p>
+<h3 id="result-focus" class="text-3xl font-black text-slate-900 dark:text-white text-center">-</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mt-2 text-center px-4">Your strongest subject area. We'll build on this foundation.</p>
+<button class="mt-4 text-primary text-sm font-bold hover:underline flex items-center gap-1">
+                    View Details <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Skill Radar Analysis -->
+<div class="lg:col-span-2 bg-white dark:bg-[#1a2632] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+<div class="flex items-center justify-between mb-6">
+<div>
+<h3 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">analytics</span>
+                            AI Skill Analysis
+                        </h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Detailed breakdown of your performance across subjects</p>
+</div>
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">info</span>
+</button>
+</div>
+<div class="flex flex-col md:flex-row gap-8 items-center">
+<!-- Pseudo Radar Chart Visualization -->
+<div class="relative w-64 h-64 flex-shrink-0">
+<!-- Background Circles -->
+<div class="absolute inset-0 rounded-full border border-slate-100 dark:border-slate-700"></div>
+<div class="absolute inset-8 rounded-full border border-slate-100 dark:border-slate-700"></div>
+<div class="absolute inset-16 rounded-full border border-slate-100 dark:border-slate-700"></div>
+<div class="absolute inset-24 rounded-full border border-slate-100 dark:border-slate-700"></div>
+<!-- Axis Lines -->
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="w-full h-px bg-slate-100 dark:bg-slate-700"></div>
+<div class="h-full w-px bg-slate-100 dark:bg-slate-700 absolute"></div>
+<div class="w-full h-px bg-slate-100 dark:bg-slate-700 rotate-45 absolute"></div>
+<div class="w-full h-px bg-slate-100 dark:bg-slate-700 -rotate-45 absolute"></div>
+</div>
+<!-- Data Polygon (SVG overlay) -->
+<svg class="absolute inset-0 w-full h-full drop-shadow-md" viewbox="0 0 100 100">
+<polygon fill="rgba(13, 127, 242, 0.2)" points="50,10 85,35 75,80 25,80 15,35" stroke="#0d7ff2" stroke-width="2"></polygon>
+<!-- Data Points -->
+<circle class="fill-primary" cx="50" cy="10" r="3"></circle> <!-- Top -->
+<circle class="fill-primary" cx="85" cy="35" r="3"></circle> <!-- Right Top -->
+<circle class="fill-primary" cx="75" cy="80" r="3"></circle> <!-- Right Bottom -->
+<circle class="fill-primary" cx="25" cy="80" r="3"></circle> <!-- Left Bottom -->
+<circle class="fill-primary" cx="15" cy="35" r="3"></circle> <!-- Left Top -->
+</svg>
+<!-- Labels -->
+<span class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-slate-700 dark:text-slate-300">Algebra</span>
+<span class="absolute top-[25%] -right-12 text-xs font-bold text-slate-700 dark:text-slate-300">Geometry</span>
+<span class="absolute bottom-[15%] -right-10 text-xs font-bold text-slate-700 dark:text-slate-300">Calculus</span>
+<span class="absolute bottom-[15%] -left-10 text-xs font-bold text-slate-700 dark:text-slate-300">Lit.</span>
+<span class="absolute top-[25%] -left-14 text-xs font-bold text-slate-700 dark:text-slate-300">Grammar</span>
+</div>
+<!-- Legend / Details -->
+<div class="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+<div class="flex justify-between items-center mb-1">
+<span class="text-sm font-medium text-slate-700 dark:text-slate-300">Algebra</span>
+<span class="text-sm font-bold text-primary">92%</span>
+</div>
+<div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 92%"></div>
+</div>
+</div>
+<div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+<div class="flex justify-between items-center mb-1">
+<span class="text-sm font-medium text-slate-700 dark:text-slate-300">Geometry</span>
+<span class="text-sm font-bold text-primary">78%</span>
+</div>
+<div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 78%"></div>
+</div>
+</div>
+<div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+<div class="flex justify-between items-center mb-1">
+<span class="text-sm font-medium text-slate-700 dark:text-slate-300">Calculus</span>
+<span class="text-sm font-bold text-primary">65%</span>
+</div>
+<div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 65%"></div>
+</div>
+</div>
+<div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+<div class="flex justify-between items-center mb-1">
+<span class="text-sm font-medium text-slate-700 dark:text-slate-300">Literature</span>
+<span class="text-sm font-bold text-primary">70%</span>
+</div>
+<div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 70%"></div>
+</div>
+</div>
+<div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+<div class="flex justify-between items-center mb-1">
+<span class="text-sm font-medium text-slate-700 dark:text-slate-300">Grammar</span>
+<span class="text-sm font-bold text-primary">85%</span>
+</div>
+<div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 85%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Locked Roadmap Preview -->
+<div class="bg-white dark:bg-[#1a2632] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col relative overflow-hidden">
+<div class="p-6 pb-2">
+<h3 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">map</span>
+                        Your Roadmap
+                    </h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Unlock your personalized path to Level 3</p>
+</div>
+<!-- Roadmap List (Blurred) -->
+<div class="flex-1 px-6 py-4 relative">
+<div class="space-y-6 filter blur-[2px] select-none opacity-60">
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<div class="size-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">1</div>
+<div class="w-0.5 h-10 bg-slate-200 dark:bg-slate-700 mt-2"></div>
+</div>
+<div>
+<h4 class="font-bold text-slate-900 dark:text-white">Advanced Algebra Basics</h4>
+<p class="text-xs text-slate-500">Module 1 â€¢ 2.5 Hours</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<div class="size-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 flex items-center justify-center font-bold text-sm">2</div>
+<div class="w-0.5 h-10 bg-slate-200 dark:bg-slate-700 mt-2"></div>
+</div>
+<div>
+<h4 class="font-bold text-slate-900 dark:text-white">Literary Analysis Techniques</h4>
+<p class="text-xs text-slate-500">Module 2 â€¢ 3 Hours</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<div class="size-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 flex items-center justify-center font-bold text-sm">3</div>
+</div>
+<div>
+<h4 class="font-bold text-slate-900 dark:text-white">Trigonometry Intro</h4>
+<p class="text-xs text-slate-500">Module 3 â€¢ 4 Hours</p>
+</div>
+</div>
+</div>
+<!-- Unlock Overlay -->
+<div class="absolute inset-0 z-10 bg-gradient-to-b from-transparent via-white/80 to-white dark:via-[#1a2632]/80 dark:to-[#1a2632] flex flex-col items-center justify-end pb-8 pt-10">
+<div class="bg-background-light dark:bg-background-dark p-2 rounded-full mb-3 shadow-lg border border-slate-200 dark:border-slate-700">
+<span class="material-symbols-outlined text-primary text-3xl">lock</span>
+</div>
+<h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Unlock Your Full Plan</h4>
+<p class="text-center text-sm text-slate-500 dark:text-slate-400 px-6 mb-4">Get access to 50+ personalized lessons and practice tests.</p>
+<button id="result-unlock-btn" class="w-10/12 bg-primary hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg shadow-blue-500/30 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2">
+<span>Unlock Now</span>
+<span class="bg-white/20 px-2 py-0.5 rounded text-xs">50.000 VNÄ</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="mt-12 flex justify-center gap-4">
+<button id="result-back-btn" class="px-6 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+                Return to Dashboard
+            </button>
+</div>
+</main>
+<script src="../config.js"></script>
+<script src="../js/appLocal.js"></script>
+</body></html>

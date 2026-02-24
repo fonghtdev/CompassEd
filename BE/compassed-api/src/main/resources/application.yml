@@ -1,26 +1,12 @@
 server:
   port: 8080
 
-spring:
-  datasource:
-    url: jdbc:mysql://centerbeam.proxy.rlwy.net:26524/railway?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
-    password: efhZpyqJnpJlpoahAlXIrRyKJqvYGmiG
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-
 openai:
   api:
     key: ${OPENAI_API_KEY:}
   model: gpt-5
 
-logging:
-  level:
-    com.zaxxer.hikari: DEBUG
-    org.hibernate.engine.jdbc.env.internal: DEBUG
+auth:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
 

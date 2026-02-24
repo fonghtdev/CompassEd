@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.compassed.compassed_api.api.dto.SubscribeItemResponse;
@@ -28,6 +29,7 @@ import com.compassed.compassed_api.service.PricingService;
 import com.compassed.compassed_api.service.SubscriptionService;
 
 @Service
+@Profile("db")
 public class SubscriptionServiceImpl implements SubscriptionService {
 
     private final UserRepository userRepository;
