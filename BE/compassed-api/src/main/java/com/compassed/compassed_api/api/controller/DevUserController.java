@@ -7,23 +7,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.compassed.compassed_api.api.dto.DevCreateUserRequest;
 import com.compassed.compassed_api.domain.entity.User;
-import com.compassed.compassed_api.repository.UserRepository;
+import com.compassed.compassed_api.local.LocalDataStore;
 
 @RestController
 @RequestMapping("/api/dev")
 public class DevUserController {
 
-    private final UserRepository userRepository;
+    private final LocalDataStore localDataStore;
 
-    public DevUserController(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public DevUserController(LocalDataStore localDataStore) {
+        this.localDataStore = localDataStore;
     }
 
     @PostMapping("/users")
     public User createUser(@RequestBody DevCreateUserRequest req) {
-        User u = new User();
-        u.setEmail(req.getEmail());
-        u.setFullName(req.getFullName());
-        return userRepository.save(u);
+        return localDataStore.createUser(req.getEmail(), req.getFullName());
     }
 }

@@ -1,5 +1,6 @@
 package com.compassed.compassed_api.service.impl;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.compassed.compassed_api.domain.entity.User;
@@ -7,6 +8,7 @@ import com.compassed.compassed_api.repository.UserRepository;
 import com.compassed.compassed_api.service.UserDevService;
 
 @Service
+@Profile("db")
 public class UserDevServiceImpl implements UserDevService {
 
     private final UserRepository userRepository;

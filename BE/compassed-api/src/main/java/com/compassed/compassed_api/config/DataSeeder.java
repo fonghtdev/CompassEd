@@ -1,6 +1,7 @@
 package com.compassed.compassed_api.config;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.compassed.compassed_api.domain.entity.Roadmap;
@@ -10,6 +11,7 @@ import com.compassed.compassed_api.repository.RoadmapRepository;
 import com.compassed.compassed_api.repository.SubjectRepository;
 
 @Component
+@Profile("db")
 public class DataSeeder implements CommandLineRunner {
 
     private final SubjectRepository subjectRepository;
