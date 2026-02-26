@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,22 +16,26 @@ import com.compassed.compassed_api.api.dto.AuthRegisterRequest;
 import com.compassed.compassed_api.api.dto.AuthResponse;
 import com.compassed.compassed_api.api.dto.AuthUserDto;
 import com.compassed.compassed_api.domain.entity.User;
+import com.compassed.compassed_api.domain.enums.UserRole;
 import com.compassed.compassed_api.local.LocalDataStore;
+import com.compassed.compassed_api.security.JwtTokenService;
 import com.compassed.compassed_api.service.AuthService;
 
 @Service
-@Primary
+@Profile("local")
 public class AuthServiceLocalImpl implements AuthService {
 
     private final LocalDataStore localDataStore;
+    private final JwtTokenService jwtTokenService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final WebClient googleClient = WebClient.builder().baseUrl("https://oauth2.googleapis.com").build();
 
     @Value("${auth.google.client-id:}")
     private String googleClientId;
 
-    public AuthServiceLocalImpl(LocalDataStore localDataStore) {
+    public AuthServiceLocalImpl(LocalDataStore localDataStore, JwtTokenService jwtTokenService) {
         this.localDataStore = localDataStore;
+        this.jwtTokenService = jwtTokenService;
     }
 
     @Override
@@ -109,7 +113,8 @@ public class AuthServiceLocalImpl implements AuthService {
 
     @Override
     public AuthUserDto me(String bearerToken) {
-        User user = localDataStore.findUserBySessionToken(extractToken(bearerToken));
+        Long userId = jwtTokenService.parseUserId(extractToken(bearerToken));
+        User user = localDataStore.getUser(userId);
         if (user == null) {
             throw new RuntimeException("Invalid token");
         }
@@ -117,7 +122,8 @@ public class AuthServiceLocalImpl implements AuthService {
     }
 
     private AuthResponse authResponseForUser(User user) {
-        String token = localDataStore.createSessionToken(user.getId());
+        String role = user.getRole() == null ? UserRole.USER.name() : user.getRole().name();
+        String token = jwtTokenService.generateToken(user.getId(), user.getEmail(), role);
         AuthResponse response = new AuthResponse();
         response.setToken(token);
         response.setUser(toUserDto(user));
@@ -129,6 +135,7 @@ public class AuthServiceLocalImpl implements AuthService {
         dto.setId(user.getId());
         dto.setEmail(user.getEmail());
         dto.setFullName(user.getFullName());
+        dto.setRole(user.getRole() == null ? UserRole.USER.name() : user.getRole().name());
         return dto;
     }
 

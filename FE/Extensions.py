@@ -38,6 +38,18 @@ def learning_roadmap():
 def history():
     return render_template("history.html")
 
+@app.route("/checkout")
+def checkout():
+    return render_template("checkout.html")
+
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
+
+@app.route("/profile")
+def profile():
+    return render_template("profile.html")
+
 
 @app.route("/admin-dashboard")
 def admin_dashboard():
@@ -46,3 +58,4 @@ def admin_dashboard():
 
 if __name__ == "__main__":
     app.run(debug=True)
+

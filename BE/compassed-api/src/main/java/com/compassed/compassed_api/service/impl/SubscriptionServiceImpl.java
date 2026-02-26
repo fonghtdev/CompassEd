@@ -29,7 +29,7 @@ import com.compassed.compassed_api.service.PricingService;
 import com.compassed.compassed_api.service.SubscriptionService;
 
 @Service
-@Profile("db")
+@Profile("mysql")
 public class SubscriptionServiceImpl implements SubscriptionService {
 
     private final UserRepository userRepository;

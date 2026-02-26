@@ -36,12 +36,12 @@
 <body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
 <!-- Top Navigation -->
 <header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1a2632] px-10 py-3 shadow-sm">
-<div class="flex items-center gap-4">
+<a class="flex items-center gap-4" href="/landing" style="text-decoration:none;color:inherit;">
 <div class="size-8 text-primary flex items-center justify-center">
 <span class="material-symbols-outlined text-3xl">school</span>
 </div>
 <h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">CompassED</h2>
-</div>
+</a>
 <div class="flex flex-1 justify-end gap-8 items-center">
 <nav class="flex items-center gap-9 hidden md:flex">
 <a class="text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Dashboard</a>
@@ -50,7 +50,7 @@
 <a class="text-slate-900 dark:text-white text-sm font-bold leading-normal border-b-2 border-primary" href="#">Results</a>
 </nav>
 <div class="flex items-center gap-4">
-<button class="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-sm font-bold transition-colors">
+<button id="result-logout-btn" class="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-sm font-bold transition-colors">
 <span class="material-symbols-outlined text-[20px]">logout</span>
 <span class="hidden sm:inline">Log Out</span>
 </button>
@@ -61,7 +61,7 @@
 <main class="flex-grow w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
 <!-- Header Section -->
 <div class="mb-10 text-center">
-<h1 class="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white mb-3">Placement Test Results</h1>
+<h1 id="result-page-title" class="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white mb-3">Placement Test Results</h1>
 <p class="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto">Great job completing the assessment! Based on your performance, our AI has analyzed your strengths and created a personalized learning path.</p>
 </div>
 <!-- Key Metrics Cards -->
@@ -99,7 +99,7 @@
 <p class="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider mb-2">Primary Focus</p>
 <h3 id="result-focus" class="text-3xl font-black text-slate-900 dark:text-white text-center">-</h3>
 <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 text-center px-4">Your strongest subject area. We'll build on this foundation.</p>
-<button class="mt-4 text-primary text-sm font-bold hover:underline flex items-center gap-1">
+<button id="result-view-focus-btn" class="mt-4 text-primary text-sm font-bold hover:underline flex items-center gap-1">
                     View Details <span class="material-symbols-outlined text-sm">arrow_forward</span>
 </button>
 </div>
@@ -115,7 +115,7 @@
                         </h3>
 <p class="text-sm text-slate-500 dark:text-slate-400">Detailed breakdown of your performance across subjects</p>
 </div>
-<button class="text-slate-400 hover:text-primary transition-colors">
+<button id="result-analysis-info-btn" class="text-slate-400 hover:text-primary transition-colors">
 <span class="material-symbols-outlined">info</span>
 </button>
 </div>
@@ -251,8 +251,8 @@
 <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Unlock Your Full Plan</h4>
 <p class="text-center text-sm text-slate-500 dark:text-slate-400 px-6 mb-4">Get access to 50+ personalized lessons and practice tests.</p>
 <button id="result-unlock-btn" class="w-10/12 bg-primary hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg shadow-blue-500/30 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2">
-<span>Unlock Now</span>
-<span class="bg-white/20 px-2 py-0.5 rounded text-xs">50.000 VNÄ</span>
+<span id="result-unlock-label">Unlock Now</span>
+<span id="result-unlock-price" class="bg-white/20 px-2 py-0.5 rounded text-xs">50.000 VNĐ</span>
 </button>
 </div>
 </div>
@@ -264,8 +264,12 @@
 <span class="material-symbols-outlined text-[20px]">arrow_back</span>
                 Return to Dashboard
             </button>
+<button id="result-return-later-btn" class="px-6 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                Return Later
+            </button>
 </div>
 </main>
 <script src="../config.js"></script>
-<script src="../js/appLocal.js"></script>
+<script type="module" src="../js/main.js"></script>
 </body></html>
+

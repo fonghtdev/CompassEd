@@ -7,4 +7,5 @@ public class AuthUserDto {
     private Long id;
     private String email;
     private String fullName;
+    private String role;
 }
