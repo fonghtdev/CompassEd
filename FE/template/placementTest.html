@@ -46,20 +46,20 @@
 <body class="bg-background-light dark:bg-background-dark font-display text-text-primary-light dark:text-text-primary-dark antialiased overflow-hidden h-screen flex flex-col">
 <!-- Top Navigation -->
 <header class="h-16 flex items-center justify-between px-6 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark shrink-0 z-20">
-<div class="flex items-center gap-3">
+<a class="flex items-center gap-3" href="/landing" style="text-decoration:none;color:inherit;">
 <div class="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
 <span class="material-symbols-outlined text-2xl">school</span>
 </div>
 <h1 class="text-lg font-bold tracking-tight">CompassED</h1>
 <span class="hidden sm:inline-block h-4 w-px bg-border-light dark:bg-border-dark mx-2"></span>
 <span class="hidden sm:inline-block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Math Placement Assessment</span>
-</div>
+</a>
 <div class="flex items-center gap-3">
-<button class="hidden sm:flex items-center justify-center h-9 px-4 rounded-lg bg-surface-light dark:bg-surface-dark hover:bg-slate-50 dark:hover:bg-slate-800 border border-border-light dark:border-border-dark text-sm font-semibold transition-colors">
+<button id="placement-save-exit-btn" class="hidden sm:flex items-center justify-center h-9 px-4 rounded-lg bg-surface-light dark:bg-surface-dark hover:bg-slate-50 dark:hover:bg-slate-800 border border-border-light dark:border-border-dark text-sm font-semibold transition-colors">
 <span class="material-symbols-outlined text-[18px] mr-2">save</span>
                 Save &amp; Exit
             </button>
-<button class="size-9 flex items-center justify-center rounded-lg bg-surface-light dark:bg-surface-dark hover:bg-slate-50 dark:hover:bg-slate-800 border border-border-light dark:border-border-dark text-text-secondary-light dark:text-text-secondary-dark transition-colors">
+<button id="placement-settings-btn" class="size-9 flex items-center justify-center rounded-lg bg-surface-light dark:bg-surface-dark hover:bg-slate-50 dark:hover:bg-slate-800 border border-border-light dark:border-border-dark text-text-secondary-light dark:text-text-secondary-dark transition-colors">
 <span class="material-symbols-outlined text-[20px]">settings</span>
 </button>
 </div>
@@ -100,40 +100,40 @@
 <div class="px-4 py-2 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-2">
                     Section 1: Algebra
                 </div>
-<button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group">
+<button id="placement-nav-q1" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group">
 <span class="flex items-center justify-center size-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
 <span class="material-symbols-outlined text-[16px]">check</span>
 </span>
 <span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark line-through decoration-emerald-500/50">Linear Equations</span>
 </button>
-<button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group">
+<button id="placement-nav-q2" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group">
 <span class="flex items-center justify-center size-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
 <span class="material-symbols-outlined text-[16px]">check</span>
 </span>
 <span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark line-through decoration-emerald-500/50">Inequalities</span>
 </button>
-<button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left bg-primary/10 dark:bg-primary/20 text-primary border border-primary/20 transition-colors">
+<button id="placement-nav-q3" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left bg-primary/10 dark:bg-primary/20 text-primary border border-primary/20 transition-colors">
 <span class="flex items-center justify-center size-6 rounded-full bg-primary text-white text-xs font-bold">3</span>
 <span class="text-sm font-bold">Solving for X</span>
 </button>
-<button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-text-secondary-light dark:text-text-secondary-dark">
+<button id="placement-nav-q4" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-text-secondary-light dark:text-text-secondary-dark">
 <span class="flex items-center justify-center size-6 rounded-full border-2 border-slate-200 dark:border-slate-700 text-[10px] font-bold">4</span>
 <span class="text-sm font-medium">Quadratic Functions</span>
 </button>
-<button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-text-secondary-light dark:text-text-secondary-dark">
+<button id="placement-nav-q5" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-text-secondary-light dark:text-text-secondary-dark">
 <span class="flex items-center justify-center size-6 rounded-full border-2 border-slate-200 dark:border-slate-700 text-[10px] font-bold">5</span>
 <span class="text-sm font-medium">Polynomials</span>
 </button>
 <div class="px-4 py-2 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mt-6 mb-2">
                     Section 2: Geometry
                 </div>
-<button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-text-secondary-light dark:text-text-secondary-dark opacity-60">
+<button id="placement-nav-locked" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-text-secondary-light dark:text-text-secondary-dark opacity-60">
 <span class="material-symbols-outlined text-lg text-slate-400">lock</span>
 <span class="text-sm font-medium">Locked</span>
 </button>
 </div>
 <div class="p-4 border-t border-border-light dark:border-border-dark">
-<button class="w-full flex items-center justify-center h-10 px-4 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-text-primary-light dark:text-text-primary-dark text-sm font-bold transition-colors">
+<button id="placement-review-all-btn" class="w-full flex items-center justify-center h-10 px-4 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-text-primary-light dark:text-text-primary-dark text-sm font-bold transition-colors">
                     Review All Answers
                 </button>
 </div>
@@ -213,7 +213,7 @@
 <span class="material-symbols-outlined text-lg">edit_note</span>
                                  Scratchpad
                              </div>
-<button class="text-xs text-primary hover:underline">Clear</button>
+<button id="placement-clear-scratchpad-btn" class="text-xs text-primary hover:underline">Clear</button>
 </div>
 <div class="h-32 w-full">
 <!-- Placeholder for drawing area -->
@@ -231,7 +231,7 @@
                     Previous
                 </button>
 <div class="flex gap-3">
-<button class="flex items-center gap-2 px-6 py-2.5 rounded-lg border border-border-light dark:border-border-dark text-text-secondary-light dark:text-text-secondary-dark hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors">
+<button id="placement-flag-btn" class="flex items-center gap-2 px-6 py-2.5 rounded-lg border border-border-light dark:border-border-dark text-text-secondary-light dark:text-text-secondary-dark hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors">
 <span class="material-symbols-outlined text-[20px]">flag</span>
 <span class="hidden sm:inline">Flag for Review</span>
 </button>
@@ -244,5 +244,6 @@
 </main>
 </div>
 <script src="../config.js"></script>
-<script src="../js/appLocal.js"></script>
+<script type="module" src="../js/main.js"></script>
 </body></html>
+

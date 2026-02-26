@@ -1,15 +1,22 @@
 ﻿<!DOCTYPE html>
 
-<html lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>CompassED Landing Page</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="../css/landingPage.css" rel="stylesheet"/>
-<script>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>CompassED Landing Page</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link href="../css/landingPage.css" rel="stylesheet" />
+    <script>
         tailwind.config = {
             darkMode: "class",
             theme: {
@@ -33,308 +40,397 @@
         }
     </script>
 </head>
+
 <body class="bg-background-light font-display text-slate-900 antialiased">
-<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
-<!-- Header -->
-<header class="flex w-full items-center justify-between border-b border-slate-200 bg-white px-6 py-4 lg:px-20">
-<div class="flex items-center gap-4">
-<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-<span class="material-symbols-outlined text-3xl">explore</span>
-</div>
-<h2 class="text-xl font-bold tracking-tight text-slate-900">CompassED</h2>
-</div>
-<nav class="hidden items-center gap-8 md:flex">
-<a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">Home</a>
-<a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">Subjects</a>
-<a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">How It Works</a>
-<a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">Pricing</a>
-</nav>
-<div class="flex items-center gap-4">
-<a id="landing-login-link" class="hidden text-sm font-medium text-slate-600 hover:text-primary md:block" href="#">Login</a>
-<button id="landing-get-started-top" class="flex h-10 cursor-pointer items-center justify-center rounded-lg bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-blue-600">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+        <!-- Header -->
+        <header class="fixed inset-x-0 top-0 z-50 flex w-full items-center justify-between border-b border-slate-200 bg-white px-6 py-4 lg:px-20">
+            <a class="flex items-center gap-4" href="/landing" style="text-decoration:none;color:inherit;">
+                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <span class="material-symbols-outlined text-3xl">explore</span>
+                </div>
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">CompassED</h2>
+            </a>
+            <nav class="hidden items-center gap-8 md:flex">
+                <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">Home</a>
+                <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">Learning</a>
+                <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">How It
+                    Works</a>
+                <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">Pricing</a>
+            </nav>
+            <div class="flex items-center gap-4">
+                <div id="landing-notif-wrap" class="relative hidden">
+                    <button id="landing-notif-btn"
+                        class="relative flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100"
+                        type="button">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span id="landing-notif-badge"
+                            class="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center hidden">0</span>
+                    </button>
+                    <div id="landing-notif-panel"
+                        class="hidden absolute left-1/2 top-12 z-[2100] w-[360px] max-w-[92vw] -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-700 bg-[#1f242b] text-slate-100 shadow-2xl">
+                        <div class="border-b border-slate-700 px-4 py-3">
+                            <h3 id="landing-notif-title" class="text-2xl font-bold">Thông báo</h3>
+                        </div>
+                        <div id="landing-notif-list" class="max-h-[420px] space-y-2 overflow-y-auto p-3">
+                            <div id="landing-notif-loading" class="text-sm text-slate-300">Đang tải thông báo...</div>
+                        </div>
+                    </div>
+                </div>
+                <a id="landing-login-link" class="hidden text-sm font-medium text-slate-600 hover:text-primary md:block"
+                    href="#">Login</a>
+                <button id="landing-get-started-top"
+                    class="flex h-10 cursor-pointer items-center justify-center rounded-lg bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-blue-600">
                     Get Started
                 </button>
-</div>
-</header>
-<main class="flex flex-1 flex-col items-center">
-<div class="w-full max-w-[1280px] px-6 lg:px-20">
-<!-- Hero Section -->
-<section class="@container py-12 lg:py-20">
-<div class="flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-16">
-<div class="flex flex-1 flex-col gap-6">
-<h1 class="text-4xl font-black leading-tight tracking-tight text-slate-900 md:text-5xl lg:text-6xl">
+            </div>
+        </header>
+        <main class="flex flex-1 flex-col items-center pt-[72px]">
+            <div class="w-full max-w-[1280px] px-6 lg:px-20">
+                <!-- Hero Section -->
+                <section class="@container py-12 lg:py-20">
+                    <div class="flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-16">
+                        <div class="flex flex-1 flex-col gap-6">
+                            <h1
+                                class="text-4xl font-black leading-tight tracking-tight text-slate-900 md:text-5xl lg:text-6xl">
                                 Your AI <span class="text-primary">Learning Compass</span>
-</h1>
-<p class="text-lg leading-relaxed text-slate-600 md:text-xl">
-                                Master High School Math, Literature, and English with personalized, AI-driven roadmaps designed just for you. Stop guessing, start improving.
+                            </h1>
+                            <p class="text-lg leading-relaxed text-slate-600 md:text-xl">
+                                Master High School Math, Literature, and English with personalized, AI-driven roadmaps
+                                designed just for you. Stop guessing, start improving.
                             </p>
-<div class="flex flex-col gap-4 sm:flex-row">
-<button id="landing-start-learning" class="flex h-12 items-center justify-center rounded-lg bg-primary px-8 text-base font-bold text-white transition-colors hover:bg-blue-600">
+                            <div class="flex flex-col gap-4 sm:flex-row">
+                                <button id="landing-start-learning"
+                                    class="flex h-12 items-center justify-center rounded-lg bg-primary px-8 text-base font-bold text-white transition-colors hover:bg-blue-600">
                                     Start Learning Now
                                 </button>
-<button class="flex h-12 items-center justify-center rounded-lg border border-slate-200 bg-white px-8 text-base font-bold text-slate-700 transition-colors hover:bg-slate-50 hover:text-primary">
+                                <button id="landing-view-syllabus"
+                                    class="flex h-12 items-center justify-center rounded-lg border border-slate-200 bg-white px-8 text-base font-bold text-slate-700 transition-colors hover:bg-slate-50 hover:text-primary">
                                     View Syllabus
                                 </button>
-</div>
-<div class="mt-4 flex items-center gap-4 text-sm text-slate-500">
-<div class="flex -space-x-2">
-<img alt="Student portrait" class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" data-alt="Portrait of a smiling female student" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDehuvcVXT4YhZLBeHZJn5EyNVLdyUFmPiwjRR-wxrswQN3vX1v-pMPDhGio5ex8fWAgcOWh8Av3frRAwZXAg7cX2yAS4Jpx8SFfKxoakPq8PI1gzhc8lxcw1PcHSsAL5U5mU9DrMYlLLY8dbhV5loclN5VqZVkxH6xSAI47uONFMshwcRYGlrYpf1bkDLbHrnVCv6IMuRXsWp3wq-sa-kGNycfX0kUTgjwaSJVF2G016YqxOf7jjSPNV4f6dpF_5cQf1QmdJXDv-g6"/>
-<img alt="Student portrait" class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" data-alt="Portrait of a male student wearing glasses" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSRejYoJv41uTveaS7ZGlHKbM298I2eUUMO_2HR6pJReiiqzeucHgq9VbiBoH2sv4cTfDIfHUBgGrcq1e391KpXvpKJQGmNJKasO0-tNhM_XDYyw_Tu54RIZeYE-Bq13X7Mc-I6VqVYMVkWT2FwZS5nHuY-WHPWyU9mIXeh5VAkJDbxKDry0Ore9xlSDVGmi7QlBpqXZLPPuaViZpS2WCxL3PDX2JuR1MMIO8SCm3KQYwC-zr1a2B5XVn4MGAK7_fLt86j79CVW_7O"/>
-<img alt="Student portrait" class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" data-alt="Portrait of a smiling male student" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHCUX004cwj8B2qisxlOMeFLpmNSlQzGf7sRNiel94vFtzgsSaJqRypnprjP3l6A78TbLoSwfi1xZ0UyWdEkZ0JbV63IjMmiVSYsdKQc137nZIdCKvhGFUpm0PLQt2WgOaH8ydYqC543yNe1SP2nfVzAKV-Ncje1S-lC0yy28YwlECS5GfoiMViz5FPWqykcWLnuOqaw8VMcQOLQ9iC9G-8CU7fZcA6WckyvlOqKRPhhhBZfUk51lz84bHcCO5fXSg0B_Zh_8qy4iu"/>
-<div class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 ring-2 ring-white text-xs font-bold text-slate-600">+2k</div>
-</div>
-<p>Join 2,000+ students today</p>
-</div>
-</div>
-<div class="w-full flex-1 lg:w-1/2">
-<div class="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-slate-100 shadow-xl" data-alt="Students studying together in a modern library" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA4gxbUxHeFqzt9MlmrzUAA5BhjXWeBv6fjq7eazg9LEjhMhdLxpwbnnk3COuU02kxoEUnpjBoh1KajbdmXWSSfqWuNB3ofLjURnKGKLdrG2tp69UGe4ljICU93yRvt8j7gmGubvNzUjfp4v8xvv_eUNQrkH7u_hAzj8F_HJL8EZoGHdtmkxk0_G330I_pcRA7eJfw3Pv5-IeWGyxTlBJyF2x2drU2bF39Rq7GQ13sExSVgfjxv4SIDEG_Rx7zVTn7bELYoAUVz126E'); background-size: cover; background-position: center;">
-<div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent"></div>
-<div class="absolute bottom-6 left-6 right-6 rounded-xl bg-white/95 p-4 backdrop-blur-sm">
-<div class="flex items-center gap-3">
-<div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
-<span class="material-symbols-outlined">check_circle</span>
-</div>
-<div>
-<p class="text-sm font-bold text-slate-900">Calculus Roadmap Complete</p>
-<p class="text-xs text-slate-500">You're ready for the final exam!</p>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- Stats Section -->
-<section class="mb-16 grid grid-cols-1 gap-6 md:grid-cols-3">
-<div class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-<div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-primary">
-<span class="material-symbols-outlined text-2xl">groups</span>
-</div>
-<p class="mt-2 text-3xl font-bold text-slate-900">10,000+</p>
-<p class="text-base font-medium text-slate-500">Students Enrolled</p>
-</div>
-<div class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-<div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-primary">
-<span class="material-symbols-outlined text-2xl">quiz</span>
-</div>
-<p class="mt-2 text-3xl font-bold text-slate-900">2 Million+</p>
-<p class="text-base font-medium text-slate-500">Questions Solved</p>
-</div>
-<div class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-<div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-primary">
-<span class="material-symbols-outlined text-2xl">trending_up</span>
-</div>
-<p class="mt-2 text-3xl font-bold text-slate-900">15%</p>
-<p class="text-base font-medium text-slate-500">Average Grade Improvement</p>
-</div>
-</section>
-<!-- Subjects Section -->
-<section id="master-core-subjects" class="py-12">
-<div class="mb-10 text-center">
-<h2 class="text-3xl font-bold text-slate-900 md:text-4xl">Master Core Subjects</h2>
-<p class="mt-4 text-lg text-slate-600">Comprehensive curriculum designed to boost your GPA and standardized test scores.</p>
-</div>
-<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-<!-- Math Card -->
-<div class="group flex flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-primary/50 hover:shadow-md">
-<div class="mb-6 flex items-center justify-between">
-<div class="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-orange-600">
-<span class="material-symbols-outlined">calculate</span>
-</div>
-<div class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">Popular</div>
-</div>
-<h3 class="mb-2 text-xl font-bold text-slate-900">Mathematics</h3>
-<div class="mb-6 flex items-baseline gap-1">
-<span class="text-3xl font-black text-slate-900">$29</span>
-<span class="text-sm font-medium text-slate-500">/month</span>
-</div>
-<ul class="mb-8 flex flex-col gap-3">
-<li class="flex items-center gap-3 text-sm text-slate-600">
-<span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+                            </div>
+                            <div class="mt-4 flex items-center gap-4 text-sm text-slate-500">
+                                <div class="flex -space-x-2">
+                                    <img alt="Student portrait"
+                                        class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                                        data-alt="Portrait of a smiling female student"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDehuvcVXT4YhZLBeHZJn5EyNVLdyUFmPiwjRR-wxrswQN3vX1v-pMPDhGio5ex8fWAgcOWh8Av3frRAwZXAg7cX2yAS4Jpx8SFfKxoakPq8PI1gzhc8lxcw1PcHSsAL5U5mU9DrMYlLLY8dbhV5loclN5VqZVkxH6xSAI47uONFMshwcRYGlrYpf1bkDLbHrnVCv6IMuRXsWp3wq-sa-kGNycfX0kUTgjwaSJVF2G016YqxOf7jjSPNV4f6dpF_5cQf1QmdJXDv-g6" />
+                                    <img alt="Student portrait"
+                                        class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                                        data-alt="Portrait of a male student wearing glasses"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSRejYoJv41uTveaS7ZGlHKbM298I2eUUMO_2HR6pJReiiqzeucHgq9VbiBoH2sv4cTfDIfHUBgGrcq1e391KpXvpKJQGmNJKasO0-tNhM_XDYyw_Tu54RIZeYE-Bq13X7Mc-I6VqVYMVkWT2FwZS5nHuY-WHPWyU9mIXeh5VAkJDbxKDry0Ore9xlSDVGmi7QlBpqXZLPPuaViZpS2WCxL3PDX2JuR1MMIO8SCm3KQYwC-zr1a2B5XVn4MGAK7_fLt86j79CVW_7O" />
+                                    <img alt="Student portrait"
+                                        class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                                        data-alt="Portrait of a smiling male student"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHCUX004cwj8B2qisxlOMeFLpmNSlQzGf7sRNiel94vFtzgsSaJqRypnprjP3l6A78TbLoSwfi1xZ0UyWdEkZ0JbV63IjMmiVSYsdKQc137nZIdCKvhGFUpm0PLQt2WgOaH8ydYqC543yNe1SP2nfVzAKV-Ncje1S-lC0yy28YwlECS5GfoiMViz5FPWqykcWLnuOqaw8VMcQOLQ9iC9G-8CU7fZcA6WckyvlOqKRPhhhBZfUk51lz84bHcCO5fXSg0B_Zh_8qy4iu" />
+                                    <div
+                                        class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 ring-2 ring-white text-xs font-bold text-slate-600">
+                                        +2k</div>
+                                </div>
+                                <p>Join 2,000+ students today</p>
+                            </div>
+                        </div>
+                        <div class="w-full flex-1 lg:w-1/2">
+                            <div class="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-slate-100 shadow-xl"
+                                data-alt="Students studying together in a modern library"
+                                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA4gxbUxHeFqzt9MlmrzUAA5BhjXWeBv6fjq7eazg9LEjhMhdLxpwbnnk3COuU02kxoEUnpjBoh1KajbdmXWSSfqWuNB3ofLjURnKGKLdrG2tp69UGe4ljICU93yRvt8j7gmGubvNzUjfp4v8xvv_eUNQrkH7u_hAzj8F_HJL8EZoGHdtmkxk0_G330I_pcRA7eJfw3Pv5-IeWGyxTlBJyF2x2drU2bF39Rq7GQ13sExSVgfjxv4SIDEG_Rx7zVTn7bELYoAUVz126E'); background-size: cover; background-position: center;">
+                                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent"></div>
+                                <div
+                                    class="absolute bottom-6 left-6 right-6 rounded-xl bg-white/95 p-4 backdrop-blur-sm">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
+                                            <span class="material-symbols-outlined">check_circle</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold text-slate-900">Calculus Roadmap Complete</p>
+                                            <p class="text-xs text-slate-500">You're ready for the final exam!</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- Stats Section -->
+                <section class="mb-16 grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <div class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-primary">
+                            <span class="material-symbols-outlined text-2xl">groups</span>
+                        </div>
+                        <p class="mt-2 text-3xl font-bold text-slate-900">10,000+</p>
+                        <p class="text-base font-medium text-slate-500">Students Enrolled</p>
+                    </div>
+                    <div class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-primary">
+                            <span class="material-symbols-outlined text-2xl">quiz</span>
+                        </div>
+                        <p class="mt-2 text-3xl font-bold text-slate-900">2 Million+</p>
+                        <p class="text-base font-medium text-slate-500">Questions Solved</p>
+                    </div>
+                    <div class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-primary">
+                            <span class="material-symbols-outlined text-2xl">trending_up</span>
+                        </div>
+                        <p class="mt-2 text-3xl font-bold text-slate-900">15%</p>
+                        <p class="text-base font-medium text-slate-500">Average Grade Improvement</p>
+                    </div>
+                </section>
+                <!-- Subjects Section -->
+                <section id="master-core-subjects" class="py-12">
+                    <div class="mb-10 text-center">
+                        <h2 id="landing-subject-title" class="text-3xl font-bold text-slate-900 md:text-4xl">Choose Your Plan</h2>
+                        <p id="landing-subject-subtitle" class="mt-4 text-lg text-slate-600">Comprehensive curriculum designed to boost your GPA and
+                            standardized test scores.</p>
+                    </div>
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <!-- Math Card -->
+                        <div
+                            class="group flex flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-primary/50 hover:shadow-md">
+                            <div class="mb-6 flex items-center justify-between">
+                                <div
+                                    class="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+                                    <span class="material-symbols-outlined">calculate</span>
+                                </div>
+                                <div
+                                    class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
+                                    Popular</div>
+                            </div>
+                            <h3 class="mb-2 text-xl font-bold text-slate-900">Mathematics</h3>
+                            <div class="mb-6 flex items-baseline gap-1">
+                                <span id="landing-price-math" class="text-3xl font-black text-slate-900">50.000 VNĐ</span>
+                                <span class="text-sm font-medium text-slate-500">/môn</span>
+                            </div>
+                            <ul class="mb-8 flex flex-col gap-3">
+                                <li class="flex items-center gap-3 text-sm text-slate-600">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 20px;">check_circle</span>
                                     Algebra &amp; Geometry
                                 </li>
-<li class="flex items-center gap-3 text-sm text-slate-600">
-<span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+                                <li class="flex items-center gap-3 text-sm text-slate-600">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 20px;">check_circle</span>
                                     Calculus Prep
                                 </li>
-<li class="flex items-center gap-3 text-sm text-slate-600">
-<span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+                                <li class="flex items-center gap-3 text-sm text-slate-600">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 20px;">check_circle</span>
                                     AI Problem Solver
                                 </li>
-<li class="flex items-center gap-3 text-sm text-slate-600">
-<span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+                                <li class="flex items-center gap-3 text-sm text-slate-600">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 20px;">check_circle</span>
                                     Step-by-step Explanations
                                 </li>
-</ul>
-<button class="js-join-program mt-auto w-full rounded-lg bg-slate-100 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-primary hover:text-white group-hover:bg-primary group-hover:text-white" data-subject-id="1">
+                            </ul>
+                            <button id="landing-join-program-math"
+                                class="js-join-program mt-auto w-full rounded-lg bg-slate-100 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-primary hover:text-white group-hover:bg-primary group-hover:text-white"
+                                data-subject-id="1">
                                 Join Program
                             </button>
-</div>
-<!-- Literature Card -->
-<div class="group flex flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-primary/50 hover:shadow-md">
-<div class="mb-6 flex items-center justify-between">
-<div class="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 text-purple-600">
-<span class="material-symbols-outlined">auto_stories</span>
-</div>
-</div>
-<h3 class="mb-2 text-xl font-bold text-slate-900">Literature</h3>
-<div class="mb-6 flex items-baseline gap-1">
-<span class="text-3xl font-black text-slate-900">$29</span>
-<span class="text-sm font-medium text-slate-500">/month</span>
-</div>
-<ul class="mb-8 flex flex-col gap-3">
-<li class="flex items-center gap-3 text-sm text-slate-600">
-<span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+                        </div>
+                        <!-- Literature Card -->
+                        <div
+                            class="group flex flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-primary/50 hover:shadow-md">
+                            <div class="mb-6 flex items-center justify-between">
+                                <div
+                                    class="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 text-purple-600">
+                                    <span class="material-symbols-outlined">auto_stories</span>
+                                </div>
+                            </div>
+                            <h3 class="mb-2 text-xl font-bold text-slate-900">Literature</h3>
+                            <div class="mb-6 flex items-baseline gap-1">
+                                <span id="landing-price-literature" class="text-3xl font-black text-slate-900">50.000 VNĐ</span>
+                                <span class="text-sm font-medium text-slate-500">/môn</span>
+                            </div>
+                            <ul class="mb-8 flex flex-col gap-3">
+                                <li class="flex items-center gap-3 text-sm text-slate-600">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 20px;">check_circle</span>
                                     Classic Novels Analysis
                                 </li>
-<li class="flex items-center gap-3 text-sm text-slate-600">
-<span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+                                <li class="flex items-center gap-3 text-sm text-slate-600">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 20px;">check_circle</span>
                                     Poetry Deconstruction
                                 </li>
-<li class="flex items-center gap-3 text-sm text-slate-600">
-<span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+                                <li class="flex items-center gap-3 text-sm text-slate-600">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 20px;">check_circle</span>
                                     Theme &amp; Motif Tracking
                                 </li>
-<li class="flex items-center gap-3 text-sm text-slate-600">
-<span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+                                <li class="flex items-center gap-3 text-sm text-slate-600">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 20px;">check_circle</span>
                                     Essay Thesis Generator
                                 </li>
-</ul>
-<button class="js-join-program mt-auto w-full rounded-lg bg-slate-100 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-primary hover:text-white group-hover:bg-primary group-hover:text-white" data-subject-id="2">
+                            </ul>
+                            <button id="landing-join-program-literature"
+                                class="js-join-program mt-auto w-full rounded-lg bg-slate-100 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-primary hover:text-white group-hover:bg-primary group-hover:text-white"
+                                data-subject-id="2">
                                 Join Program
                             </button>
-</div>
-<!-- English Card -->
-<div class="group flex flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-primary/50 hover:shadow-md">
-<div class="mb-6 flex items-center justify-between">
-<div class="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 text-teal-600">
-<span class="material-symbols-outlined">edit_note</span>
-</div>
-</div>
-<h3 class="mb-2 text-xl font-bold text-slate-900">English</h3>
-<div class="mb-6 flex items-baseline gap-1">
-<span class="text-3xl font-black text-slate-900">$29</span>
-<span class="text-sm font-medium text-slate-500">/month</span>
-</div>
-<ul class="mb-8 flex flex-col gap-3">
-<li class="flex items-center gap-3 text-sm text-slate-600">
-<span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+                        </div>
+                        <!-- English Card -->
+                        <div
+                            class="group flex flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-primary/50 hover:shadow-md">
+                            <div class="mb-6 flex items-center justify-between">
+                                <div
+                                    class="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 text-teal-600">
+                                    <span class="material-symbols-outlined">edit_note</span>
+                                </div>
+                            </div>
+                            <h3 class="mb-2 text-xl font-bold text-slate-900">English</h3>
+                            <div class="mb-6 flex items-baseline gap-1">
+                                <span id="landing-price-english" class="text-3xl font-black text-slate-900">50.000 VNĐ</span>
+                                <span class="text-sm font-medium text-slate-500">/môn</span>
+                            </div>
+                            <ul class="mb-8 flex flex-col gap-3">
+                                <li class="flex items-center gap-3 text-sm text-slate-600">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 20px;">check_circle</span>
                                     Advanced Grammar &amp; Syntax
                                 </li>
-<li class="flex items-center gap-3 text-sm text-slate-600">
-<span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+                                <li class="flex items-center gap-3 text-sm text-slate-600">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 20px;">check_circle</span>
                                     Creative Writing Workshops
                                 </li>
-<li class="flex items-center gap-3 text-sm text-slate-600">
-<span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+                                <li class="flex items-center gap-3 text-sm text-slate-600">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 20px;">check_circle</span>
                                     SAT/ACT Vocab Builder
                                 </li>
-<li class="flex items-center gap-3 text-sm text-slate-600">
-<span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+                                <li class="flex items-center gap-3 text-sm text-slate-600">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 20px;">check_circle</span>
                                     Real-time Writing Feedback
                                 </li>
-</ul>
-<button class="js-join-program mt-auto w-full rounded-lg bg-slate-100 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-primary hover:text-white group-hover:bg-primary group-hover:text-white" data-subject-id="3">
+                            </ul>
+                            <button id="landing-join-program-english"
+                                class="js-join-program mt-auto w-full rounded-lg bg-slate-100 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-primary hover:text-white group-hover:bg-primary group-hover:text-white"
+                                data-subject-id="3">
                                 Join Program
                             </button>
-</div>
-</div>
-</section>
-<!-- How It Works Section -->
-<section class="rounded-3xl bg-white p-8 py-16 lg:p-16">
-<div class="mb-12 flex flex-col gap-4 text-center">
-<h2 class="text-3xl font-bold text-slate-900 md:text-4xl">How It Works</h2>
-<p class="mx-auto max-w-2xl text-lg text-slate-600">Our AI adapts to your unique learning pace in three simple steps, ensuring you never waste time on what you already know.</p>
-</div>
-<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-<!-- Step 1 -->
-<div class="flex flex-col items-center text-center">
-<div class="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-<span class="material-symbols-outlined text-4xl">assignment</span>
-</div>
-<h3 class="mb-2 text-xl font-bold text-slate-900">1. Placement Test</h3>
-<p class="text-slate-600">Take a quick diagnostic assessment. Our AI analyzes your answers to pinpoint your exact strengths and knowledge gaps.</p>
-</div>
-<!-- Step 2 -->
-<div class="relative flex flex-col items-center text-center">
-<!-- Connector Line (Desktop) -->
-<div class="hidden md:absolute md:left-[-50%] md:top-8 md:block md:h-[2px] md:w-[100%] md:bg-gradient-to-r md:from-transparent md:via-slate-200 md:to-transparent"></div>
-<div class="z-10 mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-<span class="material-symbols-outlined text-4xl">map</span>
-</div>
-<h3 class="mb-2 text-xl font-bold text-slate-900">2. AI Roadmap</h3>
-<p class="text-slate-600">Receive a custom curriculum tailored to your goals. No generic textbooks, just the lessons you need.</p>
-</div>
-<!-- Step 3 -->
-<div class="flex flex-col items-center text-center">
-<div class="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-<span class="material-symbols-outlined text-4xl">update</span>
-</div>
-<h3 class="mb-2 text-xl font-bold text-slate-900">3. Adaptive Re-planning</h3>
-<p class="text-slate-600">As you learn, the AI adjusts your path in real-time. Struggling with a concept? We'll add more support automatically.</p>
-</div>
-</div>
-</section>
-<!-- CTA Section -->
-<section class="py-20">
-<div class="relative overflow-hidden rounded-3xl bg-primary px-6 py-16 text-center shadow-lg md:px-16">
-<!-- Background Pattern -->
-<div class="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-<div class="absolute bottom-0 left-0 -mb-16 -ml-16 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-<div class="relative z-10 mx-auto flex max-w-3xl flex-col items-center gap-6">
-<h2 class="text-3xl font-black tracking-tight text-white md:text-5xl">Ready to boost your grades?</h2>
-<p class="text-lg font-medium text-blue-100 md:text-xl">Join thousands of high school students achieving their academic goals with CompassED.</p>
-<div class="mt-4 flex flex-col gap-4 sm:flex-row">
-<button id="landing-get-started-bottom" class="flex h-14 min-w-[160px] cursor-pointer items-center justify-center rounded-lg bg-white px-8 text-base font-bold text-primary shadow-sm transition-transform hover:scale-105">
+                        </div>
+                    </div>
+                </section>
+                <!-- How It Works Section -->
+                <section class="rounded-3xl bg-white p-8 py-16 lg:p-16">
+                    <div class="mb-12 flex flex-col gap-4 text-center">
+                        <h2 class="text-3xl font-bold text-slate-900 md:text-4xl">How It Works</h2>
+                        <p class="mx-auto max-w-2xl text-lg text-slate-600">Our AI adapts to your unique learning pace
+                            in three simple steps, ensuring you never waste time on what you already know.</p>
+                    </div>
+                    <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+                        <!-- Step 1 -->
+                        <div class="flex flex-col items-center text-center">
+                            <div
+                                class="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                <span class="material-symbols-outlined text-4xl">assignment</span>
+                            </div>
+                            <h3 class="mb-2 text-xl font-bold text-slate-900">1. Placement Test</h3>
+                            <p class="text-slate-600">Take a quick diagnostic assessment. Our AI analyzes your answers
+                                to pinpoint your exact strengths and knowledge gaps.</p>
+                        </div>
+                        <!-- Step 2 -->
+                        <div class="relative flex flex-col items-center text-center">
+                            <!-- Connector Line (Desktop) -->
+                            <div
+                                class="hidden md:absolute md:left-[-50%] md:top-8 md:block md:h-[2px] md:w-[100%] md:bg-gradient-to-r md:from-transparent md:via-slate-200 md:to-transparent">
+                            </div>
+                            <div
+                                class="z-10 mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                <span class="material-symbols-outlined text-4xl">map</span>
+                            </div>
+                            <h3 class="mb-2 text-xl font-bold text-slate-900">2. AI Roadmap</h3>
+                            <p class="text-slate-600">Receive a custom curriculum tailored to your goals. No generic
+                                textbooks, just the lessons you need.</p>
+                        </div>
+                        <!-- Step 3 -->
+                        <div class="flex flex-col items-center text-center">
+                            <div
+                                class="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                <span class="material-symbols-outlined text-4xl">update</span>
+                            </div>
+                            <h3 class="mb-2 text-xl font-bold text-slate-900">3. Adaptive Re-planning</h3>
+                            <p class="text-slate-600">As you learn, the AI adjusts your path in real-time. Struggling
+                                with a concept? We'll add more support automatically.</p>
+                        </div>
+                    </div>
+                </section>
+                <!-- CTA Section -->
+                <section class="py-20">
+                    <div
+                        class="relative overflow-hidden rounded-3xl bg-primary px-6 py-16 text-center shadow-lg md:px-16">
+                        <!-- Background Pattern -->
+                        <div class="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-white/10 blur-3xl">
+                        </div>
+                        <div class="absolute bottom-0 left-0 -mb-16 -ml-16 h-64 w-64 rounded-full bg-white/10 blur-3xl">
+                        </div>
+                        <div class="relative z-10 mx-auto flex max-w-3xl flex-col items-center gap-6">
+                            <h2 class="text-3xl font-black tracking-tight text-white md:text-5xl">Ready to boost your
+                                grades?</h2>
+                            <p class="text-lg font-medium text-blue-100 md:text-xl">Join thousands of high school
+                                students achieving their academic goals with CompassED.</p>
+                            <div class="mt-4 flex flex-col gap-4 sm:flex-row">
+                                <button id="landing-get-started-bottom"
+                                    class="flex h-14 min-w-[160px] cursor-pointer items-center justify-center rounded-lg bg-white px-8 text-base font-bold text-primary shadow-sm transition-transform hover:scale-105">
                                     Get Started Free
                                 </button>
-<button class="flex h-14 min-w-[160px] cursor-pointer items-center justify-center rounded-lg border border-white/30 bg-primary px-8 text-base font-bold text-white transition-colors hover:bg-blue-600">
+                                <button id="landing-contact-sales"
+                                    class="flex h-14 min-w-[160px] cursor-pointer items-center justify-center rounded-lg border border-white/30 bg-primary px-8 text-base font-bold text-white transition-colors hover:bg-blue-600">
                                     Contact Sales
                                 </button>
-</div>
-<p class="text-xs text-blue-200 mt-2">No credit card required for 7-day trial.</p>
-</div>
-</div>
-</section>
-</div>
-</main>
-<footer class="border-t border-slate-200 bg-white py-12">
-<div class="mx-auto flex w-full max-w-[1280px] flex-col gap-8 px-6 md:flex-row md:justify-between lg:px-20">
-<div class="flex flex-col gap-4">
-<div class="flex items-center gap-3 text-slate-900">
-<div class="flex h-8 w-8 items-center justify-center rounded bg-primary text-white">
-<span class="material-symbols-outlined text-xl">explore</span>
-</div>
-<h2 class="text-lg font-bold">CompassED</h2>
-</div>
-<p class="max-w-xs text-sm text-slate-500">Empowering students with AI-driven personalized learning paths for a brighter future.</p>
-</div>
-<div class="grid grid-cols-2 gap-10 sm:grid-cols-3 md:gap-20">
-<div class="flex flex-col gap-4">
-<h3 class="text-sm font-bold uppercase tracking-wider text-slate-900">Product</h3>
-<a class="text-sm text-slate-500 hover:text-primary" href="#">Features</a>
-<a class="text-sm text-slate-500 hover:text-primary" href="#">Pricing</a>
-<a class="text-sm text-slate-500 hover:text-primary" href="#">Success Stories</a>
-</div>
-<div class="flex flex-col gap-4">
-<h3 class="text-sm font-bold uppercase tracking-wider text-slate-900">Company</h3>
-<a class="text-sm text-slate-500 hover:text-primary" href="#">About Us</a>
-<a class="text-sm text-slate-500 hover:text-primary" href="#">Careers</a>
-<a class="text-sm text-slate-500 hover:text-primary" href="#">Blog</a>
-</div>
-<div class="flex flex-col gap-4">
-<h3 class="text-sm font-bold uppercase tracking-wider text-slate-900">Support</h3>
-<a class="text-sm text-slate-500 hover:text-primary" href="#">Help Center</a>
-<a class="text-sm text-slate-500 hover:text-primary" href="#">Contact</a>
-<a class="text-sm text-slate-500 hover:text-primary" href="#">Privacy Policy</a>
-</div>
-</div>
-</div>
-<div class="mx-auto mt-12 w-full max-w-[1280px] border-t border-slate-100 px-6 pt-8 text-center text-sm text-slate-400 lg:px-20">
+                            </div>
+                            <p class="text-xs text-blue-200 mt-2">No credit card required for 7-day trial.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+        <footer class="border-t border-slate-200 bg-white py-12">
+            <div class="mx-auto flex w-full max-w-[1280px] flex-col gap-8 px-6 md:flex-row md:justify-between lg:px-20">
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-center gap-3 text-slate-900">
+                        <div class="flex h-8 w-8 items-center justify-center rounded bg-primary text-white">
+                            <span class="material-symbols-outlined text-xl">explore</span>
+                        </div>
+                        <h2 class="text-lg font-bold">CompassED</h2>
+                    </div>
+                    <p class="max-w-xs text-sm text-slate-500">Empowering students with AI-driven personalized learning
+                        paths for a brighter future.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-10 sm:grid-cols-3 md:gap-20">
+                    <div class="flex flex-col gap-4">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-900">Product</h3>
+                        <a class="text-sm text-slate-500 hover:text-primary" href="#">Features</a>
+                        <a class="text-sm text-slate-500 hover:text-primary" href="#">Pricing</a>
+                        <a class="text-sm text-slate-500 hover:text-primary" href="#">Success Stories</a>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-900">Company</h3>
+                        <a class="text-sm text-slate-500 hover:text-primary" href="#">About Us</a>
+                        <a class="text-sm text-slate-500 hover:text-primary" href="#">Careers</a>
+                        <a class="text-sm text-slate-500 hover:text-primary" href="#">Blog</a>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-900">Support</h3>
+                        <a class="text-sm text-slate-500 hover:text-primary" href="#">Help Center</a>
+                        <a class="text-sm text-slate-500 hover:text-primary" href="#">Contact</a>
+                        <a class="text-sm text-slate-500 hover:text-primary" href="#">Privacy Policy</a>
+                    </div>
+                </div>
+            </div>
+            <div
+                class="mx-auto mt-12 w-full max-w-[1280px] border-t border-slate-100 px-6 pt-8 text-center text-sm text-slate-400 lg:px-20">
                 Â© 2024 CompassED Learning Inc. All rights reserved.
             </div>
-</footer>
-</div>
-<script src="../config.js"></script>
-<script src="../js/appLocal.js"></script>
-</body></html>
+        </footer>
+    </div>
+    <script src="../config.js"></script>
+    <script type="module" src="../js/main.js"></script>
+</body>
+
+</html>
+
