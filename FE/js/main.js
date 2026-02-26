@@ -1,0 +1,29 @@
+import { pageName } from "./features/core.js";
+import { initSharedLayout } from "./features/layout.js";
+import { ensureLanguageSwitcher } from "./features/i18n.js";
+import { initLanding } from "./features/landing.js";
+import { initAuth } from "./features/auth.js";
+import { initPlacement } from "./features/placement.js";
+import { initResult } from "./features/result.js";
+import { initCheckout } from "./features/checkout.js";
+import { initRoadmap } from "./features/roadmap.js";
+import { initHistory } from "./features/history.js";
+import { initDashboard } from "./features/dashboard.js";
+import { initProfile } from "./features/profile.js";
+import { initAdmin } from "./features/admin.js";
+
+document.addEventListener("DOMContentLoaded", () => {
+  initSharedLayout();
+  ensureLanguageSwitcher();
+  const page = pageName();
+  if (page === "landing") initLanding();
+  if (page === "auth") initAuth();
+  if (page === "placement") initPlacement();
+  if (page === "result") initResult();
+  if (page === "checkout") initCheckout();
+  if (page === "roadmap") initRoadmap();
+  if (page === "history") initHistory();
+  if (page === "dashboard") initDashboard();
+  if (page === "profile") initProfile();
+  if (page === "admin") initAdmin();
+});

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CompassED Profile</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="../css/profile.css" rel="stylesheet" />
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
+      <div class="flex items-center justify-between gap-3">
+        <h1 class="text-2xl font-bold">Profile & Settings</h1>
+        <div class="flex gap-2">
+          <button id="profile-go-dashboard" class="px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold">Dashboard</button>
+          <button id="profile-go-landing" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold">Landing</button>
+        </div>
+      </div>
+
+      <form id="profile-form" class="mt-6 space-y-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">Email</label>
+          <input id="profile-email" type="email" disabled class="w-full rounded-lg border-slate-200 bg-slate-100" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Full Name</label>
+          <input id="profile-fullname" type="text" class="w-full rounded-lg border-slate-200" />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="flex items-center gap-2">
+            <input id="profile-notify-email" type="checkbox" class="rounded border-slate-300" />
+            <span class="text-sm">Receive Email Notifications</span>
+          </label>
+          <label class="flex items-center gap-2">
+            <input id="profile-notify-inapp" type="checkbox" class="rounded border-slate-300" />
+            <span class="text-sm">Receive In-App Notifications</span>
+          </label>
+        </div>
+        <button class="w-full rounded-lg bg-blue-600 text-white py-2.5 font-bold" type="submit">Save Profile</button>
+      </form>
+
+      <div class="mt-8 border-t border-slate-200 pt-6">
+        <h2 class="text-xl font-bold">Change Password</h2>
+        <form id="profile-password-form" class="mt-4 space-y-4">
+          <div>
+            <label class="block text-sm font-semibold mb-1">Current Password</label>
+            <input id="profile-current-password" type="password" class="w-full rounded-lg border-slate-200" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-1">New Password</label>
+            <input id="profile-new-password" type="password" minlength="6" class="w-full rounded-lg border-slate-200" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-1">Confirm New Password</label>
+            <input id="profile-confirm-password" type="password" minlength="6" class="w-full rounded-lg border-slate-200" />
+          </div>
+          <button class="w-full rounded-lg bg-slate-900 text-white py-2.5 font-bold" type="submit">Update Password</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="../config.js"></script>
+  <script type="module" src="../js/main.js"></script>
+</body>
+</html>

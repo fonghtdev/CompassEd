@@ -2,6 +2,7 @@ package com.compassed.compassed_api.api.controller;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -10,6 +11,7 @@ import com.compassed.compassed_api.domain.entity.User;
 import com.compassed.compassed_api.local.LocalDataStore;
 
 @RestController
+@Profile("local")
 @RequestMapping("/api/dev")
 public class DevUserController {
 

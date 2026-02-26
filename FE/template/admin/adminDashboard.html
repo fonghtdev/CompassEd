@@ -32,7 +32,7 @@
 <div class="relative flex h-screen w-full flex-row overflow-hidden">
 <!-- Sidebar -->
 <div class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full flex-shrink-0">
-<div class="flex items-center gap-3 px-6 py-6 border-b border-slate-100">
+<a class="flex items-center gap-3 px-6 py-6 border-b border-slate-100" href="/landing" style="text-decoration:none;color:inherit;">
 <div class="bg-primary/10 flex items-center justify-center rounded-lg h-10 w-10 text-primary">
 <span class="material-symbols-outlined">explore</span>
 </div>
@@ -40,37 +40,37 @@
 <h1 class="text-slate-900 text-lg font-bold leading-none tracking-tight">CompassED</h1>
 <p class="text-slate-500 text-xs font-medium mt-1">Admin Portal</p>
 </div>
-</div>
+</a>
 <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary group transition-colors" href="#">
+<a id="admin-nav-overview" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary group transition-colors" href="#">
 <span class="material-symbols-outlined text-xl">dashboard</span>
 <span class="text-sm font-medium">Dashboard</span>
 </a>
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
+<a id="admin-nav-users" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
 <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">group</span>
 <span class="text-sm font-medium">User Management</span>
 </a>
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
+<a id="admin-nav-content-bank" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
 <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">library_books</span>
 <span class="text-sm font-medium">Content Bank</span>
 </a>
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
+<a id="admin-nav-roadmaps" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
 <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">map</span>
 <span class="text-sm font-medium">Roadmap Config</span>
 </a>
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
+<a id="admin-nav-analytics" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
 <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">analytics</span>
 <span class="text-sm font-medium">Analytics</span>
 </a>
 <div class="pt-4 mt-4 border-t border-slate-100">
 <p class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">System</p>
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
+<a id="admin-nav-settings" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
 <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">settings</span>
 <span class="text-sm font-medium">Settings</span>
 </a>
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
-<span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">help</span>
-<span class="text-sm font-medium">Help Center</span>
+<a id="admin-nav-notifications" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
+<span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">notifications</span>
+<span class="text-sm font-medium">Notification Center</span>
 </a>
 </div>
 </nav>
@@ -89,7 +89,7 @@
 <!-- Header -->
 <header class="flex items-center justify-between h-16 px-6 bg-white border-b border-slate-200 flex-shrink-0">
 <div class="flex items-center gap-4">
-<button class="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-50">
+<button id="admin-menu-btn" class="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-50">
 <span class="material-symbols-outlined">menu</span>
 </button>
 <h2 class="text-lg font-bold text-slate-900">Dashboard Overview</h2>
@@ -100,11 +100,11 @@
 <input class="h-10 w-64 pl-10 pr-4 rounded-lg bg-slate-50 border-transparent focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary text-sm transition-all placeholder:text-slate-400" placeholder="Search students, subjects..." type="text"/>
 </div>
 <div class="flex items-center gap-3">
-<button class="relative p-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-primary transition-colors">
+<button id="admin-notifications-btn" class="relative p-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-primary transition-colors">
 <span class="material-symbols-outlined">notifications</span>
 <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
 </button>
-<button class="p-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-primary transition-colors">
+<button id="admin-mail-btn" class="p-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-primary transition-colors">
 <span class="material-symbols-outlined">mail</span>
 </button>
 </div>
@@ -127,7 +127,7 @@
 </div>
 <div>
 <p class="text-slate-500 text-sm font-medium">Total Students</p>
-<h3 class="text-2xl font-bold text-slate-900 mt-1">12,450</h3>
+<h3 id="admin-total-users" class="text-2xl font-bold text-slate-900 mt-1">0</h3>
 </div>
 </div>
 <!-- Stat Card 2 -->
@@ -142,7 +142,7 @@
 </div>
 <div>
 <p class="text-slate-500 text-sm font-medium">Active Subscriptions</p>
-<h3 class="text-2xl font-bold text-slate-900 mt-1">8,320</h3>
+<h3 id="admin-active-subs" class="text-2xl font-bold text-slate-900 mt-1">0</h3>
 </div>
 </div>
 <!-- Stat Card 3 -->
@@ -157,7 +157,7 @@
 </div>
 <div>
 <p class="text-slate-500 text-sm font-medium">Monthly Revenue</p>
-<h3 class="text-2xl font-bold text-slate-900 mt-1">$245k</h3>
+<h3 id="admin-pass-rate" class="text-2xl font-bold text-slate-900 mt-1">0%</h3>
 </div>
 </div>
 <!-- Stat Card 4 -->
@@ -172,9 +172,32 @@
 </div>
 <div>
 <p class="text-slate-500 text-sm font-medium">AI Accuracy Score</p>
-<h3 class="text-2xl font-bold text-slate-900 mt-1">94.2%</h3>
+<h3 id="admin-avg-score" class="text-2xl font-bold text-slate-900 mt-1">0%</h3>
 </div>
 </div>
+</div>
+<!-- Management Actions -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+<button id="admin-open-subject-roadmap-btn" class="bg-white border border-slate-200 hover:border-primary/40 rounded-xl p-4 text-left shadow-sm transition-colors">
+<p class="text-xs font-semibold text-slate-400 uppercase">Catalog</p>
+<p class="mt-1 text-sm font-bold text-slate-900">Subjects &amp; Roadmaps</p>
+<p class="mt-1 text-xs text-slate-500">CRUD subjects and roadmap metadata</p>
+</button>
+<button id="admin-open-content-btn" class="bg-white border border-slate-200 hover:border-primary/40 rounded-xl p-4 text-left shadow-sm transition-colors">
+<p class="text-xs font-semibold text-slate-400 uppercase">Content</p>
+<p class="mt-1 text-sm font-bold text-slate-900">Lessons &amp; Mini-tests</p>
+<p class="mt-1 text-xs text-slate-500">CRUD lesson bank and mini tests</p>
+</button>
+<button id="admin-open-config-btn" class="bg-white border border-slate-200 hover:border-primary/40 rounded-xl p-4 text-left shadow-sm transition-colors">
+<p class="text-xs font-semibold text-slate-400 uppercase">System</p>
+<p class="mt-1 text-sm font-bold text-slate-900">Configs</p>
+<p class="mt-1 text-xs text-slate-500">Manage runtime key/value configs</p>
+</button>
+<button id="admin-open-notification-center-btn" class="bg-white border border-slate-200 hover:border-primary/40 rounded-xl p-4 text-left shadow-sm transition-colors">
+<p class="text-xs font-semibold text-slate-400 uppercase">Messaging</p>
+<p class="mt-1 text-sm font-bold text-slate-900">Notification Center</p>
+<p class="mt-1 text-xs text-slate-500">Broadcast and direct notifications</p>
+</button>
 </div>
 <!-- Main Charts Section -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -267,7 +290,7 @@
 <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
 <div class="p-6 border-b border-slate-100 flex justify-between items-center">
 <h3 class="text-lg font-bold text-slate-900">Recent Student Signups</h3>
-<button class="text-sm text-primary font-medium hover:text-primary/80">View All</button>
+<button id="admin-view-all-users-btn" class="text-sm text-primary font-medium hover:text-primary/80">View All</button>
 </div>
 <div class="overflow-x-auto">
 <table class="w-full text-sm text-left">
@@ -315,7 +338,7 @@
 <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
 <div class="p-6 border-b border-slate-100 flex justify-between items-center">
 <h3 class="text-lg font-bold text-slate-900">Recent Content Updates</h3>
-<button class="p-2 text-slate-400 hover:text-slate-600">
+<button id="admin-more-updates-btn" class="p-2 text-slate-400 hover:text-slate-600">
 <span class="material-symbols-outlined">more_horiz</span>
 </button>
 </div>
@@ -363,4 +386,6 @@
 </main>
 </div>
 </div>
+<script src="../../config.js"></script>
+<script type="module" src="../../js/main.js"></script>
 </body></html>
