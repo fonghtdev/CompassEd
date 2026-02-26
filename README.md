@@ -1,90 +1,95 @@
-# CompassEd
+## Run Project
+# START -->
+1. Docker:
+docker compose up -d mysql
+2. BE:
+cd BE\compassed-api
+.\scripts\run-mysql.ps1 -MySqlHost localhost -MySqlPort 3306 -MySqlUser root -MySqlPassword 1234 -Database compassed
+3. FE:
+cd D:\FPT\CompassEd\FE
+python -m pip install flask requests
+python .\Extensions.py
+## END <--
 
-## Local Code-First
+<!-- # CompassEd
 
-Project hien tai chay local theo huong code-first:
-- Khong can Docker
-- Khong ket noi DB
-- Du lieu chay in-memory trong backend
+## Run Project (MySQL + FE)
 
-### Chay backend
+This project currently runs with:
+- Backend: Spring Boot (`BE/compassed-api`)
+- Frontend: Flask static host (`FE/Extensions.py`)
+- Database: MySQL 8 (Docker Compose or local MySQL)
+
+## 1) Start MySQL
+
+### Option A: Docker Compose (recommended)
 
 ```powershell
-cd BE\compassed-api
-.\mvnw.cmd spring-boot:run
+cd D:\FPT\CompassEd
+docker compose up -d mysql
 ```
 
-Backend chay tai `http://localhost:8080`.
+Current compose defaults:
+- database: `compassed`
+- root user: `root`
+- root password: `1234`
+- host port: `3307` (container `3306`)
 
-## MySQL Mode (bat dau migrate)
+Important:
+- Do not set `MYSQL_USER=root` in compose.
+- Root login is handled by `MYSQL_ROOT_PASSWORD`.
 
-Backend da co profile `mysql` de chay voi MySQL thay vi in-memory.
-Auth cho API protected da su dung JWT (`Authorization: Bearer <token>`), khong con phu thuoc `X-USER-ID`.
-`/api/dev/**` chi duoc bat o profile `local`.
+### Option B: Local MySQL service
 
-### Yeu cau
+If you already run MySQL locally (for example port `3306`), use that directly.
 
-- MySQL 8+
-- Tao database `compassed` (hoac ten khac qua env `MYSQL_URL`)
+## 2) Start Backend (profile mysql)
 
-### Chay backend voi MySQL
+### Fast way (script)
 
 ```powershell
-cd BE\compassed-api
+cd D:\FPT\CompassEd\BE\compassed-api
+.\scripts\run-mysql.ps1 -MySqlHost localhost -MySqlPort 3307 -MySqlUser root -MySqlPassword 1234 -Database compassed
+```
+
+If your local MySQL is on port `3306`, run:
+
+```powershell
+.\scripts\run-mysql.ps1 -MySqlHost localhost -MySqlPort 3306 -MySqlUser root -MySqlPassword 1234 -Database compassed
+```
+
+Backend URL:
+- `http://localhost:8080`
+
+### Manual env way (alternative)
+
+```powershell
+cd D:\FPT\CompassEd\BE\compassed-api
 $env:SPRING_PROFILES_ACTIVE="mysql"
 $env:MYSQL_URL="jdbc:mysql://localhost:3307/compassed?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
 $env:MYSQL_USER="root"
 $env:MYSQL_PASSWORD="1234"
-$env:JWT_SECRET="your-very-strong-jwt-secret-at-least-32-chars"
-$env:ADMIN_EMAIL="admin@compassed.local"
-$env:ADMIN_PASSWORD="admin123"
+$env:JWT_SECRET="this-is-a-very-strong-jwt-secret-min-32"
+$env:SERVER_PORT="8080"
 .\mvnw.cmd spring-boot:run
 ```
 
-Khi khoi dong profile `mysql`, he thong se seed 3 mon hoc + roadmap L1/L2/L3 neu chua co.
-Neu set `ADMIN_EMAIL` + `ADMIN_PASSWORD`, he thong se tao/upgrade user nay thanh role `ADMIN`.
-Schema duoc tao/quan ly boi Flyway migration (`src/main/resources/db/migration`).
-
-### Chay MySQL nhanh bang Docker Compose
+## 3) Start Frontend
 
 ```powershell
-docker compose up -d mysql
-```
-
-Mac dinh compose tao DB:
-- database: `compassed`
-- user/password: `compassed` / `compassed`
-- root password: `1234`
-- host port: `3307`
-
-### Script chay backend mysql (tu tao DB neu thieu)
-
-```powershell
-cd BE\compassed-api
-.\scripts\run-mysql.ps1
-```
-
-### Chay frontend
-
-```powershell
-cd FE
+cd D:\FPT\CompassEd\FE
 python -m pip install flask requests
 python .\Extensions.py
 ```
 
-Frontend chay tai `http://127.0.0.1:5000`.
+Frontend URL:
+- `http://127.0.0.1:5000`
+- Landing page: `http://127.0.0.1:5000/template/landingPage.html`
 
-## Admin/User APIs da co (khong gom payment)
+## Notes
 
-- Admin (`/api/admin/**`, can JWT role `ADMIN`):
-  - analytics overview
-  - quan ly users (list + update role)
-  - quan ly subjects/roadmaps
-  - quan ly lessons + mini-tests (question bank)
-  - quan ly system configs
-  - gui notification cho tung user hoac broadcast
-  - xem/review AI generation logs
-- User notification:
-  - `GET /api/notifications`
-  - `GET /api/notifications/unread-count`
-  - `POST /api/notifications/{id}/read`
+- Backend MySQL config is read from:
+  - `BE/compassed-api/src/main/resources/application-mysql.yml`
+- DB schema is managed by Flyway:
+  - `BE/compassed-api/src/main/resources/db/migration`
+- If FE cannot call BE, check `FE/config.js` (`API_BASE` should be `http://localhost:8080`). -->
