@@ -35,7 +35,7 @@ class LocalFlowBusinessRulesTests {
     @BeforeEach
     void setUp() {
         localDataStore = new LocalDataStore();
-        placementService = new PlacementServiceLocalImpl(localDataStore, objectMapper);
+        placementService = new PlacementServiceLocalImpl(localDataStore, objectMapper, null);
         roadmapService = new RoadmapServiceLocalImpl(localDataStore);
         subscriptionService = new SubscriptionServiceLocalImpl(localDataStore, new PricingServiceImpl());
     }
