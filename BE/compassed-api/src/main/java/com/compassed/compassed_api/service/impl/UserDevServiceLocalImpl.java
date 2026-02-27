@@ -1,13 +1,13 @@
 package com.compassed.compassed_api.service.impl;
 
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.compassed.compassed_api.local.LocalDataStore;
 import com.compassed.compassed_api.service.UserDevService;
 
 @Service
-@Primary
+@Profile("local")
 public class UserDevServiceLocalImpl implements UserDevService {
 
     private final LocalDataStore localDataStore;
