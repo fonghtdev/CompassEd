@@ -10,4 +10,5 @@ import com.compassed.compassed_api.domain.entity.MiniTest;
 @Repository
 public interface MiniTestRepository extends JpaRepository<MiniTest, Long> {
     List<MiniTest> findBySubjectAndLevelOrderByLessonIdAsc(String subject, String level);
+    List<MiniTest> findByModuleId(Long moduleId);
 }
