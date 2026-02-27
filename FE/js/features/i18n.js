@@ -10,7 +10,7 @@ const I18N = {
     getStartedFree: "B\u1eaft \u0111\u1ea7u mi\u1ec5n ph\u00ed",
     joinProgram: "Tham gia ch\u01b0\u01a1ng tr\u00ecnh",
     choosePlan: "Ch\u1ecdn m\u00f4n h\u1ecdc",
-    choosePlanSub: "Gi\u00e1 g\u00f3i: 1 m\u00f4n 50.000 VND, 2 m\u00f4n 90.000 VND, 3 m\u00f4n 130.000 VND.",
+    choosePlanSub: "Ch\u1ecdn m\u00f4n h\u1ecdc ph\u00f9 h\u1ee3p \u0111\u1ec3 b\u1eaft \u0111\u1ea7u l\u1ed9 tr\u00ecnh c\u00e1 nh\u00e2n h\u00f3a.",
     needAuth: "B\u1ea1n c\u1ea7n \u0111\u0103ng nh\u1eadp ho\u1eb7c \u0111\u0103ng k\u00fd tr\u01b0\u1edbc khi b\u1eaft \u0111\u1ea7u",
     checkoutTitle: "Thanh to\u00e1n",
     checkoutSubtitle: "Ch\u1ecdn m\u00f4n mu\u1ed1n m\u1edf roadmap.",
@@ -31,7 +31,6 @@ const I18N = {
     authBullet2: "M\u1edf kh\u00f3a roadmap t\u1eeb checkout local",
     authBullet3: "L\u1ecbch s\u1eed c\u00e1c l\u1ea7n l\u00e0m b\u00e0i",
     continueWith: "HO\u1eb6C TI\u1ebeP T\u1ee4C V\u1edaI",
-    continueGithub: "Ti\u1ebfp t\u1ee5c v\u1edbi GitHub (Dev)",
     googleNote: "Google login c\u1ea7n thi\u1ebft l\u1eadp",
     dashboardTitle: "B\u1ea3ng \u0111i\u1ec1u khi\u1ec3n h\u1ecdc t\u1eadp",
     historyTitle: "L\u1ecbch s\u1eed Placement",
@@ -62,7 +61,7 @@ const I18N = {
     getStartedFree: "Get Started Free",
     joinProgram: "Join Program",
     choosePlan: "Choose Your Plan",
-    choosePlanSub: "Pricing: 1 subject 50,000 VND, 2 subjects 90,000 VND, 3 subjects 130,000 VND.",
+    choosePlanSub: "Choose the subjects that match your goals to start your personalized roadmap.",
     needAuth: "You need to login/register before starting",
     checkoutTitle: "Checkout",
     checkoutSubtitle: "Choose subjects to unlock roadmap.",
@@ -83,7 +82,6 @@ const I18N = {
     authBullet2: "Unlock roadmap from local checkout",
     authBullet3: "History of attempts",
     continueWith: "OR CONTINUE WITH",
-    continueGithub: "Continue with GitHub (Dev)",
     googleNote: "Google login requires",
     dashboardTitle: "My Learning Dashboard",
     historyTitle: "Placement History",
@@ -197,7 +195,6 @@ function applyLanguage() {
   setText("auth-bullet-2", t("authBullet2"));
   setText("auth-bullet-3", t("authBullet3"));
   setText("auth-or-continue", t("continueWith"));
-  setText("github-mock-btn", t("continueGithub"));
   setBySelector("#auth-google-note-label", t("googleNote"));
 
   setText("dash-nav-overview-label", t("dashboard"));

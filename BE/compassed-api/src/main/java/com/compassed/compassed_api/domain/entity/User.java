@@ -28,6 +28,9 @@ public class User {
     @Column(length = 255)
     private String oauthProviderUserId;
 
+    @Column(nullable = false)
+    private boolean emailVerified = false;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserRole role = UserRole.USER;
