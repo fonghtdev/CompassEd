@@ -7,6 +7,7 @@ import { initPlacement } from "./features/placement.js";
 import { initResult } from "./features/result.js";
 import { initCheckout } from "./features/checkout.js";
 import { initRoadmap } from "./features/roadmap.js";
+import { initRoadmapDashboard } from "./features/roadmapDashboard.js";
 import { initHistory } from "./features/history.js";
 import { initDashboard } from "./features/dashboard.js";
 import { initProfile } from "./features/profile.js";
@@ -22,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (page === "result") initResult();
   if (page === "checkout") initCheckout();
   if (page === "roadmap") initRoadmap();
+  if (page === "roadmapDashboard") initRoadmapDashboard();
   if (page === "history") initHistory();
   if (page === "dashboard") initDashboard();
   if (page === "profile") initProfile();
