@@ -3,7 +3,7 @@ package com.compassed.compassed_api.service.impl;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +18,7 @@ import com.compassed.compassed_api.repository.UserRepository;
 import com.compassed.compassed_api.service.AuthService;
 
 @Service
-@Primary
+@Profile("jpa")
 @Transactional
 public class AuthServiceJpaImpl implements AuthService {
 
@@ -52,7 +52,8 @@ public class AuthServiceJpaImpl implements AuthService {
         user.setEmail(normalizedEmail);
         user.setFullName(request.getFullName());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setProvider("local");
+        user.setOauthProvider("local");
+        user.setOauthProviderUserId("local_" + UUID.randomUUID());
         
         user = userRepository.save(user);
         
@@ -98,7 +99,8 @@ public class AuthServiceJpaImpl implements AuthService {
             user = new User();
             user.setEmail(normalizedEmail);
             user.setFullName(fullName);
-            user.setProvider(provider);
+            user.setOauthProvider(provider);
+            user.setOauthProviderUserId(provider + "_" + UUID.randomUUID());
             user = userRepository.save(user);
         }
         

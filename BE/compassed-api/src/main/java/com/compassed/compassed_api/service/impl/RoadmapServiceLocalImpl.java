@@ -21,7 +21,7 @@ import com.compassed.compassed_api.local.LocalDataStore.SubjectInfo;
 import com.compassed.compassed_api.service.RoadmapService;
 
 @Service
-@Profile("local")
+@Profile("removed-local")
 public class RoadmapServiceLocalImpl implements RoadmapService {
 
     private final LocalDataStore localDataStore;
@@ -335,4 +335,5 @@ public class RoadmapServiceLocalImpl implements RoadmapService {
     private record RoadmapContext(SubjectInfo subject, RoadmapProgressMem progress) {
     }
 }
+
 

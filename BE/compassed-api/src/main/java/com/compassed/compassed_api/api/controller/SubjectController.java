@@ -3,11 +3,13 @@ package com.compassed.compassed_api.api.controller;
 import com.compassed.compassed_api.domain.entity.Subject;
 import com.compassed.compassed_api.repository.SubjectRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
+@Profile("removed-local")
 @RequestMapping("/api/subjects")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
@@ -32,3 +34,4 @@ public class SubjectController {
                 .orElseThrow(() -> new RuntimeException("Subject not found with code: " + code));
     }
 }
+

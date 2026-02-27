@@ -1,6 +1,6 @@
 param(
   [string]$MySqlHost = "localhost",
-  [int]$MySqlPort = 3307,
+  [int]$MySqlPort = 3306,
   [string]$MySqlUser = "root",
   [string]$MySqlPassword = "1234",
   [string]$Database = "compassed",
