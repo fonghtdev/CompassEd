@@ -18,6 +18,7 @@ async function hydrateLandingPricing() {
 
 function initLanding() {
   hydrateLandingPricing();
+  let subscribedSubjectIds = new Set();
 
   const loginLink = document.getElementById("landing-login-link");
   const getStartedTop = document.getElementById("landing-get-started-top");
@@ -157,6 +158,24 @@ function initLanding() {
 
   const closePopup = () => {
     if (popupOverlay) popupOverlay.style.display = "none";
+  };
+
+  const setJoinProgramButtons = (activeSubjectIds = new Set(), loggedIn = false) => {
+    document.querySelectorAll(".js-join-program").forEach((btn) => {
+      const subjectId = Number(btn.getAttribute("data-subject-id"));
+      const subscribed = loggedIn && activeSubjectIds.has(subjectId);
+      if (subscribed) {
+        btn.innerHTML = '<span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"><span class="material-symbols-outlined" style="font-size:20px;">check_circle</span></span>';
+        btn.className =
+          "js-join-program mt-auto w-full rounded-lg border border-emerald-200 bg-white py-2 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50";
+        btn.title = "Đã đăng ký";
+      } else {
+        btn.textContent = t("joinProgram") || "Join Program";
+        btn.className =
+          "js-join-program mt-auto w-full rounded-lg bg-slate-100 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-primary hover:text-white group-hover:bg-primary group-hover:text-white";
+        btn.title = "";
+      }
+    });
   };
 
   const openProfilePopup = async () => {
@@ -313,6 +332,8 @@ function initLanding() {
 
   checkSession().then((ok) => {
     if (!ok) {
+      subscribedSubjectIds = new Set();
+      setJoinProgramButtons(new Set(), false);
       if (notifWrap) notifWrap.classList.add("hidden");
       if (loginLink) {
         loginLink.textContent = "Login";
@@ -327,8 +348,17 @@ function initLanding() {
       return;
     }
     const { user } = getAuth();
+    const activeSubjectIds = new Set();
     if (notifWrap) notifWrap.classList.remove("hidden");
     loadUnreadCount();
+    api("/api/me/subscriptions", "GET", null, true)
+      .then((subData) => {
+        const active = (subData && subData.activeSubscriptions) || [];
+        active.forEach((s) => activeSubjectIds.add(Number(s.subjectId)));
+        subscribedSubjectIds = new Set(activeSubjectIds);
+      })
+      .catch(() => {})
+      .finally(() => setJoinProgramButtons(activeSubjectIds, true));
     if (loginLink) {
       const base = String((user && user.fullName) || (user && user.email) || "U").trim();
       loginLink.textContent = base ? base.charAt(0).toUpperCase() : "U";
@@ -395,6 +425,11 @@ function initLanding() {
         goAuthWithRedirect(`/placement-test?subjectId=${subjectId}`, `placementTest.html?subjectId=${subjectId}`);
         return;
       }
+      if (subscribedSubjectIds.has(subjectId)) {
+        localStorage.setItem("compassed_subject_id", String(subjectId));
+        nav("/roadmap-dashboard", "roadmapDashboard.html");
+        return;
+      }
       await navByPlacementStatus(subjectId);
     });
   });
@@ -441,14 +476,8 @@ function initLanding() {
 
   const viewSyllabus = document.getElementById("landing-view-syllabus");
   if (viewSyllabus) {
-    viewSyllabus.addEventListener("click", async () => {
-      try {
-        const subjects = await api("/api/subjects", "GET", null, false);
-        const names = (subjects || []).map((s) => s.name).join(", ");
-        toast(names ? `Syllabus subjects: ${names}` : "Syllabus loaded");
-      } catch (e) {
-        toast("Cannot load syllabus", "error");
-      }
+    viewSyllabus.addEventListener("click", () => {
+      nav("/roadmap-dashboard", "roadmapDashboard.html");
     });
   }
 

@@ -28,6 +28,7 @@ import com.compassed.compassed_api.domain.entity.UserProfile;
 import com.compassed.compassed_api.domain.entity.UserRoadmapAssignment;
 import com.compassed.compassed_api.local.QuestionBank;
 import com.compassed.compassed_api.repository.NotificationRepository;
+import com.compassed.compassed_api.repository.FinalTestAttemptRepository;
 import com.compassed.compassed_api.repository.PlacementResultRepository;
 import com.compassed.compassed_api.repository.SubscriptionRepository;
 import com.compassed.compassed_api.repository.SubjectRepository;
@@ -36,6 +37,7 @@ import com.compassed.compassed_api.repository.UserProgressRepository;
 import com.compassed.compassed_api.repository.UserRepository;
 import com.compassed.compassed_api.repository.UserRoadmapAssignmentRepository;
 import com.compassed.compassed_api.security.CurrentUserService;
+import com.compassed.compassed_api.service.LoginActivityService;
 import com.compassed.compassed_api.service.RoleAccessService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,7 +56,9 @@ public class UserPortalController {
     private final SubscriptionRepository subscriptionRepository;
     private final SubjectRepository subjectRepository;
     private final NotificationRepository notificationRepository;
+    private final FinalTestAttemptRepository finalTestAttemptRepository;
     private final RoleAccessService roleAccessService;
+    private final LoginActivityService loginActivityService;
     private final ObjectMapper objectMapper;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -68,7 +72,9 @@ public class UserPortalController {
             SubscriptionRepository subscriptionRepository,
             SubjectRepository subjectRepository,
             NotificationRepository notificationRepository,
+            FinalTestAttemptRepository finalTestAttemptRepository,
             RoleAccessService roleAccessService,
+            LoginActivityService loginActivityService,
             ObjectMapper objectMapper) {
         this.currentUserService = currentUserService;
         this.userRepository = userRepository;
@@ -79,7 +85,9 @@ public class UserPortalController {
         this.subscriptionRepository = subscriptionRepository;
         this.subjectRepository = subjectRepository;
         this.notificationRepository = notificationRepository;
+        this.finalTestAttemptRepository = finalTestAttemptRepository;
         this.roleAccessService = roleAccessService;
+        this.loginActivityService = loginActivityService;
         this.objectMapper = objectMapper;
     }
 
@@ -187,6 +195,7 @@ public class UserPortalController {
         out.put("testResults", myPlacements.stream().limit(20).map(this::placementPayload).toList());
         out.put("upcomingTests", buildUpcomingTests(assignments));
         out.put("ranking", rankingPayload(userId, avgScore));
+        out.put("studyStreakDays", loginActivityService.computeStreak(userId));
         out.put("strengthWeakness", buildStrengthWeakness(myPlacements));
         out.put("recommendations", buildRecommendations(assignments, myPlacements));
         out.put("practiceQuestions", buildPracticeQuestions(assignments));
@@ -233,9 +242,14 @@ public class UserPortalController {
             item.put("active", s.isActive());
             return item;
         }).toList();
+        Map<String, Object> ranking = rankingPayload(userId, 0.0);
+        int streak = loginActivityService.computeStreak(userId);
         return Map.of(
                 "activeSubscriptions", activeRows,
-                "availableSubjects", available);
+                "availableSubjects", available,
+                "rank", ranking.get("rank"),
+                "totalLearners", ranking.get("totalLearners"),
+                "studyStreakDays", streak);
     }
 
     @GetMapping(value = "/tests/export", produces = "text/csv")
@@ -286,18 +300,23 @@ public class UserPortalController {
         return upcoming;
     }
 
-    private Map<String, Object> rankingPayload(Long userId, double myAvg) {
+    private Map<String, Object> rankingPayload(Long userId, double ignoredMyAvg) {
         Map<Long, List<Double>> scores = new LinkedHashMap<>();
-        for (PlacementResult r : placementResultRepository.findAll()) {
-            if (r.getScorePercent() == null || r.getUser() == null) {
+        for (var r : finalTestAttemptRepository.findAll()) {
+            if (r == null || r.getScore() == null || r.getUserId() == null) {
                 continue;
             }
-            scores.computeIfAbsent(r.getUser().getId(), k -> new ArrayList<>()).add(r.getScorePercent());
+            scores.computeIfAbsent(r.getUserId(), k -> new ArrayList<>()).add(r.getScore().doubleValue());
         }
         List<Map.Entry<Long, Double>> ranking = scores.entrySet().stream()
                 .map(e -> Map.entry(e.getKey(), e.getValue().stream().mapToDouble(x -> x).average().orElse(0.0)))
                 .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
                 .toList();
+        Double myAvg = ranking.stream()
+                .filter(x -> x.getKey().equals(userId))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
         int rank = 1;
         for (Map.Entry<Long, Double> row : ranking) {
             if (row.getKey().equals(userId)) {
@@ -306,8 +325,8 @@ public class UserPortalController {
             rank++;
         }
         return Map.of(
-                "myAverageScore", round1(myAvg),
-                "rank", ranking.isEmpty() ? 1 : rank,
+                "myAverageScore", round1(myAvg == null ? 0.0 : myAvg),
+                "rank", myAvg == null ? 0 : rank,
                 "totalLearners", Math.max(1, ranking.size()));
     }
 

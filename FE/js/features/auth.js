@@ -105,6 +105,31 @@ function chooseSubjectForPlacement(subjects) {
   });
 }
 
+function askVerificationCode(email) {
+  return new Promise((resolve) => {
+    openChoiceModal((content, close) => {
+      content.innerHTML = `
+        <h3 style="font-size:20px;font-weight:800;color:#0f172a;margin:0;">Xac nhan email</h3>
+        <p style="margin:8px 0 14px 0;color:#475569;font-size:14px;">Nhap ma 6 so da gui toi <b>${email}</b>.</p>
+        <input id="auth-verify-code" type="text" maxlength="8" placeholder="Nhap ma xac nhan" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;outline:none;" />
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+          <button id="auth-verify-cancel" type="button" style="padding:9px 14px;border:1px solid #e2e8f0;background:#fff;border-radius:8px;font-weight:700;color:#334155;cursor:pointer;">Huy</button>
+          <button id="auth-verify-confirm" type="button" style="padding:9px 14px;border:none;background:#2563eb;color:#fff;border-radius:8px;font-weight:700;cursor:pointer;">Xac nhan</button>
+        </div>`;
+      content.querySelector("#auth-verify-cancel").addEventListener("click", () => {
+        close();
+        resolve(null);
+      });
+      content.querySelector("#auth-verify-confirm").addEventListener("click", () => {
+        const code = (content.querySelector("#auth-verify-code").value || "").trim();
+        if (!code) return;
+        close();
+        resolve(code);
+      });
+    });
+  });
+}
+
 async function handleFirstLoginAfterRegister(user) {
   if (user) localStorage.setItem(onboardingKey(user), "1");
   const shouldDoPlacement = await askPlacementChoice();
@@ -190,38 +215,27 @@ function initAuth() {
   if (registerForm) {
     registerForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      showLoading("Creating account...");
+      showLoading("Sending verification code...");
       try {
         const fullName = document.getElementById("register-name").value.trim();
         const email = document.getElementById("register-email").value.trim();
         const password = document.getElementById("register-password").value;
-        const resp = await api("/api/auth/register", "POST", { fullName, email, password }, false);
+        const requestCodeResp = await api("/api/auth/register/request-code", "POST", { fullName, email, password }, false);
+        toast((requestCodeResp && requestCodeResp.message) || "Da gui ma xac nhan qua email");
+        hideLoading();
+        const code = await askVerificationCode(email);
+        if (!code) {
+          toast("Registration cancelled", "warn");
+          return;
+        }
+        showLoading("Verifying code...");
+        const resp = await api("/api/auth/register/verify", "POST", { email, code }, false);
         saveAuth(resp);
         toast("Register successful");
         localStorage.removeItem(onboardingKey(resp.user));
         await handleFirstLoginAfterRegister(resp.user);
       } catch (err) {
         toast(`Register failed: ${err.message}`, "error");
-      } finally {
-        hideLoading();
-      }
-    });
-  }
-
-  const githubBtn = document.getElementById("github-mock-btn");
-  if (githubBtn) {
-    githubBtn.addEventListener("click", async () => {
-      const email = prompt("Enter GitHub email (dev mode)");
-      if (!email) return;
-      showLoading("Signing in via GitHub...");
-      try {
-        const fullName = email.split("@")[0];
-        const resp = await api("/api/auth/oauth/mock", "POST", { provider: "github", email, fullName }, false);
-        saveAuth(resp);
-        toast("GitHub login successful");
-        redirectAfterAuthDefault();
-      } catch (err) {
-        toast(`GitHub login failed: ${err.message}`, "error");
       } finally {
         hideLoading();
       }

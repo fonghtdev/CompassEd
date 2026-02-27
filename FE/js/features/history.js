@@ -150,19 +150,19 @@ async function initHistory() {
 
   showLoading(getLang() === "vi" ? "Đang tải lịch sử..." : "Loading history...");
   try {
-    const rows = await api("/api/history/placements", "GET", null, true);
+    const rows = await api("/api/history/tests", "GET", null, true);
     body.innerHTML = "";
     if (!rows || !rows.length) {
-      body.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">${getLang() === "vi" ? "Chưa có lịch sử placement" : "No placement history"}</td></tr>`;
+      body.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">${getLang() === "vi" ? "Chưa có lịch sử bài test" : "No test history"}</td></tr>`;
     } else {
       rows.forEach((r) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td class="px-4 py-3">${new Date(r.submittedAt).toLocaleString()}</td>
-          <td class="px-4 py-3">${r.subjectCode} - ${r.subjectName}</td>
-          <td class="px-4 py-3">${r.level}</td>
-          <td class="px-4 py-3">${Math.round(Number(r.scorePercent || 0))}%</td>
-          <td class="px-4 py-3">#${r.attemptId}</td>`;
+          <td class="px-4 py-3">${escapeHtml(r.testName || "")}</td>
+          <td class="px-4 py-3">${escapeHtml(`${r.subjectCode || ""} - ${r.subjectName || ""}`)}</td>
+          <td class="px-4 py-3">${escapeHtml(r.level || "")}</td>
+          <td class="px-4 py-3">${r.submittedAt ? new Date(r.submittedAt).toLocaleString() : ""}</td>
+          <td class="px-4 py-3">${Math.round(Number(r.scorePercent || 0))}%</td>`;
         body.appendChild(tr);
       });
     }

@@ -1,14 +1,19 @@
 ## Run Project
 # START -->
-1. Docker:
+1. (Optional) Start MySQL container:
 docker compose up -d mysql
-2. BE:
-cd BE\compassed-api
-.\scripts\run-mysql.ps1 -MySqlHost localhost -MySqlPort 3306 -MySqlUser root -MySqlPassword 1234 -Database compassed
-3. FE:
-cd D:\FPT\CompassEd\FE
-python -m pip install flask requests
-python .\Extensions.py
+
+2. Configure env once:
+Edit `scripts/dev-env.ps1`
+
+3. Run Backend:
+.\scripts\run-be.ps1
+
+4. Run Frontend:
+.\scripts\run-fe.ps1
+
+5. Run both in 2 terminals:
+.\scripts\run-all.ps1
 ## END <--
 
 <!-- # CompassEd
