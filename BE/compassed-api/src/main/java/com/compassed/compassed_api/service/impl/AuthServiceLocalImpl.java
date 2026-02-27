@@ -22,7 +22,7 @@ import com.compassed.compassed_api.security.JwtTokenService;
 import com.compassed.compassed_api.service.AuthService;
 
 @Service
-@Profile("local")
+@Profile("removed-local")
 public class AuthServiceLocalImpl implements AuthService {
 
     private final LocalDataStore localDataStore;
@@ -153,3 +153,4 @@ public class AuthServiceLocalImpl implements AuthService {
         return value == null ? null : String.valueOf(value);
     }
 }
+

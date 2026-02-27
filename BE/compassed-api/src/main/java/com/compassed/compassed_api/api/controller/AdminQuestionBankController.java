@@ -4,6 +4,7 @@ import com.compassed.compassed_api.api.dto.CreateQuestionRequest;
 import com.compassed.compassed_api.api.dto.QuestionBankDTO;
 import com.compassed.compassed_api.domain.QuestionBank.Level;
 import com.compassed.compassed_api.service.QuestionBankService;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
+@Profile("mysql")
 @RequestMapping("/api/admin/questions")
 @CrossOrigin(origins = "*")
 public class AdminQuestionBankController {
