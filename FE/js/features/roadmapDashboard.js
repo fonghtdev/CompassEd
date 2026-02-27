@@ -233,6 +233,90 @@ function updateTopStats(stats) {
   if (total) total.textContent = `${stats.total} subjects`;
 }
 
+function ensureRoadmapChoiceModal() {
+  let overlay = document.getElementById("rm-choice-overlay");
+  if (overlay) return overlay;
+  overlay = document.createElement("div");
+  overlay.id = "rm-choice-overlay";
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "rgba(15,23,42,0.45)";
+  overlay.style.display = "none";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = "9999";
+  overlay.innerHTML = `
+    <div style="width:min(520px,92vw);background:#fff;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 18px 40px rgba(2,6,23,0.25);overflow:hidden;">
+      <div id="rm-choice-content" style="padding:18px;"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function openRoadmapChoiceModal(render) {
+  const overlay = ensureRoadmapChoiceModal();
+  const content = overlay.querySelector("#rm-choice-content");
+  overlay.style.display = "flex";
+  render(content, () => {
+    overlay.style.display = "none";
+  });
+}
+
+function askSubscribeWhenNoRoadmap() {
+  return new Promise((resolve) => {
+    openRoadmapChoiceModal((content, close) => {
+      content.innerHTML = `
+        <h3 style="font-size:20px;font-weight:800;color:#0f172a;margin:0;">Hiện tại chưa có roadmap nào</h3>
+        <p style="margin:8px 0 14px 0;color:#475569;font-size:14px;">Bạn có muốn đăng ký để mở roadmap của riêng bạn không?</p>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button id="rm-choice-no" type="button" style="padding:9px 14px;border:1px solid #e2e8f0;background:#fff;border-radius:8px;font-weight:700;color:#334155;cursor:pointer;">Không</button>
+          <button id="rm-choice-yes" type="button" style="padding:9px 14px;border:none;background:#2563eb;color:#fff;border-radius:8px;font-weight:700;cursor:pointer;">Có, đăng ký</button>
+        </div>`;
+      content.querySelector("#rm-choice-no").addEventListener("click", () => {
+        close();
+        resolve(false);
+      });
+      content.querySelector("#rm-choice-yes").addEventListener("click", () => {
+        close();
+        resolve(true);
+      });
+    });
+  });
+}
+
+function chooseEnrolledSubjectModal(subjects) {
+  return new Promise((resolve) => {
+    const rows = (subjects || [])
+      .map(
+        (s) => `
+          <button type="button" data-subject-id="${s.id}" style="text-align:left;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;cursor:pointer;">
+            <div style="font-weight:700;color:#0f172a;">${escapeHtml(s.name || "Subject")}</div>
+            <div style="font-size:12px;color:#64748b;">${escapeHtml(s.code || "")}</div>
+          </button>`
+      )
+      .join("");
+    openRoadmapChoiceModal((content, close) => {
+      content.innerHTML = `
+        <h3 style="font-size:20px;font-weight:800;color:#0f172a;margin:0;">Chọn môn để tiếp tục học</h3>
+        <p style="margin:8px 0 14px 0;color:#475569;font-size:14px;">Bạn đang đăng ký nhiều roadmap, hãy chọn môn muốn tiếp tục.</p>
+        <div id="rm-subject-choice-list" style="display:grid;gap:8px;max-height:280px;overflow:auto;">${rows}</div>
+        <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+          <button id="rm-subject-choice-cancel" type="button" style="padding:9px 14px;border:1px solid #e2e8f0;background:#fff;border-radius:8px;font-weight:700;color:#334155;cursor:pointer;">Hủy</button>
+        </div>`;
+      content.querySelector("#rm-subject-choice-cancel").addEventListener("click", () => {
+        close();
+        resolve(null);
+      });
+      content.querySelectorAll("[data-subject-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          close();
+          resolve(Number(btn.getAttribute("data-subject-id")));
+        });
+      });
+    });
+  });
+}
+
 async function initRoadmapDashboard() {
   const ok = await checkSession();
   if (!ok) {
@@ -281,23 +365,40 @@ async function initRoadmapDashboard() {
   let latestSubjects = [];
   let latestActiveMap = new Map();
 
-  const openFirstAvailable = () => {
-    const firstEnrolled = latestSubjects.find((s) => latestActiveMap.has(Number(s.id)));
-    if (firstEnrolled) {
-      localStorage.setItem(KEYS.subjectId, String(firstEnrolled.id));
-      nav(`/learning-roadmap?subjectId=${firstEnrolled.id}`, `coursesDetail.html?subjectId=${firstEnrolled.id}`);
+  const openFirstAvailable = async () => {
+    const enrolledSubjects = latestSubjects.filter((s) => latestActiveMap.has(Number(s.id)));
+    if (enrolledSubjects.length === 1) {
+      const only = enrolledSubjects[0];
+      localStorage.setItem(KEYS.subjectId, String(only.id));
+      nav(`/learning-roadmap?subjectId=${only.id}`, `coursesDetail.html?subjectId=${only.id}`);
       return;
     }
-    if (latestSubjects.length) {
-      localStorage.setItem(KEYS.subjectId, String(latestSubjects[0].id));
-      nav("/checkout", "checkout.html");
+    if (enrolledSubjects.length >= 2) {
+      const selectedId = await chooseEnrolledSubjectModal(enrolledSubjects);
+      if (!selectedId) return;
+      localStorage.setItem(KEYS.subjectId, String(selectedId));
+      nav(`/learning-roadmap?subjectId=${selectedId}`, `coursesDetail.html?subjectId=${selectedId}`);
       return;
     }
-    toast("No subjects available", "warn");
+    if (!latestSubjects.length) {
+      toast("No subjects available", "warn");
+      return;
+    }
+    const okGoCheckout = await askSubscribeWhenNoRoadmap();
+    if (okGoCheckout) nav("/checkout", "checkout.html");
   };
 
   if (startRecommended) startRecommended.addEventListener("click", openFirstAvailable);
-  if (dailyPlan) dailyPlan.addEventListener("click", () => nav("/dashboard", "dashboard.html"));
+  if (dailyPlan) {
+    dailyPlan.addEventListener("click", async () => {
+      if (!latestActiveMap.size) {
+        const okGoCheckout = await askSubscribeWhenNoRoadmap();
+        if (okGoCheckout) nav("/checkout", "checkout.html");
+        return;
+      }
+      nav("/dashboard", "dashboard.html");
+    });
+  }
   if (analytics) analytics.addEventListener("click", () => nav("/dashboard", "dashboard.html"));
   if (switchFocus) switchFocus.addEventListener("click", () => {
     const input = document.getElementById("rm-search-input");
@@ -312,6 +413,14 @@ async function initRoadmapDashboard() {
     latestSubjects = Array.isArray(subjects) ? subjects : [];
     const activeRows = (subData && subData.activeSubscriptions) || [];
     latestActiveMap = new Map(activeRows.map((x) => [Number(x.subjectId), x]));
+
+    if (startRecommended) {
+      if (activeRows.length > 0) {
+        startRecommended.innerHTML = '<span class="material-symbols-outlined mr-2">play_circle</span>Continue';
+      } else {
+        startRecommended.innerHTML = '<span class="material-symbols-outlined mr-2">play_circle</span>Start Recommended';
+      }
+    }
 
     const advisorText = document.getElementById("rm-advisor-text");
     if (advisorText) {
