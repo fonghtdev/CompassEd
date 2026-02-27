@@ -8,7 +8,6 @@ import com.compassed.compassed_api.domain.entity.Subject;
 import com.compassed.compassed_api.repository.QuestionBankRepository;
 import com.compassed.compassed_api.repository.SubjectRepository;
 import com.compassed.compassed_api.service.QuestionBankService;
-import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -21,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@Profile("mysql")
 @Transactional
 public class QuestionBankServiceImpl implements QuestionBankService {
 

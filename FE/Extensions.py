@@ -67,7 +67,6 @@ def admin_dashboard():
 @app.route("/admin/question-bank")
 def admin_question_bank():
     return render_template("admin/adminQuestionBank.html")
-
 if __name__ == "__main__":
     app.run(debug=True, port=3000)
 

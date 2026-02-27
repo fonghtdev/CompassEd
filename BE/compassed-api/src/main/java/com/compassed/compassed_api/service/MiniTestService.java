@@ -24,11 +24,8 @@ public class MiniTestService {
      * Get mini test by module ID
      */
     public MiniTest getMiniTestByModule(Long moduleId) {
-        List<MiniTest> tests = miniTestRepository.findByModuleId(moduleId);
-        if (tests.isEmpty()) {
-            throw new RuntimeException("Mini test not found for module: " + moduleId);
-        }
-        return tests.get(0);
+        return miniTestRepository.findByModuleId(moduleId)
+            .orElseThrow(() -> new RuntimeException("Mini test not found for module: " + moduleId));
     }
     
     /**
