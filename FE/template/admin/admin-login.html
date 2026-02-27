@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - CompassED</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .admin-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px 20px 0 0;
+            padding: 40px;
+            text-align: center;
+            color: white;
+        }
+        
+        .admin-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+        }
+        
+        .input-group {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 15px 20px 15px 50px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .input-group i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+        
+        .btn-admin {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 16px;
+            width: 100%;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .alert {
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert-error {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .alert-success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .back-link a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .security-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #64748b;
+            font-size: 14px;
+            margin-top: 30px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto px-4">
+        <div class="admin-card max-w-md mx-auto">
+            <!-- Header -->
+            <div class="admin-header">
+                <div class="admin-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h1 class="text-3xl font-bold mb-2">Admin Portal</h1>
+                <p class="text-gray-200">CompassED Management System</p>
+            </div>
+            
+            <!-- Body -->
+            <div class="p-10">
+                <!-- Alert -->
+                <div id="alert" class="alert"></div>
+                
+                <!-- Loading -->
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p class="mt-4">Đang xác thực...</p>
+                </div>
+                
+                <!-- Login Form -->
+                <form id="adminLoginForm">
+                    <div class="input-group">
+                        <i class="fas fa-user-shield"></i>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            placeholder="Admin Email"
+                            required
+                            autocomplete="email"
+                        >
+                    </div>
+                    
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            placeholder="Admin Password"
+                            required
+                            autocomplete="current-password"
+                        >
+                    </div>
+                    
+                    <button type="submit" class="btn-admin">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        Đăng nhập Admin
+                    </button>
+                    
+                    <div class="security-badge">
+                        <i class="fas fa-lock"></i>
+                        <span>Kết nối bảo mật</span>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Back Link -->
+        <div class="back-link">
+            <a href="/auth">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Quay lại trang đăng nhập thông thường
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const alertDiv = document.getElementById('alert');
+            const loadingDiv = document.getElementById('loading');
+            const form = document.getElementById('adminLoginForm');
+            
+            // Reset alert
+            alertDiv.style.display = 'none';
+            alertDiv.className = 'alert';
+            
+            // Show loading
+            form.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            
+            try {
+                // Call login API
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Check if user has ADMIN role
+                    if (data.user && data.user.role === 'ADMIN') {
+                        // Save token and user info
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                        
+                        // Show success message
+                        showAlert('success', 'Đăng nhập thành công! Đang chuyển hướng...');
+                        
+                        // Redirect to admin dashboard
+                        setTimeout(() => {
+                            window.location.href = '/admin-dashboard';
+                        }, 1500);
+                    } else {
+                        // Not an admin
+                        showAlert('error', 'Bạn không có quyền truy cập Admin Portal!');
+                        form.style.display = 'block';
+                        loadingDiv.style.display = 'none';
+                    }
+                } else {
+                    // Login failed
+                    showAlert('error', data.message || 'Email hoặc mật khẩu không đúng!');
+                    form.style.display = 'block';
+                    loadingDiv.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('error', 'Không thể kết nối đến server. Vui lòng thử lại!');
+                form.style.display = 'block';
+                loadingDiv.style.display = 'none';
+            }
+        });
+        
+        function showAlert(type, message) {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>
+                ${message}
+            `;
+            alertDiv.style.display = 'block';
+        }
+        
+        // Check if already logged in as admin
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            const userStr = localStorage.getItem('user');
+            
+            if (token && userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    if (user.role === 'ADMIN') {
+                        // Already logged in as admin, redirect
+                        window.location.href = '/admin-dashboard';
+                    }
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
