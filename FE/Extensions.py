@@ -55,11 +55,18 @@ def profile():
     return render_template("profile.html")
 
 
+@app.route("/admin-login")
+def admin_login():
+    return render_template("admin/admin-login.html")
+
+
 @app.route("/admin-dashboard")
 def admin_dashboard():
     return render_template("admin/adminDashboard.html")
 
-
+@app.route("/admin/question-bank")
+def admin_question_bank():
+    return render_template("admin/adminQuestionBank.html")
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=3000)
 
