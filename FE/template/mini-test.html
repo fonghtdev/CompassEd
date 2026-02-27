@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Test - CompassED</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .question-card { transition: all 0.3s ease; }
+        .answer-option { transition: all 0.2s ease; }
+        .answer-option:hover { transform: translateX(4px); }
+        .answer-selected { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; }
+        .answer-correct { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
+        .answer-incorrect { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="/" class="text-2xl font-bold text-indigo-600">CompassED</a>
+                <span class="text-gray-300">|</span>
+                <span class="text-gray-700 font-semibold">Mini Test</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="user-name" class="text-gray-600"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Test Container -->
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        
+        <!-- Test Header -->
+        <div id="test-header" class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-xl p-8 text-white mb-8">
+            <h1 class="text-3xl font-bold mb-2" id="test-title">Mini Test</h1>
+            <p class="text-blue-100 mb-4" id="test-description">Hoàn thành bài kiểm tra để mở khóa module tiếp theo</p>
+            <div class="flex items-center space-x-6">
+                <div class="bg-white/20 rounded-lg px-4 py-2">
+                    <span class="text-sm">Số câu hỏi</span>
+                    <span class="font-bold ml-2" id="question-count">5</span>
+                </div>
+                <div class="bg-white/20 rounded-lg px-4 py-2">
+                    <span class="text-sm">Điểm đạt</span>
+                    <span class="font-bold ml-2">≥ 70%</span>
+                </div>
+                <div class="bg-white/20 rounded-lg px-4 py-2">
+                    <span class="text-sm">Thời gian</span>
+                    <span class="font-bold ml-2" id="timer">--:--</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Questions -->
+        <div id="questions-container">
+            <!-- Questions will be loaded here -->
+        </div>
+        
+        <!-- Submit Button -->
+        <div id="submit-section" class="mt-8 text-center">
+            <button id="submit-btn" class="px-12 py-4 bg-indigo-600 text-white rounded-xl font-bold text-lg hover:bg-indigo-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                Nộp bài
+            </button>
+        </div>
+        
+        <!-- Result Modal -->
+        <div id="result-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8">
+                <div class="text-center">
+                    <div id="result-icon" class="text-8xl mb-4">🎉</div>
+                    <h2 id="result-title" class="text-3xl font-bold text-gray-900 mb-4">Chúc mừng!</h2>
+                    <p id="result-message" class="text-xl text-gray-700 mb-6">Bạn đã hoàn thành mini test</p>
+                    
+                    <div class="flex items-center justify-center space-x-8 mb-8">
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-indigo-600" id="result-score">85%</div>
+                            <div class="text-sm text-gray-600">Điểm số</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-green-600" id="result-correct">4/5</div>
+                            <div class="text-sm text-gray-600">Đúng</div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <button id="view-answers-btn" class="w-full px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300">
+                            Xem đáp án
+                        </button>
+                        <button id="continue-btn" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">
+                            Tiếp tục học
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading -->
+        <div id="loading" class="text-center py-12">
+            <div class="animate-spin w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p class="text-gray-600">Đang tải bài test...</p>
+        </div>
+        
+        <!-- Error -->
+        <div id="error" class="hidden bg-red-50 border border-red-200 rounded-xl p-8 text-center">
+            <p class="text-red-600 text-lg font-semibold mb-4">❌ Không thể tải bài test</p>
+            <p class="text-red-500 mb-4" id="error-message"></p>
+            <button onclick="history.back()" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                Quay lại
+            </button>
+        </div>
+        
+    </div>
+
+    <script>
+        (function() {
+            const API_BASE = "http://localhost:8080";
+            let userId = null;
+            let moduleId = null;
+            let miniTest = null;
+            let questions = [];
+            let userAnswers = {};
+            let startTime = null;
+            let timerInterval = null;
+            let testResult = null;
+            
+            document.addEventListener('DOMContentLoaded', async () => {
+                // Check auth
+                const token = localStorage.getItem('compassed_token');
+                const user = JSON.parse(localStorage.getItem('compassed_user') || 'null');
+                
+                if (!token || !user) {
+                    window.location.href = '/auth';
+                    return;
+                }
+                
+                userId = user.id;
+                document.getElementById('user-name').textContent = user.fullName || user.email;
+                
+                // Get moduleId from URL
+                const params = new URLSearchParams(window.location.search);
+                moduleId = params.get('moduleId');
+                
+                if (!moduleId) {
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('error').classList.remove('hidden');
+                    document.getElementById('error-message').textContent = 'Module ID không hợp lệ';
+                    return;
+                }
+                
+                // Load mini test
+                await loadMiniTest();
+                
+                // Event listeners
+                document.getElementById('submit-btn').addEventListener('click', submitTest);
+                document.getElementById('view-answers-btn').addEventListener('click', viewAnswers);
+                document.getElementById('continue-btn').addEventListener('click', () => {
+                    window.location.href = `/roadmap?subjectId=${miniTest.subjectId || 1}&level=${miniTest.level || 'L1'}`;
+                });
+            });
+            
+            async function loadMiniTest() {
+                const token = localStorage.getItem('compassed_token');
+                
+                try {
+                    const res = await fetch(`${API_BASE}/api/mini-tests/module/${moduleId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    if (!res.ok) throw new Error('Không tìm thấy mini test');
+                    
+                    miniTest = await res.json();
+                    questions = JSON.parse(miniTest.questionsJson || '[]');
+                    
+                    if (questions.length === 0) {
+                        throw new Error('Bài test không có câu hỏi');
+                    }
+                    
+                    renderTest();
+                    startTimer();
+                    
+                    document.getElementById('loading').classList.add('hidden');
+                    
+                } catch (err) {
+                    console.error('Error loading mini test:', err);
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('error').classList.remove('hidden');
+                    document.getElementById('error-message').textContent = err.message;
+                }
+            }
+            
+            function renderTest() {
+                document.getElementById('test-title').textContent = miniTest.testName || 'Mini Test';
+                document.getElementById('question-count').textContent = questions.length;
+                
+                const container = document.getElementById('questions-container');
+                container.innerHTML = questions.map((q, index) => `
+                    <div class="question-card bg-white rounded-xl shadow-md p-6 mb-6">
+                        <div class="flex items-start mb-4">
+                            <div class="flex-shrink-0 w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold mr-4">
+                                ${index + 1}
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">${q.questionText}</h3>
+                                <div class="space-y-3">
+                                    ${q.options.map((opt, optIndex) => `
+                                        <div class="answer-option cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 border-2 border-transparent"
+                                             data-question="${index}" data-answer="${optIndex}"
+                                             onclick="selectAnswer(${index}, ${optIndex})">
+                                            <span class="font-semibold text-gray-700">${String.fromCharCode(65 + optIndex)}.</span>
+                                            <span class="ml-2 text-gray-900">${opt}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            window.selectAnswer = function(questionIndex, answerIndex) {
+                userAnswers[questionIndex] = answerIndex;
+                
+                // Update UI
+                const questionCard = document.querySelectorAll('.question-card')[questionIndex];
+                const options = questionCard.querySelectorAll('.answer-option');
+                
+                options.forEach((opt, idx) => {
+                    opt.classList.remove('answer-selected');
+                    opt.classList.remove('border-indigo-500');
+                    if (idx === answerIndex) {
+                        opt.classList.add('answer-selected');
+                        opt.classList.add('border-indigo-500');
+                    }
+                });
+                
+                // Enable submit if all answered
+                const allAnswered = Object.keys(userAnswers).length === questions.length;
+                document.getElementById('submit-btn').disabled = !allAnswered;
+            };
+            
+            function startTimer() {
+                startTime = Date.now();
+                timerInterval = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    document.getElementById('timer').textContent = 
+                        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }, 1000);
+            }
+            
+            async function submitTest() {
+                if (Object.keys(userAnswers).length !== questions.length) {
+                    alert('Vui lòng trả lời tất cả các câu hỏi!');
+                    return;
+                }
+                
+                clearInterval(timerInterval);
+                
+                const token = localStorage.getItem('compassed_token');
+                const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+                
+                // Build answers array
+                const answers = questions.map((_, idx) => userAnswers[idx]);
+                
+                try {
+                    const res = await fetch(`${API_BASE}/api/mini-tests/${miniTest.id}/submit`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            userId: userId,
+                            answers: answers,
+                            timeTaken: timeTaken
+                        })
+                    });
+                    
+                    if (!res.ok) throw new Error('Lỗi khi nộp bài');
+                    
+                    testResult = await res.json();
+                    showResult();
+                    
+                } catch (err) {
+                    console.error('Error submitting test:', err);
+                    alert('Có lỗi xảy ra khi nộp bài. Vui lòng thử lại.');
+                }
+            }
+            
+            function showResult() {
+                const passed = testResult.passed;
+                const score = testResult.score;
+                const correctCount = testResult.correctCount;
+                const totalCount = questions.length;
+                
+                document.getElementById('result-score').textContent = `${score}%`;
+                document.getElementById('result-correct').textContent = `${correctCount}/${totalCount}`;
+                
+                if (passed) {
+                    document.getElementById('result-icon').textContent = '🎉';
+                    document.getElementById('result-title').textContent = 'Chúc mừng!';
+                    document.getElementById('result-message').textContent = 'Bạn đã vượt qua mini test. Module tiếp theo đã được mở khóa!';
+                } else {
+                    document.getElementById('result-icon').textContent = '😢';
+                    document.getElementById('result-title').textContent = 'Chưa đạt';
+                    document.getElementById('result-message').textContent = 'Bạn cần đạt ≥70% để vượt qua. Hãy thử lại!';
+                    document.getElementById('continue-btn').textContent = 'Thử lại';
+                }
+                
+                document.getElementById('result-modal').classList.remove('hidden');
+            }
+            
+            function viewAnswers() {
+                document.getElementById('result-modal').classList.add('hidden');
+                
+                // Highlight correct/incorrect answers
+                questions.forEach((q, qIndex) => {
+                    const questionCard = document.querySelectorAll('.question-card')[qIndex];
+                    const options = questionCard.querySelectorAll('.answer-option');
+                    const userAnswer = userAnswers[qIndex];
+                    const correctAnswer = q.correctAnswer;
+                    
+                    options.forEach((opt, optIndex) => {
+                        opt.onclick = null; // Disable clicking
+                        opt.classList.remove('answer-selected');
+                        
+                        if (optIndex === correctAnswer) {
+                            opt.classList.add('answer-correct');
+                        } else if (optIndex === userAnswer && userAnswer !== correctAnswer) {
+                            opt.classList.add('answer-incorrect');
+                        }
+                    });
+                });
+                
+                document.getElementById('submit-section').innerHTML = `
+                    <button onclick="location.href='/roadmap?subjectId=${miniTest.subjectId || 1}&level=${miniTest.level || 'L1'}'" 
+                            class="px-12 py-4 bg-indigo-600 text-white rounded-xl font-bold text-lg hover:bg-indigo-700 shadow-lg">
+                        Quay lại Roadmap
+                    </button>
+                `;
+            }
+            
+        })();
+    </script>
+    
+</body>
+</html>

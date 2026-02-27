@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - CompassED</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl font-bold text-indigo-600">CompassED</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="/" class="text-gray-700 hover:text-indigo-600">Trang chủ</a>
+                <span id="user-name" class="text-gray-600"></span>
+                <button id="logout-btn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                    Đăng xuất
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-5xl mx-auto px-4 py-12">
+        
+        <!-- Package Selection -->
+        <div id="package-selection" class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Chọn gói học tập</h1>
+            <p class="text-gray-600 mb-8">Mở khóa toàn bộ nội dung học và placement tests không giới hạn</p>
+            
+            <!-- Selected Subject -->
+            <div class="bg-indigo-50 rounded-lg p-4 mb-8">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white text-xl font-bold" id="subject-icon">📚</span>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Môn học đã chọn</p>
+                        <p class="text-lg font-semibold text-gray-900" id="subject-name">Mathematics</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Packages Grid -->
+            <div class="grid md:grid-cols-2 gap-6">
+                
+                <!-- Placement Pack -->
+                <div class="package-card border-2 border-gray-200 rounded-xl p-6 cursor-pointer hover:border-indigo-500 hover:shadow-lg transition-all"
+                     data-package="PLACEMENT_PACK" data-amount="299000">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Placement Pack</h3>
+                            <p class="text-sm text-gray-500">Gói cơ bản</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center package-radio">
+                            <div class="w-4 h-4 rounded-full bg-indigo-600 hidden"></div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <span class="text-3xl font-bold text-indigo-600">299,000₫</span>
+                    </div>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li class="flex items-center"><span class="text-green-500 mr-2">✓</span> 3 lần placement test thêm</li>
+                        <li class="flex items-center"><span class="text-green-500 mr-2">✓</span> Báo cáo chi tiết</li>
+                        <li class="flex items-center"><span class="text-green-500 mr-2">✓</span> Gợi ý lộ trình học</li>
+                    </ul>
+                </div>
+                
+                <!-- Monthly Subscription -->
+                <div class="package-card border-2 border-indigo-500 rounded-xl p-6 cursor-pointer shadow-lg relative"
+                     data-package="SUBSCRIPTION_MONTHLY" data-amount="499000">
+                    <div class="absolute -top-3 right-4 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                        PHỔ BIẾN
+                    </div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Gói 1 Tháng</h3>
+                            <p class="text-sm text-gray-500">Subscription</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-full border-2 border-indigo-600 flex items-center justify-center package-radio">
+                            <div class="w-4 h-4 rounded-full bg-indigo-600"></div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <span class="text-3xl font-bold text-indigo-600">499,000₫</span>
+                        <span class="text-sm text-gray-500">/tháng</span>
+                    </div>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li class="flex items-center"><span class="text-green-500 mr-2">✓</span> Placement test không giới hạn</li>
+                        <li class="flex items-center"><span class="text-green-500 mr-2">✓</span> Truy cập toàn bộ roadmap</li>
+                        <li class="flex items-center"><span class="text-green-500 mr-2">✓</span> Mini tests & Final tests</li>
+                        <li class="flex items-center"><span class="text-green-500 mr-2">✓</span> Hỗ trợ 24/7</li>
+                    </ul>
+                </div>
+                
+                <!-- 3 Months -->
+                <div class="package-card border-2 border-gray-200 rounded-xl p-6 cursor-pointer hover:border-indigo-500 hover:shadow-lg transition-all"
+                     data-package="SUBSCRIPTION_3MONTHS" data-amount="1299000">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Gói 3 Tháng</h3>
+                            <p class="text-sm text-green-600 font-semibold">Tiết kiệm 13%</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center package-radio">
+                            <div class="w-4 h-4 rounded-full bg-indigo-600 hidden"></div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <span class="text-3xl font-bold text-indigo-600">1,299,000₫</span>
+                        <span class="text-sm text-gray-500">/3 tháng</span>
+                    </div>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li class="flex items-center"><span class="text-green-500 mr-2">✓</span> Tất cả tính năng gói tháng</li>
+                        <li class="flex items-center"><span class="text-green-500 mr-2">✓</span> Tiết kiệm 200,000₫</li>
+                        <li class="flex items-center"><span class="text-green-500 mr-2">✓</span> Ưu tiên hỗ trợ</li>
+                    </ul>
+                </div>
+                
+                <!-- 6 Months -->
+                <div class="package-card border-2 border-gray-200 rounded-xl p-6 cursor-pointer hover:border-indigo-500 hover:shadow-lg transition-all"
+                     data-package="SUBSCRIPTION_6MONTHS" data-amount="2499000">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Gói 6 Tháng</h3>
+                            <p class="text-sm text-green-600 font-semibold">Tiết kiệm 17%</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center package-radio">
+                            <div class="w-4 h-4 rounded-full bg-indigo-600 hidden"></div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <span class="text-3xl font-bold text-indigo-600">2,499,000₫</span>
+                        <span class="text-sm text-gray-500">/6 tháng</span>
+                    </div>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li class="flex items-center"><span class="text-green-500 mr-2">✓</span> Tất cả tính năng gói tháng</li>
+                        <li class="flex items-center"><span class="text-green-500 mr-2">✓</span> Tiết kiệm 500,000₫</li>
+                        <li class="flex items-center"><span class="text-green-500 mr-2">✓</span> VIP Support</li>
+                    </ul>
+                </div>
+                
+            </div>
+            
+            <!-- Checkout Button -->
+            <div class="mt-8 flex justify-center">
+                <button id="checkout-btn" class="px-8 py-4 bg-indigo-600 text-white rounded-xl font-semibold text-lg hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all">
+                    Thanh toán ngay →
+                </button>
+            </div>
+        </div>
+        
+        <!-- Payment Processing -->
+        <div id="payment-processing" class="hidden bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div class="animate-spin w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">Đang xử lý thanh toán...</h2>
+            <p class="text-gray-600">Vui lòng đợi trong giây lát</p>
+        </div>
+        
+        <!-- Payment Success -->
+        <div id="payment-success" class="hidden bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-4xl">✓</span>
+            </div>
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Thanh toán thành công!</h2>
+            <p class="text-gray-600 mb-8">Gói học của bạn đã được kích hoạt</p>
+            <div class="space-y-3">
+                <a href="/roadmap" class="block w-full px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">
+                    Bắt đầu học ngay
+                </a>
+                <a href="/" class="block w-full px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">
+                    Về trang chủ
+                </a>
+            </div>
+        </div>
+        
+        <!-- Payment Failed -->
+        <div id="payment-failed" class="hidden bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-4xl">✕</span>
+            </div>
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Thanh toán thất bại</h2>
+            <p class="text-gray-600 mb-8" id="error-message">Đã có lỗi xảy ra. Vui lòng thử lại.</p>
+            <button onclick="location.reload()" class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">
+                Thử lại
+            </button>
+        </div>
+        
+    </div>
+
+    <script src="/js/appLocal.js"></script>
+    <script>
+        (function() {
+            const API_BASE = "http://localhost:8080";
+            let selectedPackage = "SUBSCRIPTION_MONTHLY";
+            let selectedAmount = 499000;
+            let userId = null;
+            let subjectId = null;
+            
+            // Initialize
+            document.addEventListener('DOMContentLoaded', async () => {
+                // Check auth
+                const token = localStorage.getItem('compassed_token');
+                const user = JSON.parse(localStorage.getItem('compassed_user') || 'null');
+                
+                if (!token || !user) {
+                    window.location.href = '/auth';
+                    return;
+                }
+                
+                userId = user.id;
+                document.getElementById('user-name').textContent = user.fullName || user.email;
+                
+                // Get subject from URL params
+                const params = new URLSearchParams(window.location.search);
+                subjectId = params.get('subjectId') || 1;
+                
+                // Load subject info
+                await loadSubjectInfo(subjectId);
+                
+                // Handle package selection
+                document.querySelectorAll('.package-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        document.querySelectorAll('.package-card').forEach(c => {
+                            c.classList.remove('border-indigo-500', 'shadow-lg');
+                            c.classList.add('border-gray-200');
+                            c.querySelector('.package-radio > div').classList.add('hidden');
+                        });
+                        
+                        card.classList.remove('border-gray-200');
+                        card.classList.add('border-indigo-500', 'shadow-lg');
+                        card.querySelector('.package-radio > div').classList.remove('hidden');
+                        
+                        selectedPackage = card.dataset.package;
+                        selectedAmount = card.dataset.amount;
+                    });
+                });
+                
+                // Checkout button
+                document.getElementById('checkout-btn').addEventListener('click', handleCheckout);
+                
+                // Logout button
+                document.getElementById('logout-btn').addEventListener('click', () => {
+                    localStorage.clear();
+                    window.location.href = '/auth';
+                });
+                
+                // Check if this is a callback from VNPay
+                if (params.has('vnp_ResponseCode')) {
+                    handlePaymentCallback();
+                }
+            });
+            
+            async function loadSubjectInfo(subjectId) {
+                try {
+                    const token = localStorage.getItem('compassed_token');
+                    const res = await fetch(`${API_BASE}/api/subjects/${subjectId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    if (res.ok) {
+                        const subject = await res.json();
+                        document.getElementById('subject-name').textContent = subject.name;
+                        
+                        const icons = { 'MATH': '🔢', 'LITERATURE': '📖', 'ENGLISH': '🌍' };
+                        document.getElementById('subject-icon').textContent = icons[subject.code] || '📚';
+                    }
+                } catch (err) {
+                    console.error('Error loading subject:', err);
+                }
+            }
+            
+            async function handleCheckout() {
+                const token = localStorage.getItem('compassed_token');
+                
+                // Show processing
+                document.getElementById('package-selection').classList.add('hidden');
+                document.getElementById('payment-processing').classList.remove('hidden');
+                
+                try {
+                    const res = await fetch(`${API_BASE}/api/payments/create`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            userId: userId,
+                            subjectId: subjectId,
+                            packageType: selectedPackage
+                        })
+                    });
+                    
+                    if (!res.ok) {
+                        throw new Error('Payment creation failed');
+                    }
+                    
+                    const data = await res.json();
+                    
+                    // Redirect to VNPay
+                    if (data.paymentUrl) {
+                        window.location.href = data.paymentUrl;
+                    } else {
+                        throw new Error('No payment URL received');
+                    }
+                    
+                } catch (err) {
+                    console.error('Checkout error:', err);
+                    document.getElementById('payment-processing').classList.add('hidden');
+                    document.getElementById('payment-failed').classList.remove('hidden');
+                    document.getElementById('error-message').textContent = err.message;
+                }
+            }
+            
+            async function handlePaymentCallback() {
+                const params = new URLSearchParams(window.location.search);
+                const responseCode = params.get('vnp_ResponseCode');
+                
+                document.getElementById('package-selection').classList.add('hidden');
+                
+                if (responseCode === '00') {
+                    // Payment success
+                    document.getElementById('payment-success').classList.remove('hidden');
+                    
+                    // Call backend to verify payment
+                    try {
+                        const token = localStorage.getItem('compassed_token');
+                        await fetch(`${API_BASE}/api/payments/callback/vnpay?${params.toString()}`, {
+                            method: 'GET',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                    } catch (err) {
+                        console.error('Callback verification error:', err);
+                    }
+                } else {
+                    // Payment failed
+                    document.getElementById('payment-failed').classList.remove('hidden');
+                    document.getElementById('error-message').textContent = 
+                        `Mã lỗi: ${responseCode}. Vui lòng liên hệ hỗ trợ nếu cần.`;
+                }
+            }
+        })();
+    </script>
+    
+</body>
+</html>

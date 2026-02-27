@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Backend Connection</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; margin: 5px; background: #0d7ff2; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0b6bcb; }
+        #result { margin-top: 20px; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>🔗 Test Backend-Frontend Connection</h1>
+    
+    <div>
+        <button onclick="testBackend()">Test Backend (localhost:8080)</button>
+        <button onclick="testSubjects()">Test Get Subjects</button>
+        <button onclick="testAuth()">Test Auth Endpoint</button>
+    </div>
+
+    <div id="result">
+        <p>Click button để test connection...</p>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:8080";
+        const resultDiv = document.getElementById('result');
+
+        async function testBackend() {
+            resultDiv.innerHTML = '<p>Testing backend connection...</p>';
+            try {
+                const response = await fetch(`${API_BASE}/api/test`);
+                const text = await response.text();
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Backend Connected!</p>
+                    <p>Response: ${text}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Backend Connection Failed!</p>
+                    <p>Error: ${error.message}</p>
+                    <p>Make sure backend is running on port 8080</p>
+                `;
+            }
+        }
+
+        async function testSubjects() {
+            resultDiv.innerHTML = '<p>Loading subjects...</p>';
+            try {
+                const response = await fetch(`${API_BASE}/api/subjects`);
+                const subjects = await response.json();
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Subjects API Working!</p>
+                    <p>Found ${subjects.length} subjects:</p>
+                    <pre>${JSON.stringify(subjects, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Failed to fetch subjects!</p>
+                    <p>Error: ${error.message}</p>
+                    <p>Check CORS settings and backend status</p>
+                `;
+            }
+        }
+
+        async function testAuth() {
+            resultDiv.innerHTML = '<p>Testing auth endpoint...</p>';
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: 'test123',
+                        fullName: 'Test User'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Auth API Working!</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    const error = await response.json();
+                    resultDiv.innerHTML = `
+                        <p class="error">⚠️ Auth responded with status ${response.status}</p>
+                        <pre>${JSON.stringify(error, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Auth API Failed!</p>
+                    <p>Error: ${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
