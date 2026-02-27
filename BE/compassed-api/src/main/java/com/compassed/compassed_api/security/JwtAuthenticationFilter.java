@@ -10,9 +10,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.compassed.compassed_api.domain.entity.User;
-import com.compassed.compassed_api.repository.UserRepository;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,11 +19,9 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenService jwtTokenService;
-    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtTokenService jwtTokenService, UserRepository userRepository) {
+    public JwtAuthenticationFilter(JwtTokenService jwtTokenService) {
         this.jwtTokenService = jwtTokenService;
-        this.userRepository = userRepository;
     }
 
     @Override
@@ -36,32 +31,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (auth != null && auth.startsWith("Bearer ")) {
             String token = auth.substring(7).trim();
             try {
-                // Simple token mode: token is just user ID
-                Long userId = Long.parseLong(token);
-                // Fetch user from database to get role
-                User user = userRepository.findById(userId).orElse(null);
-                if (user != null) {
-                    String role = user.getRole().name();
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            userId,
-                            null,
-                            java.util.List.of(new SimpleGrantedAuthority("ROLE_" + role)));
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                }
-            } catch (NumberFormatException e) {
-                // Try JWT mode
-                try {
-                    Map<String, Object> claims = jwtTokenService.parseClaims(token);
-                    Long userId = Long.valueOf(String.valueOf(claims.get("sub")));
-                    String role = String.valueOf(claims.getOrDefault("role", "USER")).toUpperCase();
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            userId,
-                            null,
-                            java.util.List.of(new SimpleGrantedAuthority("ROLE_" + role)));
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                } catch (Exception ignored) {
-                    SecurityContextHolder.clearContext();
-                }
+                Map<String, Object> claims = jwtTokenService.parseClaims(token);
+                Long userId = Long.valueOf(String.valueOf(claims.get("sub")));
+                String role = String.valueOf(claims.getOrDefault("role", "USER")).toUpperCase();
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userId,
+                        null,
+                        java.util.List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (Exception ignored) {
+                SecurityContextHolder.clearContext();
             }
         }
         filterChain.doFilter(request, response);
