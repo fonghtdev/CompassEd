@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.compassed.compassed_api.api.dto.AuthLoginRequest;
-import com.compassed.compassed_api.api.dto.AuthMockOauthRequest;
 import com.compassed.compassed_api.api.dto.AuthRegisterRequest;
 import com.compassed.compassed_api.api.dto.AuthResponse;
 import com.compassed.compassed_api.api.dto.AuthUserDto;
@@ -77,34 +76,6 @@ public class AuthServiceJpaImpl implements AuthService {
     public AuthResponse loginWithGoogle(String idToken) {
         // For now, mock Google OAuth
         throw new RuntimeException("Google OAuth not implemented yet");
-    }
-
-    @Override
-    public AuthResponse loginWithMockProvider(AuthMockOauthRequest request) {
-        String provider = request.getProvider();
-        String email = request.getEmail();
-        String fullName = request.getFullName();
-        
-        if (provider == null || email == null) {
-            throw new RuntimeException("Provider and email are required");
-        }
-        
-        String normalizedEmail = email.trim().toLowerCase();
-        
-        // Check if user exists with this email and provider
-        User user = userRepository.findByEmail(normalizedEmail).orElse(null);
-        
-        if (user == null) {
-            // Create new OAuth user
-            user = new User();
-            user.setEmail(normalizedEmail);
-            user.setFullName(fullName);
-            user.setOauthProvider(provider);
-            user.setOauthProviderUserId(provider + "_" + UUID.randomUUID());
-            user = userRepository.save(user);
-        }
-        
-        return authResponseForUser(user);
     }
 
     @Override
