@@ -4,7 +4,7 @@
 docker compose up -d mysql
 2. BE:
 cd BE\compassed-api
-.\scripts\run-mysql.ps1 -MySqlHost localhost -MySqlPort 3306 -MySqlUser root -MySqlPassword 1234 -Database compassed
+.\scripts\run-mysql.ps1 -MySqlHost localhost -MySqlPort 3306 -MySqlUser ** -MySqlPassword ** -Database compassed
 3. FE:
 cd D:\FPT\CompassEd\FE
 python -m pip install flask requests
