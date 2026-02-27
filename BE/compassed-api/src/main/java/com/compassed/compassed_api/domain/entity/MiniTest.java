@@ -1,35 +1,29 @@
 package com.compassed.compassed_api.domain.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "mini_tests")
-@Data
+@Getter @Setter
 public class MiniTest {
-    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    @Column(name = "module_id", nullable = false)
-    private Long moduleId;
-    
+
     @Column(nullable = false)
     private String title;
-    
-    @Column(name = "questions_json", columnDefinition = "TEXT", nullable = false)
-    private String questionsJson;
-    
-    @Column(name = "pass_threshold")
-    private Integer passThreshold = 70;
-    
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
+
+    @Column(columnDefinition = "TEXT")
+    private String questions;
+
+    @Column(nullable = false)
+    private String subject;
+
+    @Column(nullable = false)
+    private String level;
+
+    @Column(nullable = false)
+    private Integer lessonId;
 }

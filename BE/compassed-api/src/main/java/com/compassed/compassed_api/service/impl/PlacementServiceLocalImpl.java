@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Random;
 import java.time.LocalDateTime;
 
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.compassed.compassed_api.api.dto.PlacementStartResponse;
@@ -26,7 +26,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
-@Primary
+@Profile("local")
 public class PlacementServiceLocalImpl implements PlacementService {
 
     private final LocalDataStore localDataStore;

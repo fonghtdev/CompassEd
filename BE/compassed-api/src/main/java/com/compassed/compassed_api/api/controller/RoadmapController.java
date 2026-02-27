@@ -1,82 +1,72 @@
 package com.compassed.compassed_api.api.controller;
 
-import com.compassed.compassed_api.domain.entity.Roadmap;
-import com.compassed.compassed_api.domain.entity.RoadmapModule;
-import com.compassed.compassed_api.domain.entity.UserModuleProgress;
-import com.compassed.compassed_api.service.RoadmapService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
+import com.compassed.compassed_api.api.dto.FinalTestSubmitRequest;
+import com.compassed.compassed_api.api.dto.LessonCompleteRequest;
+import com.compassed.compassed_api.api.dto.MiniTestSubmitRequest;
+import com.compassed.compassed_api.api.dto.RoadmapResponse;
+import com.compassed.compassed_api.security.CurrentUserService;
+import com.compassed.compassed_api.service.RoadmapService;
 
 @RestController
-@RequestMapping("/api/roadmaps")
-@CrossOrigin(origins = "*")
-@RequiredArgsConstructor
-@Slf4j
+@RequestMapping("/api")
 public class RoadmapController {
-    
+
     private final RoadmapService roadmapService;
-    
-    /**
-     * Get roadmap by subject and level
-     * GET /api/roadmaps/{subjectId}/{level}
-     */
-    @GetMapping("/{subjectId}/{level}")
-    public ResponseEntity<?> getRoadmap(@PathVariable Long subjectId, @PathVariable String level) {
-        try {
-            Roadmap roadmap = roadmapService.getRoadmapBySubjectAndLevel(subjectId, level);
-            List<RoadmapModule> modules = roadmapService.getModulesByRoadmap(roadmap.getId());
-            
-            return ResponseEntity.ok(Map.of(
-                "roadmap", roadmap,
-                "modules", modules
-            ));
-            
-        } catch (Exception e) {
-            log.error("Error getting roadmap", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    private final CurrentUserService currentUserService;
+
+    public RoadmapController(RoadmapService roadmapService, CurrentUserService currentUserService) {
+        this.roadmapService = roadmapService;
+        this.currentUserService = currentUserService;
     }
-    
-    /**
-     * Get modules by roadmap
-     * GET /api/roadmaps/{roadmapId}/modules
-     */
-    @GetMapping("/{roadmapId}/modules")
-    public ResponseEntity<?> getModules(@PathVariable Long roadmapId) {
-        try {
-            List<RoadmapModule> modules = roadmapService.getModulesByRoadmap(roadmapId);
-            return ResponseEntity.ok(modules);
-            
-        } catch (Exception e) {
-            log.error("Error getting modules", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+
+    @GetMapping("/subjects/{subjectId}/roadmap")
+    public RoadmapResponse getRoadmap(
+            @PathVariable Long subjectId
+    ) {
+        Long userId = currentUserService.requireCurrentUserId();
+        return roadmapService.getRoadmap(userId, subjectId);
     }
-    
-    /**
-     * Create roadmap (Admin only)
-     * POST /api/roadmaps
-     * Body: { "subjectId": 1, "level": "L1", "title": "Math L1", "description": "..." }
-     */
-    @PostMapping
-    public ResponseEntity<?> createRoadmap(@RequestBody Map<String, Object> request) {
-        try {
-            Long subjectId = Long.parseLong(request.get("subjectId").toString());
-            String level = request.get("level").toString();
-            String title = request.get("title").toString();
-            String description = request.get("description").toString();
-            
-            Roadmap roadmap = roadmapService.createRoadmap(subjectId, level, title, description);
-            return ResponseEntity.ok(roadmap);
-            
-        } catch (Exception e) {
-            log.error("Error creating roadmap", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+
+    @PostMapping("/lessons/{lessonId}/complete")
+    public void completeLesson(
+            @PathVariable Long lessonId,
+            @RequestBody LessonCompleteRequest request
+    ) {
+        Long userId = currentUserService.requireCurrentUserId();
+        roadmapService.completeLesson(userId, lessonId, request);
+    }
+
+    @PostMapping("/subjects/{subjectId}/mini-tests/{miniTestId}/submit")
+    public void submitMiniTest(
+            @PathVariable Long subjectId,
+            @PathVariable Long miniTestId,
+            @RequestBody MiniTestSubmitRequest request
+    ) {
+        Long userId = currentUserService.requireCurrentUserId();
+        roadmapService.submitMiniTest(userId, subjectId, miniTestId, request);
+    }
+
+    @PostMapping("/subjects/{subjectId}/final-test/submit")
+    public RoadmapResponse submitFinalTest(
+            @PathVariable Long subjectId,
+            @RequestBody FinalTestSubmitRequest request
+    ) {
+        Long userId = currentUserService.requireCurrentUserId();
+        return roadmapService.submitFinalTest(userId, subjectId, request);
+    }
+
+    @GetMapping("/lessons/{lessonId}")
+    public RoadmapResponse getLessonDetail(
+            @PathVariable Long lessonId
+    ) {
+        Long userId = currentUserService.requireCurrentUserId();
+        return roadmapService.getLessonDetail(userId, lessonId);
     }
 }

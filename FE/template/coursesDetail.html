@@ -43,47 +43,68 @@
         }
     </script>
 </head>
-<body class="bg-background-light text-text-main antialiased min-h-screen flex flex-col">
-<!-- Header -->
-<header class="sticky top-0 z-50 bg-surface-light border-b border-border-light shadow-sm">
-<div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-<div class="flex h-16 items-center justify-between gap-4">
-<!-- Logo & Brand -->
-<div class="flex items-center gap-4 min-w-max">
-<div class="text-primary flex items-center justify-center size-8 rounded-lg bg-primary-light">
-<span class="material-symbols-outlined">school</span>
+<body class="bg-background-light text-text-main antialiased min-h-screen">
+<div class="relative flex h-screen w-full flex-row overflow-hidden">
+<aside class="hidden md:flex flex-col w-64 bg-white border-r border-border-light h-full flex-shrink-0">
+<a class="flex items-center gap-3 px-6 py-6 border-b border-border-light" href="/landing" style="text-decoration:none;color:inherit;">
+<div class="bg-primary-light flex items-center justify-center rounded-lg h-10 w-10 text-primary">
+<span class="material-symbols-outlined">explore</span>
 </div>
-<h1 class="text-xl font-bold tracking-tight text-text-main hidden sm:block">CompassED</h1>
+<div class="flex flex-col">
+<h1 class="text-text-main text-lg font-bold leading-none tracking-tight">CompassED</h1>
+<p id="road-portal-label" class="text-text-sub text-xs font-medium mt-1">Student Portal</p>
 </div>
-<!-- Search -->
-<div class="hidden md:flex flex-1 max-w-lg mx-4">
-<div class="relative w-full text-text-sub focus-within:text-primary">
-<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-<span class="material-symbols-outlined text-[20px]">search</span>
+</a>
+<nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+<a id="road-nav-dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-background-light text-text-sub hover:text-text-main transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">dashboard</span>
+<span id="road-nav-dashboard-label" class="text-sm font-medium">Dashboard</span>
+</a>
+<a id="road-nav-overview" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary-light text-primary font-semibold transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">map</span>
+<span id="road-nav-overview-label" class="text-sm font-semibold">Roadmap</span>
+</a>
+<a id="road-nav-history" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-background-light text-text-sub hover:text-text-main transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">history</span>
+<span id="road-nav-history-label" class="text-sm font-medium">History</span>
+</a>
+<div class="pt-4 mt-4 border-t border-border-light">
+<p id="road-setting-label" class="px-3 text-xs font-semibold text-text-sub uppercase tracking-wider mb-2">Setting</p>
+<a id="road-nav-profile" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-background-light text-text-sub hover:text-text-main transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">person</span>
+<span id="road-nav-profile-label" class="text-sm font-medium">Profile</span>
+</a>
+<a id="road-nav-logout" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 text-red-600 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">logout</span>
+<span id="road-nav-logout-label" class="text-sm font-medium">Logout</span>
+</a>
 </div>
-<input class="block w-full rounded-lg border-0 bg-background-light py-2 pl-10 pr-4 text-text-main ring-1 ring-inset ring-border-light placeholder:text-text-sub focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6" placeholder="Search for topics, lessons, or resources..." type="text"/>
-</div>
-</div>
-<!-- Navigation & Actions -->
-<div class="flex items-center gap-2 sm:gap-4">
-<nav class="hidden lg:flex items-center gap-6 mr-4">
-<a class="text-sm font-medium text-text-main hover:text-primary transition-colors" href="#">Dashboard</a>
-<a class="text-sm font-medium text-text-sub hover:text-primary transition-colors" href="#">Courses</a>
-<a class="text-sm font-medium text-text-sub hover:text-primary transition-colors" href="#">Practice</a>
-<a class="text-sm font-medium text-text-sub hover:text-primary transition-colors" href="#">Community</a>
 </nav>
-<button class="relative p-2 text-text-sub hover:bg-background-light rounded-full transition-colors">
+</aside>
+<div class="flex-1 flex flex-col h-full overflow-hidden bg-background-light">
+<header class="flex items-center justify-between h-16 px-6 bg-surface-light border-b border-border-light flex-shrink-0">
+<div class="flex items-center gap-4">
+<button id="road-menu-btn" class="md:hidden p-2 rounded-lg text-text-sub hover:bg-background-light">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 id="road-page-title" class="text-lg font-bold text-text-main">Learning Roadmap</h2>
+</div>
+<div class="relative">
+<button id="road-notif-btn" class="relative p-2.5 rounded-lg text-text-sub hover:bg-background-light transition-colors">
 <span class="material-symbols-outlined">notifications</span>
-<span class="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full"></span>
+<span id="road-notif-badge" class="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center hidden">0</span>
 </button>
-<button class="size-9 rounded-full bg-slate-200 overflow-hidden ring-2 ring-transparent hover:ring-primary transition-all" data-alt="User profile avatar image">
-<img alt="User Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLEUZXQNgsu6UTozyfw7E9pbGuctYKb5bl2FyrrRnUpdBw_mk1z1BZ9uOZBEzAiWszZAR9OgUHP8k31ziz5maP2YjUPdmUEsn07Hz71p7bMvXRbKVZZV3o4MTTiLjGO4a6ZMyve_js_ijeq6tL9naVqJ7IFDu2LQy18rh3uU6vkCEA-6rARPWVJLv6hqgCjRMAYRNqDgcV0Rhg_RiRSllNe4iuocDmR2wrhNndVLsHr3xGSxnHdHvbjBJ84bc24OU_63zi4xDnskrc"/>
-</button>
+<div id="road-notif-panel" class="hidden absolute right-0 top-12 w-[360px] max-w-[92vw] bg-[#1f242b] text-slate-100 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden z-40">
+<div class="px-4 py-3 border-b border-slate-700">
+<h3 id="road-notif-title" class="text-2xl font-bold">Thông báo</h3>
+</div>
+<div id="road-notif-list" class="max-h-[420px] overflow-y-auto p-3 space-y-2">
+<div id="road-notif-loading" class="text-sm text-slate-300">Đang tải thông báo...</div>
 </div>
 </div>
 </div>
 </header>
-<main class="flex-grow">
+<main class="flex-1 overflow-y-auto">
 <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
 <!-- Welcome / Hero Section -->
 <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
@@ -92,12 +113,12 @@
 <span class="material-symbols-outlined text-lg">arrow_back</span>
 <span>Back to All Courses</span>
 </div>
-<h2 class="text-3xl md:text-4xl font-black tracking-tight text-text-main">Mathematics: Algebra II</h2>
+<h2 id="roadmap-title" class="text-3xl md:text-4xl font-black tracking-tight text-text-main">Mathematics: Algebra II</h2>
 <p class="text-text-sub text-lg">Current Topic: <span class="font-semibold text-text-main">Quadratic Equations</span></p>
 <p id="roadmap-api-status" class="text-sm text-emerald-700"></p>
 </div>
 <div class="flex gap-3">
-<button class="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-text-main shadow-sm ring-1 ring-inset ring-border-light hover:bg-gray-50">
+<button id="roadmap-syllabus-btn" class="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-text-main shadow-sm ring-1 ring-inset ring-border-light hover:bg-gray-50">
 <span class="material-symbols-outlined mr-2 text-[20px]">book</span>
                         Syllabus
                     </button>
@@ -375,7 +396,7 @@
 <a class="text-primary text-sm font-medium hover:underline" href="#">View All</a>
 </div>
 <div class="space-y-3">
-<button class="w-full flex items-center justify-between p-3 rounded-lg border border-border-light hover:border-primary hover:bg-primary-light/10 transition-colors group">
+<button id="roadmap-quick-practice-1" class="w-full flex items-center justify-between p-3 rounded-lg border border-border-light hover:border-primary hover:bg-primary-light/10 transition-colors group">
 <div class="flex items-center gap-3">
 <span class="text-2xl">ðŸ“</span>
 <div class="text-left">
@@ -385,7 +406,7 @@
 </div>
 <span class="material-symbols-outlined text-text-sub group-hover:text-primary">chevron_right</span>
 </button>
-<button class="w-full flex items-center justify-between p-3 rounded-lg border border-border-light hover:border-primary hover:bg-primary-light/10 transition-colors group">
+<button id="roadmap-quick-practice-2" class="w-full flex items-center justify-between p-3 rounded-lg border border-border-light hover:border-primary hover:bg-primary-light/10 transition-colors group">
 <div class="flex items-center gap-3">
 <span class="text-2xl">ðŸ“</span>
 <div class="text-left">
@@ -401,6 +422,9 @@
 </div>
 </div>
 </main>
+</div>
+</div>
 <script src="../config.js"></script>
-<script src="../js/appLocal.js"></script>
+<script type="module" src="../js/main.js"></script>
 </body></html>
+
