@@ -45,6 +45,7 @@ public class SecurityConfig {
                                 "/api/auth/register",
                                 "/api/auth/login",
                                 "/api/auth/oauth/**",
+                                "/api/dev/**",
                                 "/api/subjects",
                                 "/api/pricing/plans").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

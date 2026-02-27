@@ -13,6 +13,7 @@ import java.util.List;
 @RequestMapping("/api/subjects")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@Profile("mysql")
 public class SubjectController {
 
     private final SubjectRepository subjectRepository;
