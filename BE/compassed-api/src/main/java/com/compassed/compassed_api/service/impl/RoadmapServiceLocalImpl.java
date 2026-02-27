@@ -13,8 +13,6 @@ import com.compassed.compassed_api.api.dto.LessonResponse;
 import com.compassed.compassed_api.api.dto.MiniTestResponse;
 import com.compassed.compassed_api.api.dto.MiniTestSubmitRequest;
 import com.compassed.compassed_api.api.dto.RoadmapResponse;
-import com.compassed.compassed_api.domain.entity.RoadmapModule;
-import com.compassed.compassed_api.domain.entity.UserModuleProgress;
 import com.compassed.compassed_api.domain.enums.Level;
 import com.compassed.compassed_api.local.LessonBank;
 import com.compassed.compassed_api.local.LocalDataStore;
@@ -335,31 +333,6 @@ public class RoadmapServiceLocalImpl implements RoadmapService {
     }
 
     private record RoadmapContext(SubjectInfo subject, RoadmapProgressMem progress) {
-    }
-
-    // Stub cho các method bị thiếu
-    @Override
-    public RoadmapModule getModule(Long moduleId) {
-        // TODO: Implement logic
-        throw new UnsupportedOperationException("getModule not yet implemented");
-    }
-
-    @Override
-    public UserModuleProgress startModule(Long userId, Long moduleId) {
-        // TODO: Implement logic
-        throw new UnsupportedOperationException("startModule not yet implemented");
-    }
-
-    @Override
-    public void completeModule(Long userId, Long moduleId, Integer miniTestScore) {
-        // TODO: Implement logic
-        throw new UnsupportedOperationException("completeModule not yet implemented");
-    }
-
-    @Override
-    public List<UserModuleProgress> getUserProgress(Long userId) {
-        // TODO: Implement logic
-        return new ArrayList<>();
     }
 }
 
