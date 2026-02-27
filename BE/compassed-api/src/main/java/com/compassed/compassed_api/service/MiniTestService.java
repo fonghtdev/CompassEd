@@ -18,13 +18,12 @@ public class MiniTestService {
     
     private final MiniTestRepository miniTestRepository;
     private final MiniTestAttemptRepository miniTestAttemptRepository;
-    private final RoadmapService roadmapService;
     
     /**
      * Get mini test by module ID
      */
     public MiniTest getMiniTestByModule(Long moduleId) {
-        return miniTestRepository.findByModuleId(moduleId)
+        return miniTestRepository.findFirstByLessonId(moduleId)
             .orElseThrow(() -> new RuntimeException("Mini test not found for module: " + moduleId));
     }
     
@@ -37,8 +36,8 @@ public class MiniTestService {
             .orElseThrow(() -> new RuntimeException("Mini test not found: " + miniTestId));
         
         // Calculate score (simple implementation - should be more sophisticated)
-        int score = calculateScore(miniTest.getQuestionsJson(), answersJson);
-        boolean passed = score >= miniTest.getPassThreshold();
+        int score = calculateScore(miniTest.getQuestions(), answersJson);
+        boolean passed = score >= 70;
         
         // Save attempt
         MiniTestAttempt attempt = new MiniTestAttempt();
@@ -49,11 +48,6 @@ public class MiniTestService {
         attempt.setAnswersJson(answersJson);
         
         attempt = miniTestAttemptRepository.save(attempt);
-        
-        // If passed, complete module and unlock next
-        if (passed) {
-            roadmapService.completeModule(userId, miniTest.getModuleId(), score);
-        }
         
         return attempt;
     }
@@ -80,10 +74,11 @@ public class MiniTestService {
     @Transactional
     public MiniTest createMiniTest(Long moduleId, String title, String questionsJson, Integer passThreshold) {
         MiniTest miniTest = new MiniTest();
-        miniTest.setModuleId(moduleId);
+        miniTest.setLessonId(moduleId == null ? 0 : moduleId.intValue());
         miniTest.setTitle(title);
-        miniTest.setQuestionsJson(questionsJson);
-        miniTest.setPassThreshold(passThreshold != null ? passThreshold : 70);
+        miniTest.setQuestions(questionsJson);
+        miniTest.setSubject("GENERAL");
+        miniTest.setLevel("L1");
         
         return miniTestRepository.save(miniTest);
     }
