@@ -2,6 +2,8 @@ package com.compassed.compassed_api.local;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,9 +16,12 @@ import org.springframework.stereotype.Component;
 import com.compassed.compassed_api.domain.entity.User;
 import com.compassed.compassed_api.domain.enums.AttemptStatus;
 import com.compassed.compassed_api.domain.enums.Level;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class LocalDataStore {
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public record SubjectInfo(Long id, String code, String name) {
     }
@@ -118,6 +123,61 @@ public class LocalDataStore {
         }
     }
 
+    public static class RoadmapProgressMem {
+        private Level currentLevel;
+        private String phase;
+        private int replanCount;
+        private final Map<String, Set<Long>> completedLessonsByLevel = new HashMap<>();
+        private final Map<String, Map<Long, Integer>> miniScoresByLevel = new HashMap<>();
+        private final Map<String, Integer> finalScoresByLevel = new HashMap<>();
+
+        public Level getCurrentLevel() {
+            return currentLevel;
+        }
+
+        public void setCurrentLevel(Level currentLevel) {
+            this.currentLevel = currentLevel;
+        }
+
+        public String getPhase() {
+            return phase;
+        }
+
+        public void setPhase(String phase) {
+            this.phase = phase;
+        }
+
+        public int getReplanCount() {
+            return replanCount;
+        }
+
+        public void setReplanCount(int replanCount) {
+            this.replanCount = replanCount;
+        }
+
+        public Set<Long> getCompletedLessons(String levelKey) {
+            return completedLessonsByLevel.computeIfAbsent(levelKey, k -> new HashSet<>());
+        }
+
+        public Map<Long, Integer> getMiniScores(String levelKey) {
+            return miniScoresByLevel.computeIfAbsent(levelKey, k -> new HashMap<>());
+        }
+
+        public Integer getFinalScore(String levelKey) {
+            return finalScoresByLevel.get(levelKey);
+        }
+
+        public void setFinalScore(String levelKey, Integer score) {
+            finalScoresByLevel.put(levelKey, score);
+        }
+
+        public void resetLevelProgress(String levelKey) {
+            completedLessonsByLevel.remove(levelKey);
+            miniScoresByLevel.remove(levelKey);
+            finalScoresByLevel.remove(levelKey);
+        }
+    }
+
     private final AtomicLong userIdSeq = new AtomicLong(1);
     private final AtomicLong attemptIdSeq = new AtomicLong(1);
 
@@ -129,6 +189,7 @@ public class LocalDataStore {
     private final ConcurrentMap<Long, PlacementAttemptMem> attempts = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, PlacementResultMem> latestResultsByUserSubject = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, List<PlacementHistoryItem>> placementHistoryByUser = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, RoadmapProgressMem> roadmapProgressByUserSubject = new ConcurrentHashMap<>();
     private final Set<String> usedFreeAttemptKeys = ConcurrentHashMap.newKeySet();
     private final Set<String> activeSubscriptionKeys = ConcurrentHashMap.newKeySet();
 
@@ -243,6 +304,10 @@ public class LocalDataStore {
         return ids.stream().map(subjects::get).toList();
     }
 
+    public List<SubjectInfo> getAllSubjects() {
+        return subjects.values().stream().sorted((a, b) -> Long.compare(a.id(), b.id())).toList();
+    }
+
     public Long nextAttemptId() {
         return attemptIdSeq.getAndIncrement();
     }
@@ -304,6 +369,24 @@ public class LocalDataStore {
     public List<PlacementHistoryItem> getPlacementHistory(Long userId) {
         List<PlacementHistoryItem> list = placementHistoryByUser.get(userId);
         return list == null ? List.of() : List.copyOf(list);
+    }
+
+    public RoadmapProgressMem getRoadmapProgress(Long userId, Long subjectId) {
+        return roadmapProgressByUserSubject.get(userSubjectKey(userId, subjectId));
+    }
+
+    public RoadmapProgressMem initializeRoadmapProgress(Long userId, Long subjectId, Level level) {
+        String key = userSubjectKey(userId, subjectId);
+        return roadmapProgressByUserSubject.compute(key, (k, current) -> {
+            if (current != null) {
+                return current;
+            }
+            RoadmapProgressMem progress = new RoadmapProgressMem();
+            progress.setCurrentLevel(level);
+            progress.setPhase("LESSONS");
+            progress.setReplanCount(0);
+            return progress;
+        });
     }
 
     private String userSubjectKey(Long userId, Long subjectId) {

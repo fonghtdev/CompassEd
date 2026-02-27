@@ -32,7 +32,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
-@Profile("db")
+@Profile("mysql")
 public class PlacementServiceImpl implements PlacementService {
 
     private final SubjectRepository subjectRepository;
@@ -60,7 +60,7 @@ public class PlacementServiceImpl implements PlacementService {
         this.attemptRepository = attemptRepository;
         this.resultRepository = resultRepository;
         this.aiService = aiService;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = objectMapper;
     }
 
     @Override

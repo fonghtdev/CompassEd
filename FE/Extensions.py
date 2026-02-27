@@ -38,61 +38,24 @@ def learning_roadmap():
 def history():
     return render_template("history.html")
 
+@app.route("/checkout")
+def checkout():
+    return render_template("checkout.html")
 
-@app.route("/admin-login")
-def admin_login():
-    return render_template("admin-login.html")
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
+
+@app.route("/profile")
+def profile():
+    return render_template("profile.html")
 
 
-@app.route("/admin")
-def admin():
+@app.route("/admin-dashboard")
+def admin_dashboard():
     return render_template("admin/adminDashboard.html")
 
 
-@app.route("/admin/users")
-def admin_users():
-    return render_template("admin.html")
-
-
-@app.route("/admin/question-bank")
-def admin_question_bank():
-    return render_template("admin/adminQuestionBank.html")
-
-
-@app.route("/test-api")
-def test_api():
-    return render_template("test-api.html")
-
-
-@app.route("/payment")
-def payment():
-    return render_template("payment.html")
-
-
-@app.route("/payment/callback")
-def payment_callback():
-    return render_template("payment.html")
-
-
-@app.route("/roadmap")
-def roadmap():
-    return render_template("roadmap.html")
-
-
-@app.route("/mini-test")
-def mini_test():
-    return render_template("mini-test.html")
-
-
-@app.route("/final-test")
-def final_test():
-    return render_template("final-test.html")
-
-
-@app.route("/test-helper")
-def test_helper():
-    return render_template("test-helper.html")
-
-
 if __name__ == "__main__":
-    app.run(debug=True, port=3000, host='0.0.0.0')
+    app.run(debug=True)
+
