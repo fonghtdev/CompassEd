@@ -2,7 +2,7 @@
 
 function initSharedLayout() {
   const page = pageName();
-  const enabledPages = new Set(["placement", "result", "checkout", "profile"]);
+  const enabledPages = new Set(["placement", "result", "profile"]);
   if (!enabledPages.has(page)) return;
 
   if (!document.querySelector('link[href*="Material+Symbols+Outlined"]')) {
@@ -32,7 +32,7 @@ function initSharedLayout() {
         <nav class="hidden items-center gap-8 md:flex">
           <a id="shared-home-link" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="/landing">Home</a>
           <a id="shared-dashboard-link" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="/dashboard">Dashboard</a>
-          <a id="shared-roadmap-link" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="/learning-roadmap">Roadmap</a>
+          <a id="shared-roadmap-link" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="/roadmap-dashboard">Roadmap</a>
           <a id="shared-history-link" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="/history">History</a>
         </nav>
         <div class="flex items-center gap-4">
@@ -318,7 +318,7 @@ function initSharedLayout() {
           nav("/admin-dashboard", "admin/adminDashboard.html");
           return;
         }
-        nav("/learning-roadmap", "coursesDetail.html");
+        nav("/roadmap-dashboard", "roadmapDashboard.html");
       };
     }
     if (navHistory) {
@@ -358,3 +358,4 @@ function initSharedLayout() {
 }
 
 export { initSharedLayout };
+
