@@ -11,7 +11,6 @@ import com.compassed.compassed_api.repository.RoadmapRepository;
 import com.compassed.compassed_api.repository.SubjectRepository;
 
 @Component
-@Profile("db")
 public class DataSeeder implements CommandLineRunner {
 
     private final SubjectRepository subjectRepository;

@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,8 +18,9 @@ import com.compassed.compassed_api.domain.entity.User;
 import com.compassed.compassed_api.local.LocalDataStore;
 import com.compassed.compassed_api.service.AuthService;
 
-@Service
-@Primary
+// Disabled - using AuthServiceJpaImpl instead
+// @Service
+// @Primary
 public class AuthServiceLocalImpl implements AuthService {
 
     private final LocalDataStore localDataStore;
