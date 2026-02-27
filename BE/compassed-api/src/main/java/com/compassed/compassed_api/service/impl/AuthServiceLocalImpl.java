@@ -1,7 +1,6 @@
 package com.compassed.compassed_api.service.impl;
 
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.compassed.compassed_api.api.dto.AuthLoginRequest;
-import com.compassed.compassed_api.api.dto.AuthMockOauthRequest;
 import com.compassed.compassed_api.api.dto.AuthRegisterRequest;
 import com.compassed.compassed_api.api.dto.AuthResponse;
 import com.compassed.compassed_api.api.dto.AuthUserDto;
@@ -94,20 +92,6 @@ public class AuthServiceLocalImpl implements AuthService {
         }
 
         User user = localDataStore.upsertOAuthUser("google", sub, email, name);
-        return authResponseForUser(user);
-    }
-
-    @Override
-    public AuthResponse loginWithMockProvider(AuthMockOauthRequest request) {
-        if (request.getProvider() == null || request.getProvider().isBlank()) {
-            throw new RuntimeException("Provider is required");
-        }
-        if (request.getEmail() == null || request.getEmail().isBlank()) {
-            throw new RuntimeException("Email is required");
-        }
-        String provider = request.getProvider().trim().toLowerCase();
-        String identity = provider + "_" + UUID.randomUUID();
-        User user = localDataStore.upsertOAuthUser(provider, identity, request.getEmail(), request.getFullName());
         return authResponseForUser(user);
     }
 

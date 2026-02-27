@@ -3,7 +3,21 @@ server:
 
 spring:
   profiles:
-    active: local
+    active: mysql
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 openai:
   api:
@@ -13,6 +27,8 @@ openai:
 auth:
   google:
     client-id: ${GOOGLE_CLIENT_ID:}
+  mail:
+    from: ${MAIL_FROM:${MAIL_USERNAME:no-reply@compassed.local}}
   jwt:
     secret: ${JWT_SECRET:change-me-compassed-jwt-secret-32chars-min}
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
