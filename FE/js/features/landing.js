@@ -365,6 +365,22 @@ function initLanding() {
     }
   };
 
+  const navByPlacementStatus = async (subjectId) => {
+    localStorage.setItem("compassed_subject_id", String(subjectId));
+    try {
+      const rows = await api("/api/history/placements", "GET", null, true);
+      const hasPlacement = Array.isArray(rows) && rows.some((x) => Number(x.subjectId) === Number(subjectId));
+      if (hasPlacement) {
+        toast("Bạn đã làm placement môn này. Chuyển đến roadmap.");
+        nav("/learning-roadmap", "coursesDetail.html");
+        return;
+      }
+    } catch (e) {
+      // Fallback to placement flow if history endpoint cannot be loaded.
+    }
+    nav(`/placement-test?subjectId=${subjectId}`, `placementTest.html?subjectId=${subjectId}`);
+  };
+
   ["landing-start-learning", "landing-get-started-bottom"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener("click", scrollToSubjects);
@@ -373,14 +389,13 @@ function initLanding() {
   document.querySelectorAll(".js-join-program").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const subjectId = Number(btn.getAttribute("data-subject-id")) || getSubjectId();
-      localStorage.setItem("compassed_subject_id", String(subjectId));
       const ok = await checkSession();
       if (!ok) {
         toast(t("needAuth") || "Please login first", "warn");
         goAuthWithRedirect(`/placement-test?subjectId=${subjectId}`, `placementTest.html?subjectId=${subjectId}`);
         return;
       }
-      nav(`/placement-test?subjectId=${subjectId}`, `placementTest.html?subjectId=${subjectId}`);
+      await navByPlacementStatus(subjectId);
     });
   });
 

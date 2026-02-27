@@ -223,6 +223,13 @@ async function initRoadmap() {
 
   const historyBtn = document.getElementById("roadmap-history-btn");
   if (historyBtn) historyBtn.addEventListener("click", () => nav("/history", "history.html"));
+  const backAllCourses = document.getElementById("road-back-all-courses");
+  if (backAllCourses) {
+    backAllCourses.addEventListener("click", (e) => {
+      e.preventDefault();
+      nav("/roadmap-dashboard", "roadmapDashboard.html");
+    });
+  }
   const navDash = document.getElementById("road-nav-dashboard");
   if (navDash) navDash.addEventListener("click", () => nav("/dashboard", "dashboard.html"));
   const navHistory = document.getElementById("road-nav-history");

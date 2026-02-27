@@ -33,6 +33,10 @@ def placement_result():
 def learning_roadmap():
     return render_template("coursesDetail.html")
 
+@app.route("/roadmap-dashboard")
+def roadmap_dashboard():
+    return render_template("roadmapDashboard.html")
+
 
 @app.route("/history")
 def history():

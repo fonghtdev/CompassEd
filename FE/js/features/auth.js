@@ -3,11 +3,139 @@ import {
   checkSession,
   GOOGLE_CLIENT_ID,
   hideLoading,
+  nav,
   redirectAfterAuthDefault,
   saveAuth,
   showLoading,
   toast
 } from "./core.js";
+
+function onboardingKey(user) {
+  if (!user) return "compassed_onboarding_done_unknown";
+  const base = user.id != null ? `id_${user.id}` : `email_${String(user.email || "unknown").toLowerCase()}`;
+  return `compassed_placement_onboarding_done_${base}`;
+}
+
+function clearAfterAuthRedirect() {
+  localStorage.removeItem("compassed_after_auth_route");
+  localStorage.removeItem("compassed_after_auth_file");
+}
+
+function ensureChoiceModal() {
+  let overlay = document.getElementById("auth-choice-overlay");
+  if (overlay) return overlay;
+  overlay = document.createElement("div");
+  overlay.id = "auth-choice-overlay";
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "rgba(15,23,42,0.45)";
+  overlay.style.display = "none";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = "9999";
+  overlay.innerHTML = `
+    <div style="width:min(520px,92vw);background:#fff;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 18px 40px rgba(2,6,23,0.25);overflow:hidden;">
+      <div id="auth-choice-content" style="padding:18px;"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function openChoiceModal(render) {
+  const overlay = ensureChoiceModal();
+  const content = overlay.querySelector("#auth-choice-content");
+  overlay.style.display = "flex";
+  render(content, () => {
+    overlay.style.display = "none";
+  });
+}
+
+function askPlacementChoice() {
+  return new Promise((resolve) => {
+    openChoiceModal((content, close) => {
+      content.innerHTML = `
+        <h3 style="font-size:20px;font-weight:800;color:#0f172a;margin:0;">Làm placement test ngay?</h3>
+        <p style="margin:8px 0 14px 0;color:#475569;font-size:14px;">Bạn có muốn tham gia làm bài mini-test đầu vào để hệ thống tạo roadmap phù hợp cho bạn không?</p>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button id="auth-choice-no" type="button" style="padding:9px 14px;border:1px solid #e2e8f0;background:#fff;border-radius:8px;font-weight:700;color:#334155;cursor:pointer;">Chưa, về trang chủ</button>
+          <button id="auth-choice-yes" type="button" style="padding:9px 14px;border:none;background:#2563eb;color:#fff;border-radius:8px;font-weight:700;cursor:pointer;">Có</button>
+        </div>`;
+      content.querySelector("#auth-choice-no").addEventListener("click", () => {
+        close();
+        resolve(false);
+      });
+      content.querySelector("#auth-choice-yes").addEventListener("click", () => {
+        close();
+        resolve(true);
+      });
+    });
+  });
+}
+
+function chooseSubjectForPlacement(subjects) {
+  return new Promise((resolve) => {
+    openChoiceModal((content, close) => {
+      const rows = (subjects || [])
+        .map(
+          (s) => `
+            <button type="button" data-subject-id="${s.id}" style="text-align:left;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;cursor:pointer;">
+              <div style="font-weight:700;color:#0f172a;">${s.name}</div>
+              <div style="font-size:12px;color:#64748b;">${s.code || ""}</div>
+            </button>`
+        )
+        .join("");
+      content.innerHTML = `
+        <h3 style="font-size:20px;font-weight:800;color:#0f172a;margin:0;">Bạn muốn bắt đầu học môn nào?</h3>
+        <p style="margin:8px 0 14px 0;color:#475569;font-size:14px;">Chọn 1 môn bạn muốn bắt đầu trước.</p>
+        <div id="auth-subject-list" style="display:grid;gap:8px;max-height:280px;overflow:auto;">${rows}</div>
+        <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+          <button id="auth-subject-cancel" type="button" style="padding:9px 14px;border:1px solid #e2e8f0;background:#fff;border-radius:8px;font-weight:700;color:#334155;cursor:pointer;">Để sau</button>
+        </div>`;
+      content.querySelector("#auth-subject-cancel").addEventListener("click", () => {
+        close();
+        resolve(null);
+      });
+      content.querySelectorAll("[data-subject-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          close();
+          resolve(Number(btn.getAttribute("data-subject-id")));
+        });
+      });
+    });
+  });
+}
+
+async function handleFirstLoginAfterRegister(user) {
+  if (user) localStorage.setItem(onboardingKey(user), "1");
+  const shouldDoPlacement = await askPlacementChoice();
+  if (!shouldDoPlacement) {
+    clearAfterAuthRedirect();
+    nav("/landing", "landingPage.html");
+    return;
+  }
+  try {
+    const subjects = await api("/api/subjects", "GET", null, false);
+    if (!subjects || !subjects.length) {
+      toast("Không tải được danh sách môn. Chuyển về landing.", "warn");
+      clearAfterAuthRedirect();
+      nav("/landing", "landingPage.html");
+      return;
+    }
+    const subjectId = await chooseSubjectForPlacement(subjects);
+    if (!subjectId) {
+      clearAfterAuthRedirect();
+      nav("/landing", "landingPage.html");
+      return;
+    }
+    localStorage.setItem("compassed_subject_id", String(subjectId));
+    clearAfterAuthRedirect();
+    nav(`/placement-test?subjectId=${subjectId}`, `placementTest.html?subjectId=${subjectId}`);
+  } catch (err) {
+    toast(`Không tải được môn học: ${err.message}`, "error");
+    clearAfterAuthRedirect();
+    nav("/landing", "landingPage.html");
+  }
+}
 
 function setupAuthTabs() {
   const tabLogin = document.getElementById("tab-login");
@@ -70,7 +198,8 @@ function initAuth() {
         const resp = await api("/api/auth/register", "POST", { fullName, email, password }, false);
         saveAuth(resp);
         toast("Register successful");
-        redirectAfterAuthDefault();
+        localStorage.removeItem(onboardingKey(resp.user));
+        await handleFirstLoginAfterRegister(resp.user);
       } catch (err) {
         toast(`Register failed: ${err.message}`, "error");
       } finally {

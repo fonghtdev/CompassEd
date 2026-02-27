@@ -175,7 +175,7 @@ async function initHistory() {
   const navDash = document.getElementById("history-nav-dashboard");
   if (navDash) navDash.addEventListener("click", () => nav("/dashboard", "dashboard.html"));
   const navRoadmap = document.getElementById("history-nav-roadmap");
-  if (navRoadmap) navRoadmap.addEventListener("click", () => nav("/learning-roadmap", "coursesDetail.html"));
+  if (navRoadmap) navRoadmap.addEventListener("click", () => nav("/roadmap-dashboard", "roadmapDashboard.html"));
   const navOverview = document.getElementById("history-nav-overview");
   if (navOverview) navOverview.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
   const navProfile = document.getElementById("history-nav-profile");

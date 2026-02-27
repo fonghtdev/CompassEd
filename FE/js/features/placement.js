@@ -2,6 +2,7 @@ import {
   KEYS,
   api,
   checkSession,
+  clearAuth,
   getSubjectId,
   goAuthWithRedirect,
   hideLoading,
@@ -9,6 +10,11 @@ import {
   showLoading,
   toast
 } from "./core.js";
+
+function isUnauthorizedError(message) {
+  const msg = String(message || "").toLowerCase();
+  return msg.includes("http 401") || msg.includes("\"status\":401") || msg.includes("unauthorized") || msg.includes("invalid token");
+}
 
 function renderPlacementOptions(options, selected, onSelect) {
   const wrap = document.getElementById("placement-options");
@@ -121,6 +127,24 @@ async function initPlacement() {
         localStorage.removeItem(answersKey);
         nav("/placement-result", "placementTestResult.html");
       } catch (e) {
+        const msg = String(e && e.message ? e.message : "");
+        if (isUnauthorizedError(msg)) {
+          clearAuth();
+          toast("Session expired. Please login again.", "warn");
+          goAuthWithRedirect(`/placement-test?subjectId=${subjectId}`, `placementTest.html?subjectId=${subjectId}`);
+          return;
+        }
+        if (msg.toLowerCase().includes("attempt not found") || msg.includes("404")) {
+          // Stale local attempt (changed DB/profile). Reset local state and start a fresh attempt.
+          localStorage.removeItem(attemptKey);
+          localStorage.removeItem(paperKey);
+          localStorage.removeItem(answersKey);
+          toast("Attempt expired. Starting a new placement test...", "warn");
+          setTimeout(() => {
+            window.location.reload();
+          }, 300);
+          return;
+        }
         toast(`Submit failed: ${e.message}`, "error");
       } finally {
         hideLoading();
@@ -168,6 +192,13 @@ async function initPlacement() {
 
     rerender();
   } catch (err) {
+    const msg = String(err && err.message ? err.message : "");
+    if (isUnauthorizedError(msg)) {
+      clearAuth();
+      toast("Session expired. Please login again.", "warn");
+      goAuthWithRedirect(`/placement-test?subjectId=${subjectId}`, `placementTest.html?subjectId=${subjectId}`);
+      return;
+    }
     toast(`Cannot load placement: ${err.message}`, "error");
   } finally {
     hideLoading();

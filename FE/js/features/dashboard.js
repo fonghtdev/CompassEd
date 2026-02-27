@@ -266,7 +266,7 @@ async function initDashboard() {
   const brandLink = document.getElementById("dash-brand-link");
   if (brandLink) brandLink.addEventListener("click", () => nav("/landing", "landingPage.html"));
   const navRoadmap = document.getElementById("dash-nav-roadmap");
-  if (navRoadmap) navRoadmap.addEventListener("click", () => nav("/learning-roadmap", "coursesDetail.html"));
+  if (navRoadmap) navRoadmap.addEventListener("click", () => nav("/roadmap-dashboard", "roadmapDashboard.html"));
   const navHistory = document.getElementById("dash-nav-history");
   if (navHistory) navHistory.addEventListener("click", () => nav("/history", "history.html"));
   const navProfile = document.getElementById("dash-nav-profile");

@@ -36,6 +36,9 @@ const I18N = {
     dashboardTitle: "B\u1ea3ng \u0111i\u1ec1u khi\u1ec3n h\u1ecdc t\u1eadp",
     historyTitle: "L\u1ecbch s\u1eed Placement",
     roadmapTitle: "L\u1ed9 tr\u00ecnh h\u1ecdc t\u1eadp",
+    roadmapDashboardTitle: "B\u1ea3ng ch\u1ecdn roadmap",
+    roadmapDashboardSectionTitle: "Ch\u1ecdn m\u00f4n \u0111\u1ec3 v\u00e0o roadmap",
+    roadmapDashboardSectionSub: "M\u1ed7i m\u00f4n s\u1ebd m\u1edf roadmap ri\u00eang. Ch\u1ecdn m\u00f4n b\u1ea1n mu\u1ed1n ti\u1ebfp t\u1ee5c h\u1ecdc.",
     noData: "Kh\u00f4ng c\u00f3 d\u1eef li\u1ec7u",
     noGoal: "Ch\u01b0a c\u00f3 m\u1ee5c ti\u00eau",
     targetScore: "\u0110i\u1ec3m m\u1ee5c ti\u00eau",
@@ -85,6 +88,9 @@ const I18N = {
     dashboardTitle: "My Learning Dashboard",
     historyTitle: "Placement History",
     roadmapTitle: "Learning Roadmap",
+    roadmapDashboardTitle: "Roadmap Dashboard",
+    roadmapDashboardSectionTitle: "Choose a subject to open roadmap",
+    roadmapDashboardSectionSub: "Each subject has its own roadmap. Select the subject you want to continue.",
     noData: "No data",
     noGoal: "No goal",
     targetScore: "Target score",
@@ -226,6 +232,19 @@ function applyLanguage() {
   setText("road-page-title", t("roadmapTitle"));
   setText("road-notif-title", t("notificationTitle"));
   setText("road-notif-loading", t("notificationLoading"));
+
+  setText("rm-nav-dashboard-label", t("dashboard"));
+  setText("rm-nav-overview-label", t("roadmap"));
+  setText("rm-nav-history-label", t("history"));
+  setText("rm-nav-profile-label", t("profile"));
+  setText("rm-nav-logout-label", t("logout"));
+  setText("rm-setting-label", t("setting"));
+  setText("rm-portal-label", t("studentPortal"));
+  setText("rm-page-title", t("roadmapDashboardTitle"));
+  setText("rm-section-title", t("roadmapDashboardSectionTitle"));
+  setText("rm-section-subtitle", t("roadmapDashboardSectionSub"));
+  setText("rm-notif-title", t("notificationTitle"));
+  setText("rm-notif-loading", t("notificationLoading"));
 
   setText("landing-notif-title", t("notificationTitle"));
   setText("landing-notif-loading", t("notificationLoading"));
