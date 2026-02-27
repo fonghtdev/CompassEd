@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - CompassED Admin</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d7ff2",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light text-slate-900 font-display">
+    
+    <div class="relative flex h-screen w-full flex-row overflow-hidden">
+        
+        <!-- Sidebar -->
+        <div class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full flex-shrink-0">
+            <!-- Logo -->
+            <div class="flex items-center gap-3 px-6 py-6 border-b border-slate-100">
+                <div class="bg-primary/10 flex items-center justify-center rounded-lg h-10 w-10 text-primary">
+                    <span class="material-symbols-outlined">explore</span>
+                </div>
+                <div class="flex flex-col">
+                    <h1 class="text-slate-900 text-lg font-bold leading-none tracking-tight">CompassED</h1>
+                    <p class="text-slate-500 text-xs font-medium mt-1">Admin Portal</p>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="/admin">
+                    <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">dashboard</span>
+                    <span class="text-sm font-medium">Dashboard</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary group transition-colors" href="/admin/users">
+                    <span class="material-symbols-outlined text-xl">group</span>
+                    <span class="text-sm font-medium">User Management</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="/admin/question-bank">
+                    <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">library_books</span>
+                    <span class="text-sm font-medium">Content Bank</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
+                    <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">map</span>
+                    <span class="text-sm font-medium">Roadmap Config</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
+                    <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">analytics</span>
+                    <span class="text-sm font-medium">Analytics</span>
+                </a>
+                
+                <div class="pt-4 mt-4 border-t border-slate-100">
+                    <p class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">System</p>
+                    <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
+                        <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">settings</span>
+                        <span class="text-sm font-medium">Settings</span>
+                    </a>
+                    <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
+                        <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">help</span>
+                        <span class="text-sm font-medium">Help Center</span>
+                    </a>
+                </div>
+            </nav>
+
+            <!-- Admin Profile -->
+            <div class="p-4 border-t border-slate-100">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <span class="material-symbols-outlined">person</span>
+                    </div>
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="text-sm font-semibold text-slate-900 truncate" id="admin-name">Admin</span>
+                        <span class="text-xs text-slate-500 truncate" id="admin-email">Loading...</span>
+                    </div>
+                </div>
+                <button id="logout-btn" class="mt-3 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-lg">logout</span>
+                    <span>Đăng xuất</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col h-full overflow-hidden bg-background-light">
+            <!-- Header Bar -->
+            <header class="flex items-center justify-between h-16 px-6 bg-white border-b border-slate-200 flex-shrink-0">
+                <div class="flex items-center gap-4">
+                    <button class="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-50">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                    <h2 class="text-lg font-bold text-slate-900">User Management</h2>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div class="hidden sm:flex relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined text-[20px]">search</span>
+                        <input class="h-10 w-64 pl-10 pr-4 rounded-lg bg-slate-50 border-transparent focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary text-sm transition-all placeholder:text-slate-400" placeholder="Search users..." type="text"/>
+                    </div>
+                    <button class="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                    </button>
+                    <div class="text-right hidden sm:block">
+                        <p class="text-sm font-semibold text-slate-700">Xin chào!</p>
+                        <p class="text-xs text-slate-500" id="current-time">--:--</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="flex-1 overflow-y-auto p-6">
+                
+                <!-- User Management Card -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <!-- Card Header -->
+                    <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">Danh sách Users</h3>
+                            <p class="text-sm text-slate-500 mt-1">Quản lý tất cả người dùng trong hệ thống</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button id="refresh-users-btn" class="px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-2">
+                                <span class="material-symbols-outlined text-xl">refresh</span>
+                                <span class="hidden sm:inline">Refresh</span>
+                            </button>
+                            <button id="create-user-btn" class="px-4 py-2 bg-primary text-white hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                                <span class="material-symbols-outlined text-xl">add</span>
+                                <span>Tạo User</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Table Container -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-4">ID</th>
+                                    <th class="px-6 py-4">Email</th>
+                                    <th class="px-6 py-4">Họ tên</th>
+                                    <th class="px-6 py-4">Role</th>
+                                    <th class="px-6 py-4">Provider</th>
+                                    <th class="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-tbody" class="divide-y divide-slate-100">
+                                <tr>
+                                    <td colspan="6" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center gap-3">
+                                            <span class="material-symbols-outlined text-5xl text-slate-300">group</span>
+                                            <p class="text-slate-500">Đang tải danh sách users...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 shadow-2xl flex flex-col items-center gap-3">
+            <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-slate-700 font-medium">Đang xử lý...</p>
+        </div>
+    </div>
+
+    <!-- Modal: Create User -->
+                    <h3 class="text-xl font-bold text-slate-800 mb-6">Quản lý Subjects</h3>
+                    <p class="text-slate-500">Đang phát triển...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Admin Modal -->
+    <div id="create-admin-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold text-slate-800 mb-6">Tạo Admin mới</h3>
+            <form id="create-admin-form">
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+                    <input type="email" id="new-admin-email" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Họ tên</label>
+                    <input type="text" id="new-admin-fullname" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Mật khẩu</label>
+                    <input type="password" id="new-admin-password" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex space-x-3">
+                    <button type="button" id="cancel-create-admin" class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50">
+                        Hủy
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Tạo Admin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div id="create-user-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold text-slate-800 mb-6">Tạo User mới</h3>
+            <form id="create-user-form">
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+                    <input type="email" id="create-user-email" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Họ tên</label>
+                    <input type="text" id="create-user-fullname" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Mật khẩu</label>
+                    <input type="password" id="create-user-password" required minlength="6" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-slate-500 mt-1">Tối thiểu 6 ký tự</p>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Role</label>
+                    <select id="create-user-role" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="USER">USER (Người dùng thường)</option>
+                        <option value="ADMIN">ADMIN (Quản trị viên)</option>
+                    </select>
+                </div>
+                <div class="flex space-x-3">
+                    <button type="button" id="cancel-create-user" class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50">
+                        Hủy
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        Tạo User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="edit-user-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold text-slate-800 mb-6">Chỉnh sửa User</h3>
+            <form id="edit-user-form">
+                <input type="hidden" id="edit-user-id">
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+                    <input type="email" id="edit-user-email" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Họ tên</label>
+                    <input type="text" id="edit-user-fullname" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Role</label>
+                    <select id="edit-user-role" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="USER">USER (Người dùng thường)</option>
+                        <option value="ADMIN">ADMIN (Quản trị viên)</option>
+                    </select>
+                </div>
+                <div class="flex space-x-3">
+                    <button type="button" id="cancel-edit-user" class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50">
+                        Hủy
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Cập nhật
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="change-password-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold text-slate-800 mb-6">Đổi mật khẩu</h3>
+            <p class="text-sm text-slate-600 mb-4">User: <strong id="change-pwd-email-display"></strong></p>
+            <form id="change-password-form">
+                <input type="hidden" id="change-pwd-user-id">
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Mật khẩu mới</label>
+                    <input type="password" id="change-pwd-new" required minlength="6" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Xác nhận mật khẩu</label>
+                    <input type="password" id="change-pwd-confirm" required minlength="6" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-slate-500 mt-1">Tối thiểu 6 ký tự</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button type="button" id="cancel-change-pwd" class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50">
+                        Hủy
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                        Đổi mật khẩu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <script src="/config.js"></script>
+    <script src="/js/admin.js"></script>
+</body>
+</html>

@@ -162,20 +162,76 @@
     nav(route, file);
   }
 
-  function initLanding() {
-    const scrollToSubjects = () => {
-      const section = document.getElementById("master-core-subjects");
-      if (section) {
-        section.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    };
+  async function loadSubjects() {
+    const container = document.querySelector("#master-core-subjects .grid");
+    if (!container) return;
 
-    ["landing-get-started-top", "landing-start-learning", "landing-get-started-bottom"].forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener("click", scrollToSubjects);
-    });
+    try {
+      const subjects = await api("/api/subjects", "GET", null, false);
+      
+      // Clear existing cards
+      container.innerHTML = "";
+      
+      // Subject icons mapping
+      const iconMap = {
+        "MATH": { icon: "calculate", color: "orange" },
+        "LITERATURE": { icon: "auto_stories", color: "purple" },
+        "ENGLISH": { icon: "edit_note", color: "teal" }
+      };
+      
+      subjects.forEach((subject, idx) => {
+        const config = iconMap[subject.code] || { icon: "book", color: "blue" };
+        const isPopular = idx === 0;
+        
+        const card = document.createElement("div");
+        card.className = "group flex flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-primary/50 hover:shadow-md";
+        card.innerHTML = `
+          <div class="mb-6 flex items-center justify-between">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-${config.color}-100 text-${config.color}-600">
+              <span class="material-symbols-outlined">${config.icon}</span>
+            </div>
+            ${isPopular ? '<div class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">Popular</div>' : ''}
+          </div>
+          <h3 class="mb-2 text-xl font-bold text-slate-900">${subject.name}</h3>
+          <div class="mb-6 flex items-baseline gap-1">
+            <span class="text-3xl font-black text-slate-900">$29</span>
+            <span class="text-sm font-medium text-slate-500">/month</span>
+          </div>
+          <ul class="mb-8 flex flex-col gap-3">
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+              Adaptive Learning Path
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+              AI-Powered Explanations
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+              Practice Exercises
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+              Progress Tracking
+            </li>
+          </ul>
+          <button class="js-join-program mt-auto w-full rounded-lg bg-slate-100 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-primary hover:text-white group-hover:bg-primary group-hover:text-white" data-subject-id="${subject.id}">
+            Join Program
+          </button>
+        `;
+        container.appendChild(card);
+      });
+      
+      // Re-attach event listeners after rendering
+      attachJoinProgramListeners();
+      
+    } catch (err) {
+      console.error("Failed to load subjects:", err);
+      toast("Khong tai duoc danh sach mon hoc", "error");
+    }
+  }
 
+  function attachJoinProgramListeners() {
     document.querySelectorAll(".js-join-program").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const subjectId = Number(btn.getAttribute("data-subject-id")) || 1;
@@ -188,6 +244,71 @@
         }
         nav(`/placement-test?subjectId=${subjectId}`, `placementTest.html?subjectId=${subjectId}`);
       });
+    });
+  }
+
+  function initLanding() {
+    // Load subjects from API
+    loadSubjects();
+    
+    // Check if user is logged in and update UI
+    const auth = getAuth();
+    const loginLink = document.getElementById("landing-login-link");
+    const userMenu = document.getElementById("landing-user-menu");
+    const userName = document.getElementById("landing-user-name");
+    const userAvatar = document.getElementById("landing-user-avatar");
+    const userDropdown = document.getElementById("landing-user-dropdown");
+    const logoutBtn = document.getElementById("landing-logout-btn");
+
+    if (auth && auth.user) {
+      // User is logged in - show user menu
+      if (loginLink) loginLink.classList.add("hidden");
+      if (userMenu) {
+        userMenu.classList.remove("hidden");
+        userMenu.classList.add("flex");
+      }
+      if (userName) userName.textContent = auth.user.fullName || auth.user.email;
+      if (userAvatar) {
+        const initials = (auth.user.fullName || auth.user.email || "U").charAt(0).toUpperCase();
+        userAvatar.textContent = initials;
+        
+        // Toggle dropdown
+        userAvatar.addEventListener("click", (e) => {
+          e.stopPropagation();
+          userDropdown && userDropdown.classList.toggle("hidden");
+        });
+      }
+      
+      // Close dropdown when clicking outside
+      document.addEventListener("click", () => {
+        userDropdown && userDropdown.classList.add("hidden");
+      });
+      
+      // Logout handler
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+          clearAuth();
+          toast("Da dang xuat thanh cong");
+          location.reload();
+        });
+      }
+    } else {
+      // User not logged in - show login link
+      if (loginLink) loginLink.classList.remove("hidden");
+      if (userMenu) userMenu.classList.add("hidden");
+    }
+
+    const scrollToSubjects = () => {
+      const section = document.getElementById("master-core-subjects");
+      if (section) {
+        section.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+
+    ["landing-get-started-top", "landing-start-learning", "landing-get-started-bottom"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("click", scrollToSubjects);
     });
 
     const login = document.getElementById("landing-login-link");
@@ -314,13 +435,41 @@
       const letter = String.fromCharCode(65 + idx);
       const label = document.createElement("label");
       label.className = "relative group cursor-pointer";
-      label.innerHTML = `
-        <input class="peer sr-only" type="radio" name="placement-answer" value="${letter}" ${selected === letter ? "checked" : ""} />
-        <div class="p-5 rounded-xl border-2 border-border-light bg-surface-light hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5 transition-all duration-200 flex items-center gap-4">
-          <div class="size-8 rounded-full border-2 border-border-light flex items-center justify-center text-sm font-bold text-text-secondary-light peer-checked:bg-primary peer-checked:border-primary peer-checked:text-white">${letter}</div>
-          <span class="text-lg font-medium">${text}</span>
-        </div>`;
-      label.querySelector("input").addEventListener("change", (e) => onSelect(e.target.value));
+      
+      // Create input element
+      const input = document.createElement("input");
+      input.className = "peer sr-only";
+      input.type = "radio";
+      input.name = "placement-answer";
+      input.value = letter;
+      if (selected === letter) input.checked = true;
+      
+      // Create div wrapper
+      const divWrapper = document.createElement("div");
+      divWrapper.className = "p-5 rounded-xl border-2 border-border-light bg-surface-light hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5 transition-all duration-200 flex items-center gap-4";
+      
+      // Create letter circle
+      const letterCircle = document.createElement("div");
+      letterCircle.className = "size-8 rounded-full border-2 border-border-light flex items-center justify-center text-sm font-bold text-text-secondary-light peer-checked:bg-primary peer-checked:border-primary peer-checked:text-white";
+      letterCircle.textContent = letter;
+      
+      // Create text span
+      const textSpan = document.createElement("span");
+      textSpan.className = "text-lg font-medium";
+      textSpan.textContent = text;
+      
+      // Assemble elements
+      divWrapper.appendChild(letterCircle);
+      divWrapper.appendChild(textSpan);
+      label.appendChild(input);
+      label.appendChild(divWrapper);
+      
+      // Add event listener AFTER creating all elements
+      input.addEventListener("change", (e) => {
+        console.log("Answer selected:", e.target.value); // Debug log
+        onSelect(e.target.value);
+      });
+      
       wrap.appendChild(label);
     });
   }
@@ -336,19 +485,47 @@
     const paperKey = `${KEYS.paper}_${subjectId}`;
     const answersKey = `${KEYS.answers}_${subjectId}`;
 
+    showLoading("Dang kiem tra quyen truy cap...");
+    try {
+      // Check free attempts first
+      const { user } = getAuth();
+      const checkRes = await api(`/api/placement-tests/check-free-attempts?userId=${user.id}&subjectId=${subjectId}`, "GET", null, true);
+      
+      if (!checkRes.hasAccess) {
+        hideLoading();
+        if (confirm("Ban khong con luot placement mien phi. Ban can mua goi de tiep tuc. Chuyen den trang thanh toan?")) {
+          nav(`/payment?subjectId=${subjectId}`, `payment.html?subjectId=${subjectId}`);
+        } else {
+          nav("/landing", "landingPage.html");
+        }
+        return;
+      }
+    } catch (err) {
+      console.error("Check free attempts failed:", err);
+      // Continue anyway if check fails
+    }
+
     showLoading("Dang tai de placement...");
     try {
-      let attemptId = Number(localStorage.getItem(attemptKey) || 0);
-      let paper = JSON.parse(localStorage.getItem(paperKey) || "[]");
-      let isNew = false;
-      if (!attemptId || !paper.length) {
-        const started = await api(`/api/subjects/${subjectId}/placement-tests`, "POST", null, true);
-        attemptId = started.attemptId;
-        paper = JSON.parse(started.paperJson || "[]");
-        localStorage.setItem(attemptKey, String(attemptId));
-        localStorage.setItem(paperKey, JSON.stringify(paper));
-        isNew = true;
+      // FORCE RELOAD: Luôn gọi API mới để lấy câu hỏi mới nhất từ database
+      // Xóa cache cũ nếu có
+      const oldAttemptId = Number(localStorage.getItem(attemptKey) || 0);
+      const hasOldCache = oldAttemptId > 0 && localStorage.getItem(paperKey);
+      
+      if (hasOldCache) {
+        // Clear old cache to force new questions
+        localStorage.removeItem(attemptKey);
+        localStorage.removeItem(paperKey);
+        localStorage.removeItem(answersKey);
       }
+      
+      // Always call API to get fresh questions from database
+      const started = await api(`/api/subjects/${subjectId}/placement-tests`, "POST", null, true);
+      const attemptId = started.attemptId;
+      const paper = JSON.parse(started.paperJson || "[]");
+      localStorage.setItem(attemptKey, String(attemptId));
+      localStorage.setItem(paperKey, JSON.stringify(paper));
+      const isNew = true;
       let index = 0;
       const answers = isNew ? {} : JSON.parse(localStorage.getItem(answersKey) || "{}");
       localStorage.setItem(answersKey, JSON.stringify(answers));
@@ -364,14 +541,18 @@
       function rerender() {
         const q = paper[index];
         if (!q) return;
+        console.log(`Rendering question ${index + 1}:`, q.id, q.q); // Debug log
         questionEl.textContent = q.q || `Question ${index + 1}`;
         if (descEl) descEl.textContent = "Chon dap an phu hop nhat.";
         const options = (q.options || []).map((x) => String(x).replace(/^[A-D]\.\s*/, ""));
         renderPlacementOptions(options, answers[String(q.id)], (value) => {
+          console.log(`Answer saved for question ${q.id}:`, value); // Debug log
           answers[String(q.id)] = value;
           localStorage.setItem(answersKey, JSON.stringify(answers));
+          console.log('Current answers:', answers); // Debug log
         });
         const answeredCount = Object.keys(answers).length;
+        console.log(`Answered: ${answeredCount} / ${paper.length}`); // Debug log
         progressText.textContent = `${answeredCount} of ${paper.length} answered`;
         progressBar.style.width = `${Math.round((answeredCount / Math.max(paper.length, 1)) * 100)}%`;
         counterEl.textContent = `Question ${index + 1} of ${paper.length}`;
@@ -388,18 +569,23 @@
 
       nextBtn.addEventListener("click", async () => {
         const q = paper[index];
+        console.log(`Next button clicked. Current question:`, q.id, `Answer:`, answers[String(q.id)]); // Debug log
         if (!answers[String(q.id)]) {
           toast("Vui long chon dap an truoc khi tiep tuc", "warn");
           return;
         }
         if (index < paper.length - 1) {
           index += 1;
+          console.log(`Moving to question ${index + 1}`); // Debug log
           rerender();
           return;
         }
+        // Last question - submit
+        console.log('Submitting test with answers:', answers); // Debug log
         showLoading("Dang nop bai...");
         try {
           const result = await api(`/api/placement-attempts/${attemptId}/submit`, "POST", { answersJson: JSON.stringify(answers) }, true);
+          console.log('Submit result:', result); // Debug log
           localStorage.setItem(KEYS.result, JSON.stringify(result));
           localStorage.removeItem(attemptKey);
           localStorage.removeItem(paperKey);
@@ -407,6 +593,7 @@
           toast("Nop bai thanh cong");
           nav("/placement-result", "placementTestResult.html");
         } catch (e) {
+          console.error('Submit error:', e); // Debug log
           toast(`Nop bai that bai: ${e.message}`, "error");
         } finally {
           hideLoading();
@@ -443,18 +630,10 @@
         goAuthWithRedirect("/placement-result", "placementTestResult.html");
         return;
       }
-      showLoading("Dang unlock roadmap...");
-      try {
-        const subjectId = getSubjectId();
-        const sub = await api("/api/subscriptions/checkout", "POST", { subjectIds: [subjectId] }, true);
-        localStorage.setItem(KEYS.subscription, JSON.stringify(sub));
-        toast("Unlock roadmap thanh cong");
-        nav("/learning-roadmap", "coursesDetail.html");
-      } catch (err) {
-        toast(`Unlock that bai: ${err.message}`, "error");
-      } finally {
-        hideLoading();
-      }
+      // Go directly to roadmap page
+      const subjectId = getSubjectId();
+      const level = data.level || "L1";
+      nav(`/roadmap?subjectId=${subjectId}&level=${level}`, `roadmap.html?subjectId=${subjectId}&level=${level}`);
     });
   }
 

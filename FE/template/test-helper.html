@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Helper - CompassED</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-indigo-600 mb-8">🧪 CompassED Test Helper</h1>
+        
+        <!-- Status Cards -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold mb-2">Backend Status</h2>
+                <div id="backend-status" class="text-sm">Checking...</div>
+                <button onclick="checkBackend()" class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded">
+                    Check Again
+                </button>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold mb-2">Current User</h2>
+                <div id="user-info" class="text-sm">Not logged in</div>
+                <button onclick="clearLocalStorage()" class="mt-4 px-4 py-2 bg-red-600 text-white rounded">
+                    Clear Storage
+                </button>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="location.href='/'" class="px-4 py-3 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    🏠 Home Page
+                </button>
+                <button onclick="location.href='/auth'" class="px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700">
+                    🔐 Register/Login
+                </button>
+                <button onclick="location.href='/placement-test?subjectId=1'" class="px-4 py-3 bg-purple-600 text-white rounded hover:bg-purple-700">
+                    📝 Placement Test
+                </button>
+                <button onclick="location.href='/roadmap?subjectId=1&level=L1'" class="px-4 py-3 bg-yellow-600 text-white rounded hover:bg-yellow-700">
+                    🗺️ Roadmap L1
+                </button>
+                <button onclick="location.href='/payment?subjectId=1'" class="px-4 py-3 bg-orange-600 text-white rounded hover:bg-orange-700">
+                    💳 Payment
+                </button>
+                <button onclick="location.href='/history'" class="px-4 py-3 bg-gray-600 text-white rounded hover:bg-gray-700">
+                    📊 History
+                </button>
+            </div>
+        </div>
+        
+        <!-- API Tests -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">API Tests</h2>
+            <div class="space-y-4">
+                <div>
+                    <button onclick="testAPI('/api/subjects')" class="px-4 py-2 bg-indigo-600 text-white rounded">
+                        Test GET /api/subjects
+                    </button>
+                </div>
+                <div>
+                    <button onclick="testAPI('/api/auth/me')" class="px-4 py-2 bg-indigo-600 text-white rounded">
+                        Test GET /api/auth/me
+                    </button>
+                </div>
+                <div>
+                    <button onclick="testAPI('/api/roadmaps/1/L1')" class="px-4 py-2 bg-indigo-600 text-white rounded">
+                        Test GET /api/roadmaps/1/L1
+                    </button>
+                </div>
+                <div id="api-result" class="mt-4 p-4 bg-gray-100 rounded text-sm font-mono overflow-auto max-h-64">
+                    Click a button to test API
+                </div>
+            </div>
+        </div>
+        
+        <!-- LocalStorage Inspector -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">LocalStorage Contents</h2>
+            <pre id="storage-contents" class="text-sm bg-gray-100 p-4 rounded overflow-auto max-h-64"></pre>
+            <button onclick="refreshStorage()" class="mt-4 px-4 py-2 bg-gray-600 text-white rounded">
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        
+        async function checkBackend() {
+            const el = document.getElementById('backend-status');
+            try {
+                const res = await fetch(`${API_BASE}/api/subjects`);
+                if (res.ok) {
+                    const data = await res.json();
+                    el.innerHTML = `<span class="text-green-600">✅ Connected</span><br>Subjects: ${data.length}`;
+                } else {
+                    el.innerHTML = `<span class="text-red-600">❌ Error ${res.status}</span>`;
+                }
+            } catch (err) {
+                el.innerHTML = `<span class="text-red-600">❌ Not running</span><br>${err.message}`;
+            }
+        }
+        
+        function clearLocalStorage() {
+            if (confirm('Clear all localStorage data?')) {
+                localStorage.clear();
+                alert('✅ Cleared!');
+                location.reload();
+            }
+        }
+        
+        async function testAPI(endpoint) {
+            const el = document.getElementById('api-result');
+            el.textContent = 'Loading...';
+            
+            try {
+                const token = localStorage.getItem('compassed_token');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+                
+                const res = await fetch(`${API_BASE}${endpoint}`, { headers });
+                const data = await res.json();
+                
+                el.textContent = JSON.stringify(data, null, 2);
+                el.className = 'mt-4 p-4 bg-green-50 rounded text-sm font-mono overflow-auto max-h-64';
+            } catch (err) {
+                el.textContent = `Error: ${err.message}`;
+                el.className = 'mt-4 p-4 bg-red-50 rounded text-sm font-mono overflow-auto max-h-64';
+            }
+        }
+        
+        function refreshStorage() {
+            const el = document.getElementById('storage-contents');
+            const storage = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                storage[key] = localStorage.getItem(key);
+            }
+            el.textContent = JSON.stringify(storage, null, 2);
+        }
+        
+        function checkUser() {
+            const user = JSON.parse(localStorage.getItem('compassed_user') || 'null');
+            const el = document.getElementById('user-info');
+            if (user) {
+                el.innerHTML = `<span class="text-green-600">✅ Logged in</span><br>
+                    Email: ${user.email}<br>
+                    Level: ${user.level || 'N/A'}<br>
+                    ID: ${user.id}`;
+            } else {
+                el.innerHTML = '<span class="text-gray-500">❌ Not logged in</span>';
+            }
+        }
+        
+        // Auto-run on load
+        checkBackend();
+        checkUser();
+        refreshStorage();
+    </script>
+</body>
+</html>

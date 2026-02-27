@@ -10,4 +10,7 @@ import com.compassed.compassed_api.domain.enums.Level;
 public interface RoadmapRepository extends JpaRepository<Roadmap, Long> {
 
     Optional<Roadmap> findBySubject_IdAndLevel(Long subjectId, Level level);
+    
+    // For string-based level queries (used by RoadmapService)
+    Optional<Roadmap> findBySubjectIdAndLevel(Long subjectId, String level);
 }

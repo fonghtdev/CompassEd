@@ -229,4 +229,48 @@ public class PlacementServiceImpl implements PlacementService {
             throw new RuntimeException("Cannot generate paper json");
         }
     }
+    
+    @Override
+    public int checkFreeAttempts(Long userId, Long subjectId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
+        
+        UserSubjectFreeAttempt free = freeAttemptRepository
+                .findByUser_IdAndSubject_Id(userId, subjectId)
+                .orElseGet(() -> {
+                    UserSubjectFreeAttempt x = new UserSubjectFreeAttempt();
+                    x.setUser(user);
+                    x.setSubject(subject);
+                    x.setUsed(false);
+                    return x;
+                });
+        
+        return free.isUsed() ? 0 : 1;
+    }
+    
+    @Override
+    public void decrementFreeAttempts(Long userId, Long subjectId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
+        
+        UserSubjectFreeAttempt free = freeAttemptRepository
+                .findByUser_IdAndSubject_Id(userId, subjectId)
+                .orElseGet(() -> {
+                    UserSubjectFreeAttempt x = new UserSubjectFreeAttempt();
+                    x.setUser(user);
+                    x.setSubject(subject);
+                    x.setUsed(false);
+                    return x;
+                });
+        
+        if (!free.isUsed()) {
+            free.setUsed(true);
+            free.setUsedAt(LocalDateTime.now());
+            freeAttemptRepository.save(free);
+        }
+    }
 }

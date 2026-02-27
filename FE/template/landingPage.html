@@ -50,7 +50,23 @@
 <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">Pricing</a>
 </nav>
 <div class="flex items-center gap-4">
-<a id="landing-login-link" class="hidden text-sm font-medium text-slate-600 hover:text-primary md:block" href="#">Login</a>
+<!-- Show when not logged in -->
+<a id="landing-login-link" class="text-sm font-medium text-slate-600 hover:text-primary md:block" href="#">Login</a>
+<!-- Show when logged in -->
+<div id="landing-user-menu" class="hidden items-center gap-3">
+<span id="landing-user-name" class="text-sm font-medium text-slate-700"></span>
+<div class="relative">
+<button id="landing-user-avatar" class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white font-bold hover:bg-blue-600 transition-colors">
+U
+</button>
+<div id="landing-user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
+<a href="/learning-roadmap" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">My Roadmap</a>
+<a href="/history" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">History</a>
+<hr class="my-2 border-slate-200"/>
+<button id="landing-logout-btn" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-slate-50">Logout</button>
+</div>
+</div>
+</div>
 <button id="landing-get-started-top" class="flex h-10 cursor-pointer items-center justify-center rounded-lg bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-blue-600">
                     Get Started
                 </button>
