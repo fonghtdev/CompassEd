@@ -1,5 +1,6 @@
 from flask import Flask
 from flask import render_template
+import os
 
 app = Flask(__name__, template_folder="template", static_folder=".", static_url_path="")
 
@@ -68,5 +69,5 @@ def admin_dashboard():
 def admin_question_bank():
     return render_template("admin/adminQuestionBank.html")
 if __name__ == "__main__":
-    app.run(debug=True, port=3000)
+    app.run(debug=True, port=int(os.getenv("FE_PORT", "3000")))
 
