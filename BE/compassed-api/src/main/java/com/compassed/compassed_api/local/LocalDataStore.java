@@ -217,6 +217,20 @@ public class LocalDataStore {
         return users.containsKey(userId);
     }
 
+    public User getOrCreateUser(Long userId, String email, String fullName) {
+        if (users.containsKey(userId)) {
+            return users.get(userId);
+        }
+        // Auto-create user
+        User user = new User();
+        user.setId(userId);
+        user.setEmail(email);
+        user.setFullName(fullName);
+        users.put(userId, user);
+        userIdByEmail.put(email.toLowerCase(), userId);
+        return user;
+    }
+
     public User getUser(Long userId) {
         return users.get(userId);
     }

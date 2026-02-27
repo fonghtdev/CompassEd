@@ -13,12 +13,14 @@ import org.springframework.stereotype.Service;
 import com.compassed.compassed_api.api.dto.PlacementStartResponse;
 import com.compassed.compassed_api.api.dto.PlacementSubmitRequest;
 import com.compassed.compassed_api.api.dto.PlacementSubmitResponse;
+import com.compassed.compassed_api.domain.QuestionBank;
 import com.compassed.compassed_api.domain.enums.AttemptStatus;
 import com.compassed.compassed_api.domain.enums.Level;
 import com.compassed.compassed_api.local.LocalDataStore;
 import com.compassed.compassed_api.local.LocalDataStore.PlacementAttemptMem;
 import com.compassed.compassed_api.local.LocalDataStore.PlacementResultMem;
 import com.compassed.compassed_api.local.LocalDataStore.SubjectInfo;
+import com.compassed.compassed_api.repository.QuestionBankRepository;
 import com.compassed.compassed_api.service.PlacementService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,10 +31,12 @@ public class PlacementServiceLocalImpl implements PlacementService {
 
     private final LocalDataStore localDataStore;
     private final ObjectMapper objectMapper;
+    private final QuestionBankRepository questionBankRepository;
 
-    public PlacementServiceLocalImpl(LocalDataStore localDataStore, ObjectMapper objectMapper) {
+    public PlacementServiceLocalImpl(LocalDataStore localDataStore, ObjectMapper objectMapper, QuestionBankRepository questionBankRepository) {
         this.localDataStore = localDataStore;
         this.objectMapper = objectMapper;
+        this.questionBankRepository = questionBankRepository;
     }
 
     @Override
@@ -43,13 +47,14 @@ public class PlacementServiceLocalImpl implements PlacementService {
             throw new RuntimeException("Subject not found: " + subjectId);
         }
 
-        boolean hasUsedFreeAttempt = localDataStore.hasUsedFreeAttempt(userId, subjectId);
-        if (hasUsedFreeAttempt && !localDataStore.hasActiveSubscription(userId, subjectId)) {
-            throw new RuntimeException("PAYMENT_REQUIRED: Need subscription to start placement");
-        }
-        if (!hasUsedFreeAttempt) {
-            localDataStore.markFreeAttemptUsed(userId, subjectId);
-        }
+        // Tạm thời tắt check subscription để test
+        // boolean hasUsedFreeAttempt = localDataStore.hasUsedFreeAttempt(userId, subjectId);
+        // if (hasUsedFreeAttempt && !localDataStore.hasActiveSubscription(userId, subjectId)) {
+        //     throw new RuntimeException("PAYMENT_REQUIRED: Need subscription to start placement");
+        // }
+        // if (!hasUsedFreeAttempt) {
+        //     localDataStore.markFreeAttemptUsed(userId, subjectId);
+        // }
 
         String paperJson = generateDummyPaperJson(subject.code());
         PlacementAttemptMem attempt = new PlacementAttemptMem();
@@ -107,7 +112,8 @@ public class PlacementServiceLocalImpl implements PlacementService {
 
     private void ensureUserExists(Long userId) {
         if (!localDataStore.userExists(userId)) {
-            throw new RuntimeException("Please create user via /api/dev/users first (local mode)");
+            // Auto-create user if not exists
+            localDataStore.getOrCreateUser(userId, "user" + userId + "@test.com", "Test User " + userId);
         }
     }
 
@@ -148,6 +154,64 @@ public class PlacementServiceLocalImpl implements PlacementService {
     }
 
     private String generateDummyPaperJson(String subjectCode) {
+        // Lấy câu hỏi từ database thay vì hardcode
+        List<QuestionBank> questions = questionBankRepository.findBySubjectIdAndLevelAndIsActiveTrue(
+            getSubjectIdByCode(subjectCode), com.compassed.compassed_api.domain.QuestionBank.Level.L1);
+        
+        if (questions.isEmpty()) {
+            // Fallback to dummy if no questions in DB
+            return generateFallbackPaperJson(subjectCode);
+        }
+        
+        // Chọn random 10 câu (hoặc ít hơn nếu không đủ)
+        List<QuestionBank> selectedQuestions = selectRandomQuestions(questions, 10);
+        
+        List<Map<String, Object>> paper = new ArrayList<>();
+        for (QuestionBank q : selectedQuestions) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", q.getId());
+            item.put("q", q.getQuestionText());
+            
+            // Parse options từ JSON string
+            try {
+                List<String> options = objectMapper.readValue(q.getOptions(), new TypeReference<List<String>>() {});
+                item.put("options", options);
+            } catch (Exception e) {
+                item.put("options", List.of("A. Option A", "B. Option B", "C. Option C", "D. Option D"));
+            }
+            
+            item.put("correct", q.getCorrectAnswer());
+            item.put("skill", q.getSkillType());
+            paper.add(item);
+        }
+        
+        try {
+            return objectMapper.writeValueAsString(paper);
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot generate paper json");
+        }
+    }
+    
+    private Long getSubjectIdByCode(String code) {
+        // Math=1, Literature=2, English=3
+        return switch (code.toUpperCase()) {
+            case "MATH", "MATHEMATICS" -> 1L;
+            case "LIT", "LITERATURE" -> 2L;
+            case "ENG", "ENGLISH" -> 3L;
+            default -> 1L;
+        };
+    }
+    
+    private List<QuestionBank> selectRandomQuestions(List<QuestionBank> questions, int count) {
+        if (questions.size() <= count) {
+            return questions;
+        }
+        List<QuestionBank> shuffled = new ArrayList<>(questions);
+        java.util.Collections.shuffle(shuffled);
+        return shuffled.subList(0, count);
+    }
+    
+    private String generateFallbackPaperJson(String subjectCode) {
         List<Map<String, Object>> paper = new ArrayList<>();
         String[] opts = new String[] { "A", "B", "C", "D" };
         Random rnd = new Random();
@@ -165,5 +229,18 @@ public class PlacementServiceLocalImpl implements PlacementService {
         } catch (Exception e) {
             throw new RuntimeException("Cannot generate paper json");
         }
+    }
+    
+    @Override
+    public int checkFreeAttempts(Long userId, Long subjectId) {
+        ensureUserExists(userId);
+        boolean hasUsedFree = localDataStore.hasUsedFreeAttempt(userId, subjectId);
+        return hasUsedFree ? 0 : 1;
+    }
+    
+    @Override
+    public void decrementFreeAttempts(Long userId, Long subjectId) {
+        ensureUserExists(userId);
+        localDataStore.markFreeAttemptUsed(userId, subjectId);
     }
 }
