@@ -40,23 +40,22 @@ public class PlacementServiceLocalImpl implements PlacementService {
     }
 
     @Override
-    public PlacementStartResponse startPlacement(Long userId, Long subjectId) {
+    public PlacementStartResponse startPlacement(Long userId, Long subjectId, Integer gradeLevel) {
         ensureUserExists(userId);
         SubjectInfo subject = localDataStore.getSubject(subjectId);
         if (subject == null) {
             throw new RuntimeException("Subject not found: " + subjectId);
         }
 
-        // Tạm thời tắt check subscription để test
-        // boolean hasUsedFreeAttempt = localDataStore.hasUsedFreeAttempt(userId, subjectId);
-        // if (hasUsedFreeAttempt && !localDataStore.hasActiveSubscription(userId, subjectId)) {
-        //     throw new RuntimeException("PAYMENT_REQUIRED: Need subscription to start placement");
-        // }
-        // if (!hasUsedFreeAttempt) {
-        //     localDataStore.markFreeAttemptUsed(userId, subjectId);
-        // }
+        int grade = gradeLevel != null ? gradeLevel : 10;
+        // Kiểm tra xem có câu hỏi nào trong QuestionBank không
+        List<QuestionBank> questions = questionBankRepository.findBySubjectIdAndLevelAndGradeLevelAndIsActiveTrue(
+                subjectId, QuestionBank.Level.L1, grade);
+        if (questions.isEmpty()) {
+            throw new RuntimeException("No questions found for subject: " + subjectId);
+        }
 
-        String paperJson = generateDummyPaperJson(subject.code());
+        String paperJson = generateDummyPaperJson(subject.code(), grade);
         PlacementAttemptMem attempt = new PlacementAttemptMem();
         attempt.setId(localDataStore.nextAttemptId());
         attempt.setUserId(userId);
@@ -118,10 +117,10 @@ public class PlacementServiceLocalImpl implements PlacementService {
     }
 
     private Level decideLevel(double scorePercent) {
-        if (scorePercent < 40.0) {
+        if (scorePercent < 50.0) {
             return Level.L1;
         }
-        if (scorePercent < 70.0) {
+        if (scorePercent < 90.0) {
             return Level.L2;
         }
         return Level.L3;
@@ -153,18 +152,18 @@ public class PlacementServiceLocalImpl implements PlacementService {
         }
     }
 
-    private String generateDummyPaperJson(String subjectCode) {
+    private String generateDummyPaperJson(String subjectCode, int gradeLevel) {
         // Lấy câu hỏi từ database thay vì hardcode
-        List<QuestionBank> questions = questionBankRepository.findBySubjectIdAndLevelAndIsActiveTrue(
-            getSubjectIdByCode(subjectCode), com.compassed.compassed_api.domain.QuestionBank.Level.L1);
+        List<QuestionBank> questions = questionBankRepository.findBySubjectIdAndLevelAndGradeLevelAndIsActiveTrue(
+            getSubjectIdByCode(subjectCode), com.compassed.compassed_api.domain.QuestionBank.Level.L1, gradeLevel);
         
         if (questions.isEmpty()) {
             // Fallback to dummy if no questions in DB
-            return generateFallbackPaperJson(subjectCode);
+            return generateFallbackPaperJson(subjectCode, gradeLevel);
         }
         
-        // Chọn random 10 câu (hoặc ít hơn nếu không đủ)
-        List<QuestionBank> selectedQuestions = selectRandomQuestions(questions, 10);
+        // Chọn random 50 câu (hoặc ít hơn nếu không đủ)
+        List<QuestionBank> selectedQuestions = selectRandomQuestions(questions, 50);
         
         List<Map<String, Object>> paper = new ArrayList<>();
         for (QuestionBank q : selectedQuestions) {
@@ -183,6 +182,28 @@ public class PlacementServiceLocalImpl implements PlacementService {
             item.put("correct", q.getCorrectAnswer());
             item.put("skill", q.getSkillType());
             paper.add(item);
+        }
+
+        // Nếu chưa đủ 50 câu, bổ sung câu hỏi dummy để đủ số lượng
+        if (paper.size() < 50) {
+            long maxId = 0L;
+            for (QuestionBank q : selectedQuestions) {
+                if (q.getId() != null && q.getId() > maxId) {
+                    maxId = q.getId();
+                }
+            }
+            String[] opts = new String[] { "A", "B", "C", "D" };
+            Random rnd = new Random();
+            int remain = 50 - paper.size();
+            for (int i = 1; i <= remain; i++) {
+                Map<String, Object> extra = new LinkedHashMap<>();
+                extra.put("id", maxId + i);
+                extra.put("q", "[" + subjectCode + "] Câu bổ sung " + i + " (demo)");
+                extra.put("options", List.of("A. Option A", "B. Option B", "C. Option C", "D. Option D"));
+                extra.put("correct", opts[rnd.nextInt(opts.length)]);
+                extra.put("skill", "topic_demo");
+                paper.add(extra);
+            }
         }
         
         try {
@@ -211,14 +232,14 @@ public class PlacementServiceLocalImpl implements PlacementService {
         return shuffled.subList(0, count);
     }
     
-    private String generateFallbackPaperJson(String subjectCode) {
+    private String generateFallbackPaperJson(String subjectCode, int gradeLevel) {
         List<Map<String, Object>> paper = new ArrayList<>();
         String[] opts = new String[] { "A", "B", "C", "D" };
         Random rnd = new Random();
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= 50; i++) {
             Map<String, Object> q = new LinkedHashMap<>();
             q.put("id", i);
-            q.put("q", "[" + subjectCode + "] Question " + i + " (demo)");
+            q.put("q", "[" + subjectCode + " | Lớp " + gradeLevel + "] Question " + i + " (demo)");
             q.put("options", List.of("A. Option A", "B. Option B", "C. Option C", "D. Option D"));
             q.put("correct", opts[rnd.nextInt(opts.length)]);
             q.put("skill", "topic_demo");

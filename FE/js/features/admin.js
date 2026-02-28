@@ -739,6 +739,12 @@ async function initAdmin() {
   bindAction("admin-nav-notifications", showNotificationCenterModal);
   bindAction("admin-nav-analytics", showAiLogsModal);
 
+  // Question Bank - allow normal navigation
+  const questionBankLink = document.getElementById("admin-nav-question-bank");
+  if (questionBankLink) {
+    // Don't prevent default - let it navigate normally
+  }
+
   const overviewLink = document.getElementById("admin-nav-overview");
   if (overviewLink) {
     overviewLink.addEventListener("click", (e) => {

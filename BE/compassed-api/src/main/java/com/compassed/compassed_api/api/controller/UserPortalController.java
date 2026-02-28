@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.compassed.compassed_api.api.dto.UpdateMyProfileRequest;
 import com.compassed.compassed_api.api.dto.ChangeMyPasswordRequest;
 import com.compassed.compassed_api.domain.entity.PlacementResult;
+import com.compassed.compassed_api.domain.entity.Subject;
+import com.compassed.compassed_api.domain.entity.Subscription;
 import com.compassed.compassed_api.domain.entity.User;
 import com.compassed.compassed_api.domain.entity.UserProfile;
 import com.compassed.compassed_api.domain.entity.UserRoadmapAssignment;
@@ -213,8 +215,8 @@ public class UserPortalController {
     @GetMapping("/subscriptions")
     public Map<String, Object> mySubscriptions() {
         Long userId = currentUserService.requireCurrentUserId();
-        var active = subscriptionRepository.findByUser_IdAndActiveTrue(userId);
-        var activeIds = active.stream().map(s -> s.getSubject().getId()).toList();
+        var active = subscriptionRepository.findByUserIdAndIsActiveTrue(userId);
+        var activeIds = active.stream().map(Subscription::getSubjectId).toList();
         var available = subjectRepository.findAll().stream()
                 .filter(s -> !activeIds.contains(s.getId()))
                 .map(s -> Map.of(
@@ -223,16 +225,19 @@ public class UserPortalController {
                         "subjectName", s.getName()))
                 .toList();
         var activeRows = active.stream().map(s -> {
-            var assigned = assignmentRepository.findByUser_IdAndSubject_Id(userId, s.getSubject().getId()).orElse(null);
+            Subject subject = subjectRepository.findById(s.getSubjectId()).orElse(null);
+            if (subject == null) return null;
+            
+            var assigned = assignmentRepository.findByUserIdAndSubjectId(userId, s.getSubjectId()).orElse(null);
             Map<String, Object> item = new LinkedHashMap<>();
-            item.put("subjectId", s.getSubject().getId());
-            item.put("subjectCode", s.getSubject().getCode());
-            item.put("subjectName", s.getSubject().getName());
+            item.put("subjectId", subject.getId());
+            item.put("subjectCode", subject.getCode());
+            item.put("subjectName", subject.getName());
             item.put("phase", assigned == null ? "NOT_STARTED" : assigned.getPhase());
             item.put("level", assigned == null ? "" : assigned.getRoadmap().getLevel().name());
-            item.put("active", s.isActive());
+            item.put("active", s.getIsActive());
             return item;
-        }).toList();
+        }).filter(item -> item != null).toList();
         return Map.of(
                 "activeSubscriptions", activeRows,
                 "availableSubjects", available);
@@ -439,6 +444,6 @@ public class UserPortalController {
                 "targetScore", profile.getTargetScore() == null ? 75 : profile.getTargetScore(),
                 "notifyEmail", profile.isNotifyEmail(),
                 "notifyInApp", profile.isNotifyInApp(),
-                "activeSubjects", subscriptionRepository.findByUser_IdAndActiveTrue(user.getId()).size());
+                "activeSubjects", subscriptionRepository.findByUserIdAndIsActiveTrue(user.getId()).size());
     }
 }

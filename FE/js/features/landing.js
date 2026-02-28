@@ -1,4 +1,4 @@
-﻿import { api, checkSession, clearAuth, getAuth, getSubjectId, goAuthWithRedirect, nav, toast, formatVnd } from "./core.js";
+import { api, checkSession, clearAuth, getAuth, getSubjectId, goAuthWithRedirect, nav, toast, formatVnd } from "./core.js";
 import { t } from "./i18n.js";
 import { openInlineProfilePanel } from "./inlineProfilePanel.js";
 
@@ -367,18 +367,20 @@ function initLanding() {
 
   const navByPlacementStatus = async (subjectId) => {
     localStorage.setItem("compassed_subject_id", String(subjectId));
+    const gradeKey = `compassed_grade_level_${subjectId}`;
+    const gradeLevel = Number(localStorage.getItem(gradeKey) || 10);
     try {
       const rows = await api("/api/history/placements", "GET", null, true);
-      const hasPlacement = Array.isArray(rows) && rows.some((x) => Number(x.subjectId) === Number(subjectId));
+      const hasPlacement = Array.isArray(rows) && rows.length > 0;
       if (hasPlacement) {
-        toast("Bạn đã làm placement môn này. Chuyển đến roadmap.");
-        nav("/learning-roadmap", "coursesDetail.html");
+        toast("Bạn đã làm placement. Chuyển đến roadmap.");
+        nav("/roadmap-dashboard", "roadmapDashboard.html");
         return;
       }
     } catch (e) {
       // Fallback to placement flow if history endpoint cannot be loaded.
     }
-    nav(`/placement-test?subjectId=${subjectId}`, `placementTest.html?subjectId=${subjectId}`);
+    nav(`/placement-test?subjectId=${subjectId}&grade=${gradeLevel}`, `placementTest.html?subjectId=${subjectId}&grade=${gradeLevel}`);
   };
 
   ["landing-start-learning", "landing-get-started-bottom"].forEach((id) => {
