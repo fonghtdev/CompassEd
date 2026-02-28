@@ -4,6 +4,7 @@ import {
   GOOGLE_CLIENT_ID,
   hideLoading,
   nav,
+  currentRole,
   redirectAfterAuthDefault,
   saveAuth,
   showLoading,
@@ -105,36 +106,41 @@ function chooseSubjectForPlacement(subjects) {
   });
 }
 
-async function handleFirstLoginAfterRegister(user) {
-  if (user) localStorage.setItem(onboardingKey(user), "1");
-  const shouldDoPlacement = await askPlacementChoice();
-  if (!shouldDoPlacement) {
-    clearAfterAuthRedirect();
-    nav("/landing", "landingPage.html");
+function resolvePlacementSubjectId() {
+  const stored = Number(localStorage.getItem("compassed_subject_id"));
+  if (stored) return stored;
+  return 1;
+}
+
+function resolvePlacementGrade(subjectId) {
+  const key = `compassed_grade_level_${subjectId}`;
+  return Number(localStorage.getItem(key) || 10);
+}
+
+async function redirectToPlacementAfterAuth() {
+  if (currentRole() === "ADMIN") {
+    redirectAfterAuthDefault();
     return;
   }
   try {
-    const subjects = await api("/api/subjects", "GET", null, false);
-    if (!subjects || !subjects.length) {
-      toast("Không tải được danh sách môn. Chuyển về landing.", "warn");
+    const rows = await api("/api/history/placements", "GET", null, true);
+    if (Array.isArray(rows) && rows.length > 0) {
       clearAfterAuthRedirect();
-      nav("/landing", "landingPage.html");
+      nav("/roadmap-dashboard", "roadmapDashboard.html");
       return;
     }
-    const subjectId = await chooseSubjectForPlacement(subjects);
-    if (!subjectId) {
-      clearAfterAuthRedirect();
-      nav("/landing", "landingPage.html");
-      return;
-    }
-    localStorage.setItem("compassed_subject_id", String(subjectId));
-    clearAfterAuthRedirect();
-    nav(`/placement-test?subjectId=${subjectId}`, `placementTest.html?subjectId=${subjectId}`);
-  } catch (err) {
-    toast(`Không tải được môn học: ${err.message}`, "error");
-    clearAfterAuthRedirect();
-    nav("/landing", "landingPage.html");
+  } catch (e) {
+    // ignore and continue to placement
   }
+  const subjectId = resolvePlacementSubjectId();
+  const gradeLevel = resolvePlacementGrade(subjectId);
+  clearAfterAuthRedirect();
+  nav(`/placement-test?subjectId=${subjectId}&grade=${gradeLevel}`, `placementTest.html?subjectId=${subjectId}&grade=${gradeLevel}`);
+}
+
+async function handleFirstLoginAfterRegister(user) {
+  if (user) localStorage.setItem(onboardingKey(user), "1");
+  await redirectToPlacementAfterAuth();
 }
 
 function setupAuthTabs() {
@@ -162,7 +168,7 @@ function setupAuthTabs() {
 
 function initAuth() {
   checkSession().then((ok) => {
-    if (ok) redirectAfterAuthDefault();
+    if (ok) redirectToPlacementAfterAuth();
   });
   setupAuthTabs();
 
@@ -177,7 +183,7 @@ function initAuth() {
         const resp = await api("/api/auth/login", "POST", { email, password }, false);
         saveAuth(resp);
         toast("Login successful");
-        redirectAfterAuthDefault();
+        redirectToPlacementAfterAuth();
       } catch (err) {
         toast(`Login failed: ${err.message}`, "error");
       } finally {
@@ -219,7 +225,7 @@ function initAuth() {
         const resp = await api("/api/auth/oauth/mock", "POST", { provider: "github", email, fullName }, false);
         saveAuth(resp);
         toast("GitHub login successful");
-        redirectAfterAuthDefault();
+        redirectToPlacementAfterAuth();
       } catch (err) {
         toast(`GitHub login failed: ${err.message}`, "error");
       } finally {
@@ -237,7 +243,7 @@ function initAuth() {
           const resp = await api("/api/auth/oauth/google", "POST", { idToken: response.credential }, false);
           saveAuth(resp);
           toast("Google login successful");
-          redirectAfterAuthDefault();
+          redirectToPlacementAfterAuth();
         } catch (err) {
           toast(`Google login failed: ${err.message}`, "error");
         } finally {

@@ -33,6 +33,7 @@ public class AdminQuestionBankController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllQuestions(
             @RequestParam(required = false) Long subjectId,
+            @RequestParam(required = false) Integer gradeLevel,
             @RequestParam(required = false) Level level,
             @RequestParam(required = false) String skillType,
             @RequestParam(required = false) Boolean isActive,
@@ -45,7 +46,7 @@ public class AdminQuestionBankController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
         
         Page<QuestionBankDTO> result = questionBankService.getAllQuestions(
-            subjectId, level, skillType, isActive, pageable);
+            subjectId, level, skillType, isActive, gradeLevel, pageable);
         
         Map<String, Object> response = new HashMap<>();
         response.put("questions", result.getContent());

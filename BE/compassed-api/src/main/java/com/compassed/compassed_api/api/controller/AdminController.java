@@ -99,7 +99,7 @@ public class AdminController {
     public Map<String, Object> overview() {
         long totalUsers = userRepository.count();
         long totalSubjects = subjectRepository.count();
-        long activeSubscriptions = subscriptionRepository.countByActiveTrue();
+        long activeSubscriptions = subscriptionRepository.countByIsActiveTrue();
         long totalPlacementResults = placementResultRepository.count();
         long passedPlacements = placementResultRepository.countPassed();
         Double avgScore = placementResultRepository.averageScorePercent();

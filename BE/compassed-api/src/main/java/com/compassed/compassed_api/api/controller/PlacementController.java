@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.compassed.compassed_api.api.dto.PlacementStartResponse;
@@ -27,10 +28,11 @@ public class PlacementController {
     // Start placement
     @PostMapping("/subjects/{subjectId}/placement-tests")
     public PlacementStartResponse start(
-            @PathVariable Long subjectId
+            @PathVariable Long subjectId,
+            @RequestParam(required = false) Integer gradeLevel
     ) {
         Long userId = currentUserService.requireCurrentUserId();
-        return placementService.startPlacement(userId, subjectId);
+        return placementService.startPlacement(userId, subjectId, gradeLevel);
     }
 
     // Submit placement

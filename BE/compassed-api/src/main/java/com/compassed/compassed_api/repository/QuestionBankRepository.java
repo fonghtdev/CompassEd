@@ -17,13 +17,13 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, Long
     /**
      * Tìm câu hỏi theo subject và level
      */
-    List<QuestionBank> findBySubjectIdAndLevelAndIsActiveTrue(Long subjectId, Level level);
+    List<QuestionBank> findBySubjectIdAndLevelAndGradeLevelAndIsActiveTrue(Long subjectId, Level level, Integer gradeLevel);
 
     /**
      * Tìm câu hỏi theo subject, level và skill type
      */
-    List<QuestionBank> findBySubjectIdAndLevelAndSkillTypeAndIsActiveTrue(
-            Long subjectId, Level level, String skillType);
+    List<QuestionBank> findBySubjectIdAndLevelAndGradeLevelAndSkillTypeAndIsActiveTrue(
+            Long subjectId, Level level, Integer gradeLevel, String skillType);
 
     /**
      * Random N câu hỏi theo subject và level
@@ -31,12 +31,14 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, Long
     @Query(value = "SELECT * FROM question_bank " +
             "WHERE subject_id = :subjectId " +
             "AND level = :level " +
+            "AND grade_level = :gradeLevel " +
             "AND is_active = 1 " +
             "ORDER BY RAND() " +
             "LIMIT :limit", nativeQuery = true)
     List<QuestionBank> findRandomQuestions(
             @Param("subjectId") Long subjectId,
             @Param("level") String level,
+            @Param("gradeLevel") int gradeLevel,
             @Param("limit") int limit);
 
     /**
@@ -45,6 +47,7 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, Long
     @Query(value = "SELECT * FROM question_bank " +
             "WHERE subject_id = :subjectId " +
             "AND level = :level " +
+            "AND grade_level = :gradeLevel " +
             "AND skill_type = :skillType " +
             "AND is_active = 1 " +
             "ORDER BY RAND() " +
@@ -52,6 +55,7 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, Long
     List<QuestionBank> findRandomQuestionsBySkill(
             @Param("subjectId") Long subjectId,
             @Param("level") String level,
+            @Param("gradeLevel") int gradeLevel,
             @Param("skillType") String skillType,
             @Param("limit") int limit);
 

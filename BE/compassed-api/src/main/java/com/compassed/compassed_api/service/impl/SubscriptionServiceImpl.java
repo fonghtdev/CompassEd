@@ -86,13 +86,21 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         List<SubscribeItemResponse> items = new ArrayList<>();
 
         for (Subject subject : subjects) {
-            Subscription sub = subscriptionRepository.findByUser_IdAndSubject_Id(userId, subject.getId())
-                    .orElseGet(Subscription::new);
-
-            sub.setUser(user);
-            sub.setSubject(subject);
-            sub.setActive(true);
-            sub.setActivatedAt(LocalDateTime.now());
+            Subscription sub = subscriptionRepository.findByUserIdAndSubjectId(userId, subject.getId())
+                    .orElseGet(() -> Subscription.builder()
+                            .userId(userId)
+                            .subjectId(subject.getId())
+                            .packageId(0L) // TODO: Get from actual package
+                            .paymentId(0L) // TODO: Get from actual payment
+                            .startDate(LocalDateTime.now())
+                            .endDate(LocalDateTime.now().plusYears(1))
+                            .isActive(true)
+                            .placementUnlocked(false)
+                            .createdAt(LocalDateTime.now())
+                            .build());
+            
+            sub.setIsActive(true);
+            sub.setUpdatedAt(LocalDateTime.now());
             subscriptionRepository.save(sub);
 
             // Nếu có placement thì assign roadmap theo level
@@ -111,7 +119,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                                 "Roadmap not found for subject=" + subject.getId() + ", level=" + level));
 
                 UserRoadmapAssignment assignment = assignmentRepository
-                        .findByUser_IdAndSubject_Id(userId, subject.getId())
+                        .findByUserIdAndSubjectId(userId, subject.getId())
                         .orElseGet(UserRoadmapAssignment::new);
 
                 assignment.setUser(user);

@@ -31,6 +31,7 @@ public class UserQuestionBankController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getQuestions(
             @RequestParam(required = false) Long subjectId,
+            @RequestParam(required = false) Integer gradeLevel,
             @RequestParam(required = false) Level level,
             @RequestParam(required = false) String skillType,
             @RequestParam(defaultValue = "0") int page,
@@ -42,7 +43,7 @@ public class UserQuestionBankController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
         Page<QuestionBankDTO> result = questionBankService.getAllQuestions(
-                subjectId, level, skillType, true, pageable);
+                subjectId, level, skillType, true, gradeLevel, pageable);
 
         Map<String, Object> response = new HashMap<>();
         response.put("questions", result.getContent());
