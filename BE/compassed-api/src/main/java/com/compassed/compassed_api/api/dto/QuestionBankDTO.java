@@ -9,6 +9,7 @@ public class QuestionBankDTO {
     private Long subjectId;
     private String subjectName;
     private Level level;
+    private String gradeBand;
     private String skillType;
     private QuestionType questionType;
     private String questionText;
@@ -52,6 +53,14 @@ public class QuestionBankDTO {
 
     public void setLevel(Level level) {
         this.level = level;
+    }
+
+    public String getGradeBand() {
+        return gradeBand;
+    }
+
+    public void setGradeBand(String gradeBand) {
+        this.gradeBand = gradeBand;
     }
 
     public String getSkillType() {
