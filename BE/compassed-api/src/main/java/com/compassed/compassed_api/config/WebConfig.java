@@ -23,7 +23,11 @@ public class WebConfig implements WebMvcConfigurer {
                         "http://127.0.0.1:5000",
                         "http://localhost:5000",
                         "http://127.0.0.1:3000",
-                        "http://localhost:3000")
+                        "http://localhost:3000",
+                        "https://compassed.io.vn",
+                        "https://www.compassed.io.vn",
+                        "http://compassed.io.vn",
+                        "http://www.compassed.io.vn")
                 .allowedMethods("GET","POST","PUT","DELETE","OPTIONS")
                 .allowedHeaders("*");
     }

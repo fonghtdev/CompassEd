@@ -11,4 +11,11 @@ public interface AiService {
             String subjectCode,
             String level,
             int questionCount);
+
+    String generatePersonalizedRoadmapGuide(
+            String subjectCode,
+            String level,
+            String academicTrack,
+            double placementScorePercent,
+            String availableSkillsJson);
 }
