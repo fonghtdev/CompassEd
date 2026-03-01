@@ -1,12 +1,16 @@
 package com.compassed.compassed_api.api.controller;
 
+import com.compassed.compassed_api.security.CurrentUserService;
 import com.compassed.compassed_api.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -15,6 +19,7 @@ import java.util.Map;
 public class PaymentController {
     
     private final PaymentService paymentService;
+    private final CurrentUserService currentUserService;
     
     /**
      * Create payment
@@ -24,7 +29,7 @@ public class PaymentController {
     @PostMapping("/create")
     public ResponseEntity<?> createPayment(@RequestBody Map<String, Object> request) {
         try {
-            Long userId = Long.parseLong(request.get("userId").toString());
+            Long userId = currentUserService.requireCurrentUserId();
             Long subjectId = Long.parseLong(request.get("subjectId").toString());
             String packageType = request.get("packageType").toString();
             
@@ -44,11 +49,40 @@ public class PaymentController {
     @GetMapping("/{paymentId}/status")
     public ResponseEntity<?> getPaymentStatus(@PathVariable Long paymentId) {
         try {
-            Map<String, Object> result = paymentService.getPaymentStatus(paymentId);
+            Long userId = currentUserService.requireCurrentUserId();
+            Map<String, Object> result = paymentService.getPaymentStatusForUser(userId, paymentId);
             return ResponseEntity.ok(result);
             
         } catch (Exception e) {
             log.error("Error getting payment status", e);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/checkout-qr")
+    public ResponseEntity<?> createCheckoutQr(@RequestBody Map<String, Object> request) {
+        try {
+            Long userId = currentUserService.requireCurrentUserId();
+            List<Long> subjectIds = extractSubjectIds(request);
+            Map<String, Object> result = paymentService.createCheckoutQrPayment(userId, subjectIds);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error creating checkout qr payment", e);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{paymentId}/submit-transfer")
+    public ResponseEntity<?> submitTransfer(
+            @PathVariable Long paymentId,
+            @RequestBody(required = false) Map<String, Object> request) {
+        try {
+            Long userId = currentUserService.requireCurrentUserId();
+            String transferNote = request == null ? null : Objects.toString(request.get("transferNote"), null);
+            Map<String, Object> result = paymentService.submitTransfer(userId, paymentId, transferNote);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error submitting transfer", e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
@@ -77,5 +111,20 @@ public class PaymentController {
     @GetMapping("/callback/vnpay")
     public ResponseEntity<?> vnpayCallbackGet(@RequestParam Map<String, String> params) {
         return vnpayCallback(params);
+    }
+
+    private List<Long> extractSubjectIds(Map<String, Object> request) {
+        if (request == null || request.get("subjectIds") == null) {
+            return Collections.emptyList();
+        }
+        Object raw = request.get("subjectIds");
+        if (!(raw instanceof List<?> list)) {
+            return Collections.emptyList();
+        }
+        return list.stream()
+                .filter(Objects::nonNull)
+                .map(Object::toString)
+                .map(Long::parseLong)
+                .toList();
     }
 }
