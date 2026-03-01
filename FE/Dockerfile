@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11-bookworm
 
 WORKDIR /app
 
@@ -6,7 +6,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-RUN chmod +x /app/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && chmod +x /app/docker-entrypoint.sh
 
 ENV FE_HOST=0.0.0.0
 ENV FE_PORT=3000
