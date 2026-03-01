@@ -29,6 +29,9 @@ public class QuestionBank {
     @Enumerated(EnumType.STRING)
     private QuestionType questionType;
 
+    @Column(name = "grade_band", length = 20)
+    private String gradeBand; // GRADE_11, GRADE_12, UNI_PREP
+
     @Column(name = "question_text", nullable = false, columnDefinition = "TEXT")
     private String questionText;
 
@@ -113,6 +116,14 @@ public class QuestionBank {
 
     public void setQuestionType(QuestionType questionType) {
         this.questionType = questionType;
+    }
+
+    public String getGradeBand() {
+        return gradeBand;
+    }
+
+    public void setGradeBand(String gradeBand) {
+        this.gradeBand = gradeBand;
     }
 
     public String getQuestionText() {

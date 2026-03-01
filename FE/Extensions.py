@@ -69,5 +69,9 @@ def admin_dashboard():
 def admin_question_bank():
     return render_template("admin/adminQuestionBank.html")
 if __name__ == "__main__":
-    app.run(debug=True, port=int(os.getenv("FE_PORT", "3000")))
+    app.run(
+        host=os.getenv("FE_HOST", "0.0.0.0"),
+        debug=True,
+        port=int(os.getenv("FE_PORT", "3000")),
+    )
 
