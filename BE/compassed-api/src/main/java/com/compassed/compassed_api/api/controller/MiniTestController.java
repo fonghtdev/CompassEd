@@ -13,7 +13,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/mini-tests")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Slf4j
 public class MiniTestController {

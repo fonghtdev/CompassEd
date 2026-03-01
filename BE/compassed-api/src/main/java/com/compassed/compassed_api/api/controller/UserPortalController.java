@@ -15,28 +15,33 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.compassed.compassed_api.api.dto.UpdateMyProfileRequest;
+import com.compassed.compassed_api.api.dto.AiGeneratedRoadmapResponse;
 import com.compassed.compassed_api.api.dto.ChangeMyPasswordRequest;
+import com.compassed.compassed_api.api.dto.UpdateMyProfileRequest;
 import com.compassed.compassed_api.domain.entity.PlacementResult;
+import com.compassed.compassed_api.domain.entity.Subject;
 import com.compassed.compassed_api.domain.entity.User;
 import com.compassed.compassed_api.domain.entity.UserProfile;
 import com.compassed.compassed_api.domain.entity.UserRoadmapAssignment;
 import com.compassed.compassed_api.local.QuestionBank;
-import com.compassed.compassed_api.repository.NotificationRepository;
 import com.compassed.compassed_api.repository.FinalTestAttemptRepository;
+import com.compassed.compassed_api.repository.NotificationRepository;
 import com.compassed.compassed_api.repository.PlacementResultRepository;
-import com.compassed.compassed_api.repository.SubscriptionRepository;
+import com.compassed.compassed_api.repository.QuestionBankRepository;
 import com.compassed.compassed_api.repository.SubjectRepository;
+import com.compassed.compassed_api.repository.SubscriptionRepository;
 import com.compassed.compassed_api.repository.UserProfileRepository;
 import com.compassed.compassed_api.repository.UserProgressRepository;
 import com.compassed.compassed_api.repository.UserRepository;
 import com.compassed.compassed_api.repository.UserRoadmapAssignmentRepository;
 import com.compassed.compassed_api.security.CurrentUserService;
+import com.compassed.compassed_api.service.AiService;
 import com.compassed.compassed_api.service.LoginActivityService;
 import com.compassed.compassed_api.service.RoleAccessService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -57,8 +62,10 @@ public class UserPortalController {
     private final SubjectRepository subjectRepository;
     private final NotificationRepository notificationRepository;
     private final FinalTestAttemptRepository finalTestAttemptRepository;
+    private final QuestionBankRepository questionBankRepository;
     private final RoleAccessService roleAccessService;
     private final LoginActivityService loginActivityService;
+    private final AiService aiService;
     private final ObjectMapper objectMapper;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -73,8 +80,10 @@ public class UserPortalController {
             SubjectRepository subjectRepository,
             NotificationRepository notificationRepository,
             FinalTestAttemptRepository finalTestAttemptRepository,
+            QuestionBankRepository questionBankRepository,
             RoleAccessService roleAccessService,
             LoginActivityService loginActivityService,
+            AiService aiService,
             ObjectMapper objectMapper) {
         this.currentUserService = currentUserService;
         this.userRepository = userRepository;
@@ -86,8 +95,10 @@ public class UserPortalController {
         this.subjectRepository = subjectRepository;
         this.notificationRepository = notificationRepository;
         this.finalTestAttemptRepository = finalTestAttemptRepository;
+        this.questionBankRepository = questionBankRepository;
         this.roleAccessService = roleAccessService;
         this.loginActivityService = loginActivityService;
+        this.aiService = aiService;
         this.objectMapper = objectMapper;
     }
 
@@ -115,6 +126,9 @@ public class UserPortalController {
             if (request.getTargetScore() != null) {
                 int target = Math.max(0, Math.min(100, request.getTargetScore()));
                 profile.setTargetScore(target);
+            }
+            if (request.getAcademicTrack() != null) {
+                profile.setAcademicTrack(normalizeAcademicTrack(request.getAcademicTrack()));
             }
             if (request.getNotifyEmail() != null) {
                 profile.setNotifyEmail(Boolean.TRUE.equals(request.getNotifyEmail()));
@@ -252,6 +266,65 @@ public class UserPortalController {
                 "studyStreakDays", streak);
     }
 
+    @GetMapping("/subjects/{subjectId}/ai-roadmap")
+    public AiGeneratedRoadmapResponse generateAiRoadmap(@PathVariable Long subjectId) {
+        Long userId = currentUserService.requireCurrentUserId();
+        User user = getUser(userId);
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new RuntimeException("Subject not found"));
+        UserProfile profile = getOrCreateProfile(user);
+        String academicTrack = normalizeAcademicTrack(profile.getAcademicTrack());
+
+        PlacementResult placement = placementResultRepository
+                .findTopByUser_IdAndSubject_IdOrderByCreatedAtDesc(userId, subjectId)
+                .orElseThrow(() -> new RuntimeException("Need placement result before generating AI roadmap"));
+
+        com.compassed.compassed_api.domain.QuestionBank.Level level = com.compassed.compassed_api.domain.QuestionBank.Level
+                .valueOf(placement.getLevel().name());
+
+        List<com.compassed.compassed_api.domain.QuestionBank> qb = questionBankRepository
+                .findBySubjectIdAndLevelAndGradeBandAndIsActiveTrue(subjectId, level, academicTrack);
+        if (qb.isEmpty()) {
+            qb = questionBankRepository.findBySubjectIdAndLevelAndIsActiveTrue(subjectId, level);
+        }
+        if (qb.isEmpty()) {
+            throw new RuntimeException("Question bank is empty for this subject/level/track");
+        }
+
+        List<String> skills = qb.stream()
+                .map(com.compassed.compassed_api.domain.QuestionBank::getSkillType)
+                .filter(s -> s != null && !s.isBlank())
+                .distinct()
+                .toList();
+        String skillsJson = toJsonQuietly(skills);
+        String guide = aiService.generatePersonalizedRoadmapGuide(
+                subject.getCode(),
+                placement.getLevel().name(),
+                academicTrack,
+                placement.getScorePercent() == null ? 0.0 : placement.getScorePercent(),
+                skillsJson);
+
+        List<com.compassed.compassed_api.domain.QuestionBank> shuffled = new ArrayList<>(qb);
+        java.util.Collections.shuffle(shuffled);
+        List<com.compassed.compassed_api.domain.QuestionBank> miniRows = shuffled.stream()
+                .limit(Math.min(10, shuffled.size())).toList();
+        List<com.compassed.compassed_api.domain.QuestionBank> finalRows = shuffled.stream()
+                .limit(Math.min(20, shuffled.size())).toList();
+
+        AiGeneratedRoadmapResponse response = new AiGeneratedRoadmapResponse();
+        response.setSubjectId(subject.getId());
+        response.setSubjectCode(subject.getCode());
+        response.setSubjectName(subject.getName());
+        response.setLevel(placement.getLevel().name());
+        response.setAcademicTrack(academicTrack);
+        response.setPlacementScorePercent(
+                placement.getScorePercent() == null ? 0.0 : round1(placement.getScorePercent()));
+        response.setRoadmapGuideJson(guide);
+        response.setMiniTestDraft(toQuestionItems(miniRows));
+        response.setFinalTestDraft(toQuestionItems(finalRows));
+        return response;
+    }
+
     @GetMapping(value = "/tests/export", produces = "text/csv")
     public ResponseEntity<String> exportTestsCsv() {
         Long userId = currentUserService.requireCurrentUserId();
@@ -273,8 +346,10 @@ public class UserPortalController {
                 .body(csv.toString());
     }
 
-    private Map<String, Object> buildProgressChart(List<PlacementResult> placements, List<UserRoadmapAssignment> assignments) {
-        int roadmapInProgress = (int) assignments.stream().filter(a -> !"COURSE_COMPLETED".equals(a.getPhase())).count();
+    private Map<String, Object> buildProgressChart(List<PlacementResult> placements,
+            List<UserRoadmapAssignment> assignments) {
+        int roadmapInProgress = (int) assignments.stream().filter(a -> !"COURSE_COMPLETED".equals(a.getPhase()))
+                .count();
         int roadmapDone = (int) assignments.stream().filter(a -> "COURSE_COMPLETED".equals(a.getPhase())).count();
         int placementCount = placements.size();
         return Map.of(
@@ -362,7 +437,8 @@ public class UserPortalController {
         }
     }
 
-    private List<String> buildRecommendations(List<UserRoadmapAssignment> assignments, List<PlacementResult> placements) {
+    private List<String> buildRecommendations(List<UserRoadmapAssignment> assignments,
+            List<PlacementResult> placements) {
         List<String> items = new ArrayList<>();
         if (placements.isEmpty()) {
             items.add("Take your first placement test to unlock personalized recommendations.");
@@ -429,6 +505,29 @@ public class UserPortalController {
         return Math.round(x * 10.0) / 10.0;
     }
 
+    private List<AiGeneratedRoadmapResponse.QuestionItem> toQuestionItems(
+            List<com.compassed.compassed_api.domain.QuestionBank> rows) {
+        return rows.stream().map(q -> {
+            AiGeneratedRoadmapResponse.QuestionItem item = new AiGeneratedRoadmapResponse.QuestionItem();
+            item.setQuestionId(q.getId());
+            item.setSkillType(q.getSkillType());
+            item.setQuestionText(q.getQuestionText());
+            item.setOptions(q.getOptions());
+            item.setCorrectAnswer(q.getCorrectAnswer());
+            item.setExplanation(q.getExplanation());
+            item.setDifficulty(q.getDifficulty());
+            return item;
+        }).toList();
+    }
+
+    private String toJsonQuietly(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception ex) {
+            return "[]";
+        }
+    }
+
     private User getUser(Long userId) {
         return userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
     }
@@ -444,6 +543,7 @@ public class UserPortalController {
         created.setTargetScore(75);
         created.setNotifyEmail(false);
         created.setNotifyInApp(true);
+        created.setAcademicTrack("GRADE_11");
         created.setUpdatedAt(LocalDateTime.now());
         return userProfileRepository.save(created);
     }
@@ -456,8 +556,19 @@ public class UserPortalController {
                 "role", roleAccessService.resolveRoleName(user),
                 "learningGoal", profile.getLearningGoal() == null ? "" : profile.getLearningGoal(),
                 "targetScore", profile.getTargetScore() == null ? 75 : profile.getTargetScore(),
+                "academicTrack", profile.getAcademicTrack() == null ? "GRADE_11" : profile.getAcademicTrack(),
                 "notifyEmail", profile.isNotifyEmail(),
                 "notifyInApp", profile.isNotifyInApp(),
                 "activeSubjects", subscriptionRepository.findByUser_IdAndActiveTrue(user.getId()).size());
+    }
+
+    private String normalizeAcademicTrack(String track) {
+        String normalized = track == null ? "" : track.trim().toUpperCase();
+        if (normalized.isBlank())
+            return "GRADE_11";
+        return switch (normalized) {
+            case "GRADE_11", "GRADE_12", "UNI_PREP" -> normalized;
+            default -> throw new RuntimeException("academicTrack must be GRADE_11, GRADE_12 or UNI_PREP");
+        };
     }
 }
