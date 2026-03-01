@@ -27,6 +27,17 @@ services:
       MYSQL_PASSWORD: 1234
       JWT_SECRET: this-is-a-very-strong-jwt-secret-min-32
       SERVER_PORT: 8080
+      CHECKOUT_QR_IMAGE_URL: https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=CompassED_Payment_Placeholder
+      CHECKOUT_QR_ACCOUNT_NAME: COMPASSED
+      CHECKOUT_QR_ACCOUNT_NO: 8990186866886
+      CHECKOUT_QR_BANK: VietQR
+      CHECKOUT_QR_BANK_BIN: 970422
+      CASSO_ENABLED: "true"
+      CASSO_API_KEY: "aadc0296-82a6-4510-b689-df6605bdb6d7"
+      CASSO_BASE_URL: https://oauth.casso.vn/v2
+      CASSO_ACCOUNT_NUMBER: "8990186866886"
+      CASSO_PAGE_SIZE: 50
+      CASSO_CHECK_COOLDOWN_SECONDS: 20
     ports:
       - "8080:8080"
 

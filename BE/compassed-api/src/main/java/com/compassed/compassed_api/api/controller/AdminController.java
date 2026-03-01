@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.compassed.compassed_api.api.dto.AdminCreateRoadmapRequest;
@@ -45,6 +46,7 @@ import com.compassed.compassed_api.repository.SystemConfigRepository;
 import com.compassed.compassed_api.repository.UserRepository;
 import com.compassed.compassed_api.repository.UserRoadmapAssignmentRepository;
 import com.compassed.compassed_api.security.CurrentUserService;
+import com.compassed.compassed_api.service.PaymentService;
 import com.compassed.compassed_api.service.RoleAccessService;
 
 @RestController
@@ -63,6 +65,7 @@ public class AdminController {
     private final AiGenerationLogRepository aiGenerationLogRepository;
     private final LessonRepository lessonRepository;
     private final MiniTestRepository miniTestRepository;
+    private final PaymentService paymentService;
     private final RoleAccessService roleAccessService;
     private final CurrentUserService currentUserService;
 
@@ -78,6 +81,7 @@ public class AdminController {
             AiGenerationLogRepository aiGenerationLogRepository,
             LessonRepository lessonRepository,
             MiniTestRepository miniTestRepository,
+            PaymentService paymentService,
             RoleAccessService roleAccessService,
             CurrentUserService currentUserService) {
         this.userRepository = userRepository;
@@ -91,6 +95,7 @@ public class AdminController {
         this.aiGenerationLogRepository = aiGenerationLogRepository;
         this.lessonRepository = lessonRepository;
         this.miniTestRepository = miniTestRepository;
+        this.paymentService = paymentService;
         this.roleAccessService = roleAccessService;
         this.currentUserService = currentUserService;
     }
@@ -391,6 +396,24 @@ public class AdminController {
                     item.put("createdAt", n.getCreatedAt());
                     return item;
                 }).toList();
+    }
+
+    @GetMapping("/payments")
+    public List<Map<String, Object>> payments(@RequestParam(required = false) String status) {
+        return paymentService.getPaymentsForAdmin(status);
+    }
+
+    @PostMapping("/payments/{paymentId}/approve")
+    public Map<String, Object> approvePayment(@PathVariable Long paymentId) {
+        return paymentService.approveManualPayment(paymentId);
+    }
+
+    @PostMapping("/payments/{paymentId}/reject")
+    public Map<String, Object> rejectPayment(
+            @PathVariable Long paymentId,
+            @RequestBody(required = false) Map<String, Object> request) {
+        String reason = request == null ? null : String.valueOf(request.getOrDefault("reason", ""));
+        return paymentService.rejectManualPayment(paymentId, reason);
     }
 
     @GetMapping("/ai/logs")
