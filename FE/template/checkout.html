@@ -89,9 +89,9 @@
               <div class="w-full md:w-64 flex flex-col items-center gap-4">
                 <div class="relative p-4 bg-white rounded-2xl border-2 border-slate-100 shadow-inner group">
                   <div class="size-56 bg-slate-50 flex items-center justify-center rounded-lg border-2 border-dashed border-slate-200 overflow-hidden relative">
-                    <span class="material-symbols-outlined text-slate-300 text-6xl group-hover:scale-110 transition-transform duration-500">qr_code_2</span>
+                    <span id="checkout-qr-placeholder" class="material-symbols-outlined text-slate-300 text-6xl group-hover:scale-110 transition-transform duration-500">qr_code_2</span>
                     <div class="absolute inset-0 flex items-center justify-center p-4">
-                      <div class="size-full bg-[url('https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=CompassED_Payment_Placeholder')] bg-cover opacity-90"></div>
+                      <img id="checkout-qr-image" class="size-full object-cover opacity-90 hidden" alt="Checkout QR" />
                     </div>
                   </div>
                 </div>
@@ -105,12 +105,31 @@
                   <h3 class="text-2xl font-black text-slate-900 mb-2">Scan to Pay</h3>
                   <p class="text-slate-500">Open your mobile banking app or e-wallet and scan the QR code to finish your order.</p>
                 </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div class="rounded-lg border border-slate-200 px-3 py-2">
+                    <div class="text-slate-500 text-xs uppercase tracking-wider">Bank</div>
+                    <div id="checkout-bank-name" class="font-semibold text-slate-800">-</div>
+                  </div>
+                  <div class="rounded-lg border border-slate-200 px-3 py-2">
+                    <div class="text-slate-500 text-xs uppercase tracking-wider">Account No</div>
+                    <div id="checkout-account-no" class="font-semibold text-slate-800">-</div>
+                  </div>
+                  <div class="rounded-lg border border-slate-200 px-3 py-2 sm:col-span-2">
+                    <div class="text-slate-500 text-xs uppercase tracking-wider">Account Name</div>
+                    <div id="checkout-account-name" class="font-semibold text-slate-800">-</div>
+                  </div>
+                </div>
+                <div class="rounded-lg border border-slate-200 px-3 py-2">
+                  <div class="text-slate-500 text-xs uppercase tracking-wider">Transfer Content</div>
+                  <div id="checkout-transfer-content" class="font-semibold text-slate-800">-</div>
+                  <p class="text-[11px] text-slate-500 mt-1">Vui lòng giữ nguyên nội dung để hệ thống tự xác nhận.</p>
+                </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div class="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">
                     <span class="material-symbols-outlined text-primary">bolt</span>
                     <div>
                       <p class="font-bold text-sm">Instant Activation</p>
-                      <p class="text-xs text-slate-500">Roadmap unlocks immediately after payment</p>
+                      <p class="text-xs text-slate-500">Roadmap unlocks after admin confirms transfer</p>
                     </div>
                   </div>
                   <div class="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">

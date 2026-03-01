@@ -11,10 +11,13 @@ import java.util.Optional;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByTransactionId(String transactionId);
+    Optional<Payment> findByIdAndUserId(Long id, Long userId);
 
     List<Payment> findByUserIdOrderByCreatedAtDesc(Long userId);
 
     List<Payment> findByStatus(String status);
+    List<Payment> findByStatusOrderByCreatedAtDesc(String status);
+    List<Payment> findAllByOrderByCreatedAtDesc();
 
     long countByUserIdAndStatus(Long userId, String status);
 }
