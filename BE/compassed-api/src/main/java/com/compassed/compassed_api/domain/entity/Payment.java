@@ -31,6 +31,12 @@ public class Payment {
     
     @Column(name = "transaction_id", length = 255)
     private String transactionId;
+
+    @Column(name = "payment_reference", length = 64)
+    private String paymentReference;
+
+    @Column(name = "last_checked_at")
+    private LocalDateTime lastCheckedAt;
     
     @Column(nullable = false, length = 50)
     private String status; // PENDING, SUCCESS, FAILED, CANCELLED
@@ -40,10 +46,16 @@ public class Payment {
     
     @Column(name = "package_type", length = 50)
     private String packageType; // PLACEMENT_PACK, SUBSCRIPTION_MONTHLY, etc.
-    
+
+    @Column(name = "transfer_note", length = 255)
+    private String transferNote;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-    
+
+    @Column(name = "submitted_at")
+    private LocalDateTime submittedAt;
+
     @Column(name = "confirmed_at")
     private LocalDateTime confirmedAt;
     

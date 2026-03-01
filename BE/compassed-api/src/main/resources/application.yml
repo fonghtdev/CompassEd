@@ -32,3 +32,19 @@ auth:
   jwt:
     secret: ${JWT_SECRET:change-me-compassed-jwt-secret-32chars-min}
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
+
+checkout:
+  qr:
+    image-url: ${CHECKOUT_QR_IMAGE_URL:https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=CompassED_Payment_Placeholder}
+    account-name: ${CHECKOUT_QR_ACCOUNT_NAME:COMPASSED}
+    account-no: ${CHECKOUT_QR_ACCOUNT_NO:0000000000}
+    bank: ${CHECKOUT_QR_BANK:VietQR}
+    bank-bin: ${CHECKOUT_QR_BANK_BIN:970422}
+
+casso:
+  enabled: ${CASSO_ENABLED:false}
+  api-key: ${CASSO_API_KEY:}
+  base-url: ${CASSO_BASE_URL:https://oauth.casso.vn/v2}
+  account-number: ${CASSO_ACCOUNT_NUMBER:}
+  page-size: ${CASSO_PAGE_SIZE:50}
+  check-cooldown-seconds: ${CASSO_CHECK_COOLDOWN_SECONDS:20}
