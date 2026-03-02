@@ -136,6 +136,29 @@
             </article>
           </section>
 
+          <section class="panel">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="panel-title">Ngân hàng câu hỏi</h2>
+              <div class="flex gap-2">
+                <select id="question-subject-filter" class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                  <option value="">Tất cả môn</option>
+                </select>
+                <select id="question-level-filter" class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                  <option value="">Tất cả level</option>
+                  <option value="L1">Level 1</option>
+                  <option value="L2">Level 2</option>
+                  <option value="L3">Level 3</option>
+                </select>
+                <button id="question-filter-btn" class="px-4 py-1.5 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors">
+                  Lọc
+                </button>
+              </div>
+            </div>
+            <div id="user-question-list" class="space-y-3 mt-4">
+              <div class="text-sm text-slate-400">Đang tải câu hỏi...</div>
+            </div>
+          </section>
+
           <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <article class="panel">
               <h2 class="panel-title">Thông báo hệ thống</h2>

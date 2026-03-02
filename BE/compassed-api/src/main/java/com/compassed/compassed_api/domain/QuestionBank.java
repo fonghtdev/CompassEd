@@ -22,6 +22,9 @@ public class QuestionBank {
     @Enumerated(EnumType.STRING)
     private Level level;
 
+    @Column(name = "grade_level", nullable = false)
+    private Integer gradeLevel; // 10/11/12
+
     @Column(name = "skill_type", nullable = false, length = 100)
     private String skillType; // Đại số, Hình học, Ngữ pháp, Reading...
 
@@ -70,6 +73,9 @@ public class QuestionBank {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (gradeLevel == null) {
+            gradeLevel = 10;
+        }
     }
 
     @PreUpdate
@@ -100,6 +106,14 @@ public class QuestionBank {
 
     public void setLevel(Level level) {
         this.level = level;
+    }
+
+    public Integer getGradeLevel() {
+        return gradeLevel;
+    }
+
+    public void setGradeLevel(Integer gradeLevel) {
+        this.gradeLevel = gradeLevel;
     }
 
     public String getSkillType() {

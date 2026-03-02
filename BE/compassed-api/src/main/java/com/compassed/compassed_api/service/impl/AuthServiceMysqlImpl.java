@@ -95,9 +95,6 @@ public class AuthServiceMysqlImpl implements AuthService {
             throw new RuntimeException("Google token payload missing sub/email");
         }
         User user = upsertOAuthUser("google", sub, email, name);
-        if (isAdmin(user)) {
-            throw new RuntimeException("Admin account must sign in with email/password");
-        }
         return authResponseForUser(user);
     }
 
@@ -113,9 +110,6 @@ public class AuthServiceMysqlImpl implements AuthService {
         return userRepository.findByOauthProviderAndOauthProviderUserId(provider, providerUserId)
                 .or(() -> userRepository.findByEmail(email))
                 .map(existing -> {
-                    if (isAdmin(existing)) {
-                        throw new RuntimeException("Admin account must sign in with email/password");
-                    }
                     if (fullName != null && !fullName.isBlank()) {
                         existing.setFullName(fullName);
                     }
@@ -180,9 +174,5 @@ public class AuthServiceMysqlImpl implements AuthService {
 
     private String asString(Object value) {
         return value == null ? null : String.valueOf(value);
-    }
-
-    private boolean isAdmin(User user) {
-        return "ADMIN".equalsIgnoreCase(roleAccessService.resolveRoleName(user));
     }
 }

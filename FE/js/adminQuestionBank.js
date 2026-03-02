@@ -1,8 +1,8 @@
 // Admin Question Bank Management JavaScript
 (function() {
     const API_BASE = (window.APP_CONFIG && window.APP_CONFIG.API_BASE) || "http://localhost:8080";
-    const TOKEN_KEY = "compassed_admin_token";
-    const USER_KEY = "compassed_admin_user";
+    const TOKEN_KEY = "compassed_auth_token";
+    const USER_KEY = "compassed_auth_user";
     
     let currentPage = 0;
     const pageSize = 20;
@@ -10,6 +10,7 @@
     let totalItems = 0;
     let currentFilters = {
         subjectId: null,
+        gradeLevel: null,
         level: null,
         skillType: null
     };
@@ -113,6 +114,7 @@
             let url = `/api/admin/questions?page=${currentPage}&size=${pageSize}&sortBy=id&sortDir=DESC`;
             
             if (currentFilters.subjectId) url += `&subjectId=${currentFilters.subjectId}`;
+            if (currentFilters.gradeLevel) url += `&gradeLevel=${currentFilters.gradeLevel}`;
             if (currentFilters.level) url += `&level=${currentFilters.level}`;
             if (currentFilters.skillType) url += `&skillType=${encodeURIComponent(currentFilters.skillType)}`;
             
@@ -138,7 +140,7 @@
         if (!questions || questions.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="px-6 py-12 text-center text-slate-500">
+                    <td colspan="9" class="px-6 py-12 text-center text-slate-500">
                         Không tìm thấy câu hỏi nào
                     </td>
                 </tr>
@@ -161,6 +163,7 @@
                 <tr class="hover:bg-slate-50 transition">
                     <td class="px-6 py-4 text-sm font-medium text-slate-900">#${q.id}</td>
                     <td class="px-6 py-4 text-sm text-slate-600">${q.subjectName}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600">${q.gradeLevel || "-"}</td>
                     <td class="px-6 py-4">
                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${levelColor}">
                             ${q.level}
@@ -236,6 +239,7 @@
 📚 Câu hỏi #${question.id}
 
 Môn học: ${question.subjectName}
+Khối lớp: ${question.gradeLevel || "-"}
 Level: ${question.level}
 Kỹ năng: ${question.skillType}
 Loại: ${question.questionType}
@@ -271,6 +275,7 @@ ${question.explanation || "Không có"}
             document.getElementById("question-id").value = question.id;
             document.getElementById("input-subject").value = question.subjectId;
             document.getElementById("input-level").value = question.level;
+            document.getElementById("input-grade").value = question.gradeLevel || "10";
             document.getElementById("input-type").value = question.questionType;
             document.getElementById("input-skill").value = question.skillType;
             document.getElementById("input-question").value = question.questionText;
@@ -321,6 +326,7 @@ ${question.explanation || "Không có"}
             
             const questionData = {
                 subjectId: parseInt(document.getElementById("input-subject").value),
+                gradeLevel: parseInt(document.getElementById("input-grade").value),
                 level: document.getElementById("input-level").value,
                 questionType: document.getElementById("input-type").value,
                 skillType: document.getElementById("input-skill").value,
@@ -358,6 +364,7 @@ ${question.explanation || "Không có"}
     
     window.applyFilters = function() {
         currentFilters.subjectId = document.getElementById("filter-subject").value || null;
+        currentFilters.gradeLevel = document.getElementById("filter-grade").value || null;
         currentFilters.level = document.getElementById("filter-level").value || null;
         currentFilters.skillType = document.getElementById("filter-skill").value || null;
         
@@ -383,7 +390,7 @@ ${question.explanation || "Không có"}
         if (confirm("Bạn có chắc muốn đăng xuất?")) {
             localStorage.removeItem(TOKEN_KEY);
             localStorage.removeItem(USER_KEY);
-            window.location.href = "/admin-login";
+            window.location.href = "/auth";
         }
     };
 
@@ -392,7 +399,7 @@ ${question.explanation || "Không có"}
     async function init() {
         const { user } = getAuth();
         if (!user) {
-            window.location.href = "/admin-login";
+            window.location.href = "/auth";
             return;
         }
         
@@ -403,9 +410,10 @@ ${question.explanation || "Không có"}
         }
         
         // Update admin info
-        document.getElementById("admin-name").textContent = user.fullName || "Admin";
-        document.getElementById("admin-email").textContent = user.email;
-        document.getElementById("admin-initial").textContent = (user.fullName || "A")[0].toUpperCase();
+        const adminNameEl = document.getElementById("admin-name");
+        if (adminNameEl) {
+            adminNameEl.textContent = user.fullName || "Admin";
+        }
         
         // Update time
         updateTime();

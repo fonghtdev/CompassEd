@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en"><head>
 <meta charset="utf-8"/>
@@ -44,99 +44,44 @@
     </script>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display text-text-primary-light dark:text-text-primary-dark antialiased overflow-hidden h-screen flex flex-col">
-<!-- Top Navigation -->
-<header class="h-16 flex items-center justify-between px-6 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark shrink-0 z-20">
-<a class="flex items-center gap-3" href="/landing" style="text-decoration:none;color:inherit;">
-<div class="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-<span class="material-symbols-outlined text-2xl">school</span>
-</div>
-<h1 class="text-lg font-bold tracking-tight">CompassED</h1>
-<span class="hidden sm:inline-block h-4 w-px bg-border-light dark:bg-border-dark mx-2"></span>
-<span class="hidden sm:inline-block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Math Placement Assessment</span>
-</a>
-<div class="flex items-center gap-3">
-<button id="placement-save-exit-btn" class="hidden sm:flex items-center justify-center h-9 px-4 rounded-lg bg-surface-light dark:bg-surface-dark hover:bg-slate-50 dark:hover:bg-slate-800 border border-border-light dark:border-border-dark text-sm font-semibold transition-colors">
-<span class="material-symbols-outlined text-[18px] mr-2">save</span>
-                Save &amp; Exit
-            </button>
-<button id="placement-settings-btn" class="size-9 flex items-center justify-center rounded-lg bg-surface-light dark:bg-surface-dark hover:bg-slate-50 dark:hover:bg-slate-800 border border-border-light dark:border-border-dark text-text-secondary-light dark:text-text-secondary-dark transition-colors">
-<span class="material-symbols-outlined text-[20px]">settings</span>
-</button>
-</div>
-</header>
 <div class="flex flex-1 overflow-hidden">
 <!-- Sidebar Navigation -->
-<aside class="w-80 bg-surface-light dark:bg-surface-dark border-r border-border-light dark:border-border-dark flex flex-col shrink-0 hidden lg:flex h-full overflow-hidden">
-<div class="p-6 border-b border-border-light dark:border-border-dark">
-<div class="flex items-center justify-between mb-2">
-<span class="text-sm font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">Time Remaining</span>
-<span class="material-symbols-outlined text-text-secondary-light dark:text-text-secondary-dark text-lg">timer</span>
-</div>
-<div class="flex gap-2">
-<div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-2 text-center">
-<span class="block text-2xl font-bold font-mono">00</span>
-<span class="text-[10px] uppercase text-text-secondary-light dark:text-text-secondary-dark font-medium">Hrs</span>
-</div>
-<div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-2 text-center">
-<span class="block text-2xl font-bold font-mono text-primary">45</span>
-<span class="text-[10px] uppercase text-text-secondary-light dark:text-text-secondary-dark font-medium">Min</span>
-</div>
-<div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-2 text-center">
-<span class="block text-2xl font-bold font-mono">30</span>
-<span class="text-[10px] uppercase text-text-secondary-light dark:text-text-secondary-dark font-medium">Sec</span>
-</div>
-</div>
-</div>
-<div class="p-6 border-b border-border-light dark:border-border-dark">
-<div class="flex justify-between items-end mb-2">
-<span class="text-sm font-medium">Progress</span>
-<span id="placement-progress-text" class="text-xs text-text-secondary-light dark:text-text-secondary-dark">0 of 0 answered</span>
-</div>
-<div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-<div id="placement-progress-bar" class="h-full bg-primary w-[0%] rounded-full"></div>
-</div>
-</div>
-<div class="flex-1 overflow-y-auto p-4 space-y-1">
-<div class="px-4 py-2 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-2">
-                    Section 1: Algebra
-                </div>
-<button id="placement-nav-q1" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group">
-<span class="flex items-center justify-center size-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-<span class="material-symbols-outlined text-[16px]">check</span>
-</span>
-<span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark line-through decoration-emerald-500/50">Linear Equations</span>
-</button>
-<button id="placement-nav-q2" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group">
-<span class="flex items-center justify-center size-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-<span class="material-symbols-outlined text-[16px]">check</span>
-</span>
-<span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark line-through decoration-emerald-500/50">Inequalities</span>
-</button>
-<button id="placement-nav-q3" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left bg-primary/10 dark:bg-primary/20 text-primary border border-primary/20 transition-colors">
-<span class="flex items-center justify-center size-6 rounded-full bg-primary text-white text-xs font-bold">3</span>
-<span class="text-sm font-bold">Solving for X</span>
-</button>
-<button id="placement-nav-q4" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-text-secondary-light dark:text-text-secondary-dark">
-<span class="flex items-center justify-center size-6 rounded-full border-2 border-slate-200 dark:border-slate-700 text-[10px] font-bold">4</span>
-<span class="text-sm font-medium">Quadratic Functions</span>
-</button>
-<button id="placement-nav-q5" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-text-secondary-light dark:text-text-secondary-dark">
-<span class="flex items-center justify-center size-6 rounded-full border-2 border-slate-200 dark:border-slate-700 text-[10px] font-bold">5</span>
-<span class="text-sm font-medium">Polynomials</span>
-</button>
-<div class="px-4 py-2 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mt-6 mb-2">
-                    Section 2: Geometry
-                </div>
-<button id="placement-nav-locked" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-text-secondary-light dark:text-text-secondary-dark opacity-60">
-<span class="material-symbols-outlined text-lg text-slate-400">lock</span>
-<span class="text-sm font-medium">Locked</span>
-</button>
-</div>
-<div class="p-4 border-t border-border-light dark:border-border-dark">
-<button id="placement-review-all-btn" class="w-full flex items-center justify-center h-10 px-4 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-text-primary-light dark:text-text-primary-dark text-sm font-bold transition-colors">
-                    Review All Answers
-                </button>
-</div>
+<aside class="w-64 bg-surface-light dark:bg-surface-dark border-r border-border-light dark:border-border-dark flex flex-col shrink-0 hidden lg:flex h-full overflow-hidden">
+    <!-- Timer -->
+    <div class="p-5 border-b border-border-light dark:border-border-dark">
+        <div class="flex items-center gap-2 mb-3">
+            <span class="material-symbols-outlined text-primary text-lg">timer</span>
+            <span class="text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">Time Remaining</span>
+        </div>
+        <div class="flex gap-2">
+            <div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-2 text-center">
+                <span id="placement-timer-hrs" class="block text-2xl font-bold font-mono">00</span>
+                <span class="text-[10px] uppercase text-text-secondary-light dark:text-text-secondary-dark font-medium">Hrs</span>
+            </div>
+            <div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-2 text-center">
+                <span id="placement-timer-min" class="block text-2xl font-bold font-mono text-primary">45</span>
+                <span class="text-[10px] uppercase text-text-secondary-light dark:text-text-secondary-dark font-medium">Min</span>
+            </div>
+            <div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-2 text-center">
+                <span id="placement-timer-sec" class="block text-2xl font-bold font-mono">00</span>
+                <span class="text-[10px] uppercase text-text-secondary-light dark:text-text-secondary-dark font-medium">Sec</span>
+            </div>
+        </div>
+    </div>
+    <!-- Question list -->
+    <div class="p-4 border-b border-border-light dark:border-border-dark flex items-center justify-between">
+        <span class="text-sm font-semibold text-text-primary-light dark:text-text-primary-dark">Questions</span>
+        <span id="placement-progress-text" class="text-xs font-medium text-text-secondary-light dark:text-text-secondary-dark">0 / 0</span>
+    </div>
+    <div id="placement-question-grid" class="flex-1 overflow-y-auto p-4">
+        <!-- Question number buttons rendered by JS -->
+    </div>
+    <!-- Progress bar -->
+    <div class="p-4 border-t border-border-light dark:border-border-dark">
+        <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+            <div id="placement-progress-bar" class="h-full bg-primary w-[0%] rounded-full transition-all duration-300"></div>
+        </div>
+    </div>
 </aside>
 <!-- Main Content Area -->
 <main class="flex-1 flex flex-col h-full overflow-hidden relative">
@@ -150,6 +95,27 @@
 </div>
 <div class="flex-1 overflow-y-auto p-6 md:p-10 lg:p-16 flex justify-center">
 <div class="max-w-3xl w-full flex flex-col">
+<!-- Progress bar (answered questions) -->
+<div class="mb-6">
+    <div class="mb-3 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2 text-sm text-text-secondary-light dark:text-text-secondary-dark">
+            <span class="material-symbols-outlined text-primary text-base">school</span>
+            <span>Khối lớp</span>
+        </div>
+        <select id="placement-grade-select" class="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 px-3 py-1 text-sm">
+            <option value="10">Lớp 10</option>
+            <option value="11">Lớp 11</option>
+            <option value="12">Lớp 12</option>
+        </select>
+    </div>
+    <div class="flex items-center justify-between text-sm text-text-secondary-light dark:text-text-secondary-dark">
+        <span>Tiến độ</span>
+        <span id="placement-progress-text-main">0 / 0</span>
+    </div>
+    <div class="mt-2 h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+        <div id="placement-progress-bar-main" class="h-full bg-primary w-[0%] rounded-full transition-all duration-300"></div>
+    </div>
+</div>
 <!-- Question Header -->
 <div class="mb-8">
 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-4">
@@ -163,64 +129,18 @@
                             Select the value of x that makes the equation true. Remember to isolate the variable x by performing inverse operations.
                         </p>
 </div>
+<!-- Preview controls (FE-only) - hidden, loaded by JS -->
+<div id="placement-preview-controls" class="hidden">
+    <button id="placement-load-preview-btn"></button>
+    <select id="placement-preview-subject">
+        <option value="1">Math (Toan)</option>
+        <option value="2">Literature (Van)</option>
+        <option value="3">English (Anh)</option>
+    </select>
+    <span id="placement-preview-note"></span>
+</div>
 <!-- Answer Options -->
 <div id="placement-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-<!-- Option A -->
-<label class="relative group cursor-pointer">
-<input class="peer sr-only" name="answer" type="radio"/>
-<div class="p-5 rounded-xl border-2 border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark hover:border-primary/50 dark:hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5 transition-all duration-200 flex items-center gap-4">
-<div class="size-8 rounded-full border-2 border-border-light dark:border-border-dark flex items-center justify-center text-sm font-bold text-text-secondary-light dark:text-text-secondary-dark group-hover:border-primary/50 peer-checked:bg-primary peer-checked:border-primary peer-checked:text-white transition-colors">
-                                    A
-                                </div>
-<span class="text-lg font-medium">x = 5</span>
-</div>
-</label>
-<!-- Option B -->
-<label class="relative group cursor-pointer">
-<input class="peer sr-only" name="answer" type="radio"/>
-<div class="p-5 rounded-xl border-2 border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark hover:border-primary/50 dark:hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5 transition-all duration-200 flex items-center gap-4">
-<div class="size-8 rounded-full border-2 border-border-light dark:border-border-dark flex items-center justify-center text-sm font-bold text-text-secondary-light dark:text-text-secondary-dark group-hover:border-primary/50 peer-checked:bg-primary peer-checked:border-primary peer-checked:text-white transition-colors">
-                                    B
-                                </div>
-<span class="text-lg font-medium">x = 10</span>
-</div>
-</label>
-<!-- Option C -->
-<label class="relative group cursor-pointer">
-<input class="peer sr-only" name="answer" type="radio"/>
-<div class="p-5 rounded-xl border-2 border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark hover:border-primary/50 dark:hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5 transition-all duration-200 flex items-center gap-4">
-<div class="size-8 rounded-full border-2 border-border-light dark:border-border-dark flex items-center justify-center text-sm font-bold text-text-secondary-light dark:text-text-secondary-dark group-hover:border-primary/50 peer-checked:bg-primary peer-checked:border-primary peer-checked:text-white transition-colors">
-                                    C
-                                </div>
-<span class="text-lg font-medium">x = 20</span>
-</div>
-</label>
-<!-- Option D -->
-<label class="relative group cursor-pointer">
-<input class="peer sr-only" name="answer" type="radio"/>
-<div class="p-5 rounded-xl border-2 border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark hover:border-primary/50 dark:hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5 transition-all duration-200 flex items-center gap-4">
-<div class="size-8 rounded-full border-2 border-border-light dark:border-border-dark flex items-center justify-center text-sm font-bold text-text-secondary-light dark:text-text-secondary-dark group-hover:border-primary/50 peer-checked:bg-primary peer-checked:border-primary peer-checked:text-white transition-colors">
-                                    D
-                                </div>
-<span class="text-lg font-medium">x = 7.5</span>
-</div>
-</label>
-</div>
-<!-- Scratchpad Area (Optional Feature Visual) -->
-<div class="mt-auto mb-8 p-4 rounded-xl border border-dashed border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800/50">
-<div class="flex items-center justify-between mb-2">
-<div class="flex items-center gap-2 text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">
-<span class="material-symbols-outlined text-lg">edit_note</span>
-                                 Scratchpad
-                             </div>
-<button id="placement-clear-scratchpad-btn" class="text-xs text-primary hover:underline">Clear</button>
-</div>
-<div class="h-32 w-full">
-<!-- Placeholder for drawing area -->
-<svg class="w-full h-full text-slate-300 dark:text-slate-600" preserveaspectratio="none" viewbox="0 0 400 100">
-<path d="M10,50 Q50,10 100,50 T200,50 T300,50" fill="none" stroke="currentColor" stroke-dasharray="5,5" stroke-width="2"></path>
-</svg>
-</div>
 </div>
 </div>
 </div>

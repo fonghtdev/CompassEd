@@ -1,20 +1,27 @@
 package com.compassed.compassed_api.domain.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payments")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Payment {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(name = "user_id", nullable = false)
+    @Column(nullable = false)
     private Long userId;
     
     @Column(nullable = false, precision = 10, scale = 2)
@@ -62,18 +69,8 @@ public class Payment {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-    }
-    
-    // Constructor
-    public Payment() {}
-    
-    public Payment(Long userId, BigDecimal amount, String paymentGateway, Long subjectId, String packageType) {
-        this.userId = userId;
-        this.amount = amount;
-        this.currency = "VND";
-        this.paymentGateway = paymentGateway;
-        this.subjectId = subjectId;
-        this.packageType = packageType;
-        this.status = "PENDING";
+        if (status == null) {
+            status = "PENDING";
+        }
     }
 }

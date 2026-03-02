@@ -1,6 +1,7 @@
-﻿import { api, checkSession, clearAuth, currentRole, hideLoading, nav, showLoading, toast } from "./core.js";
+import { api, checkSession, clearAuth, currentRole, hideLoading, nav, showLoading, toast } from "./core.js";
 import { getLang, t } from "./i18n.js";
 import { openInlineProfilePanel } from "./inlineProfilePanel.js";
+import { initQuestions } from "./questions.js";
 
 function renderList(targetId, rows, renderer) {
   const wrap = document.getElementById(targetId);
@@ -297,6 +298,104 @@ async function initDashboard() {
 
   await setupNotificationCenter();
 
+  // Load Question Bank
+  await loadQuestionBank();
+  setupQuestionFilters();
+
+}
+
+async function loadQuestionBank() {
+  try {
+    const subjectId = localStorage.getItem("question_subject_filter") || "";
+    const level = localStorage.getItem("question_level_filter") || "";
+    const gradeLevel = subjectId ? localStorage.getItem(`compassed_grade_level_${subjectId}`) || "" : "";
+    
+    const params = [];
+    if (subjectId) params.push(`subjectId=${subjectId}`);
+    if (gradeLevel) params.push(`gradeLevel=${gradeLevel}`);
+    if (level) params.push(`level=${level}`);
+    const query = params.length ? "?" + params.join("&") : "";
+    
+    const data = await api(`/api/questions${query}`, "GET", null, false);
+    const questions = data.questions || [];
+    
+    renderQuestions(questions);
+  } catch (err) {
+    const wrap = document.getElementById("user-question-list");
+    if (wrap) {
+      wrap.innerHTML = `<div class="text-sm text-red-500">Không tải được câu hỏi: ${err.message}</div>`;
+    }
+  }
+}
+
+function renderQuestions(questions) {
+  const wrap = document.getElementById("user-question-list");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  if (!questions.length) {
+    wrap.innerHTML = "<div class='text-sm text-slate-400'>Không có câu hỏi nào.</div>";
+    return;
+  }
+  questions.forEach((q) => {
+    const el = document.createElement("div");
+    el.className = "border border-slate-200 rounded-lg p-4 hover:border-primary transition-colors";
+    el.innerHTML = `
+      <div class='font-semibold text-slate-900 mb-2'>${escapeHtml(q.questionText)}</div>
+      <div class='text-xs text-slate-500 mb-3'>
+        <span class="inline-flex items-center px-2 py-1 rounded bg-blue-50 text-blue-700 mr-2">
+          Môn: ${escapeHtml(q.subjectName || 'N/A')}
+        </span>
+        <span class="inline-flex items-center px-2 py-1 rounded bg-amber-50 text-amber-700 mr-2">
+          Khối: ${escapeHtml(String(q.gradeLevel || 'N/A'))}
+        </span>
+        <span class="inline-flex items-center px-2 py-1 rounded bg-green-50 text-green-700 mr-2">
+          Level: ${escapeHtml(q.level || 'N/A')}
+        </span>
+        <span class="inline-flex items-center px-2 py-1 rounded bg-purple-50 text-purple-700">
+          ${escapeHtml(q.skillType || 'N/A')}
+        </span>
+      </div>
+      <div class='mt-2 text-sm'>
+        <b class="text-slate-700">Đáp án đúng:</b> <span class="text-primary font-semibold">${escapeHtml(q.correctAnswer || 'N/A')}</span>
+      </div>
+      ${q.explanation ? `<div class='mt-2 text-xs text-slate-600 italic bg-slate-50 p-2 rounded'>💡 ${escapeHtml(q.explanation)}</div>` : ''}
+    `;
+    wrap.appendChild(el);
+  });
+}
+
+function setupQuestionFilters() {
+  const filterBtn = document.getElementById("question-filter-btn");
+  const subjectFilter = document.getElementById("question-subject-filter");
+  const levelFilter = document.getElementById("question-level-filter");
+  
+  if (filterBtn) {
+    filterBtn.addEventListener("click", async () => {
+      if (subjectFilter) localStorage.setItem("question_subject_filter", subjectFilter.value);
+      if (levelFilter) localStorage.setItem("question_level_filter", levelFilter.value);
+      await loadQuestionBank();
+    });
+  }
+  
+  // Load subjects for filter
+  loadSubjectsForFilter();
+}
+
+async function loadSubjectsForFilter() {
+  try {
+    const subjects = await api("/api/subjects", "GET", null, false);
+    const subjectFilter = document.getElementById("question-subject-filter");
+    if (subjectFilter && subjects && subjects.length) {
+      subjects.forEach(s => {
+        const option = document.createElement("option");
+        option.value = s.id;
+        option.textContent = s.name;
+        subjectFilter.appendChild(option);
+      });
+    }
+  } catch (err) {
+    console.error("Cannot load subjects for filter:", err);
+  }
 }
 
 export { initDashboard };

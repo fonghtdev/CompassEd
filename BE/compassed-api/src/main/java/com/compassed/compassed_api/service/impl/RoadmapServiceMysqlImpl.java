@@ -68,7 +68,7 @@ public class RoadmapServiceMysqlImpl implements RoadmapService {
         Subject subject = getSubjectOrThrow(subjectId);
 
         RoadmapResponse response = baseResponse(subject);
-        boolean subscribed = subscriptionRepository.existsByUser_IdAndSubject_IdAndActiveTrue(userId, subjectId);
+        boolean subscribed = subscriptionRepository.existsByUserIdAndSubjectIdAndIsActiveTrue(userId, subjectId);
         response.setSubscribed(subscribed);
 
         PlacementResult placement = placementResultRepository.findTopByUser_IdAndSubject_IdOrderByCreatedAtDesc(userId, subjectId)
@@ -206,7 +206,7 @@ public class RoadmapServiceMysqlImpl implements RoadmapService {
 
         List<Subject> candidates = new ArrayList<>();
         for (Subject subject : subjectRepository.findAll()) {
-            if (!subscriptionRepository.existsByUser_IdAndSubject_IdAndActiveTrue(userId, subject.getId())) {
+            if (!subscriptionRepository.existsByUserIdAndSubjectIdAndIsActiveTrue(userId, subject.getId())) {
                 continue;
             }
             PlacementResult placement = placementResultRepository
@@ -234,7 +234,7 @@ public class RoadmapServiceMysqlImpl implements RoadmapService {
     }
 
     private UserRoadmapAssignment getOrCreateAssignment(Long userId, Subject subject, Level level) {
-        return assignmentRepository.findByUser_IdAndSubject_Id(userId, subject.getId())
+        return assignmentRepository.findByUserIdAndSubjectId(userId, subject.getId())
                 .orElseGet(() -> {
                     Roadmap roadmap = roadmapRepository.findBySubject_IdAndLevel(subject.getId(), level)
                             .orElseThrow(() -> new RuntimeException(
@@ -373,7 +373,7 @@ public class RoadmapServiceMysqlImpl implements RoadmapService {
     private RoadmapContext requireActiveRoadmap(Long userId, Long subjectId) {
         ensureUserExists(userId);
         Subject subject = getSubjectOrThrow(subjectId);
-        if (!subscriptionRepository.existsByUser_IdAndSubject_IdAndActiveTrue(userId, subjectId)) {
+        if (!subscriptionRepository.existsByUserIdAndSubjectIdAndIsActiveTrue(userId, subjectId)) {
             throw new RuntimeException("Need subscription to access roadmap");
         }
         PlacementResult placement = placementResultRepository.findTopByUser_IdAndSubject_IdOrderByCreatedAtDesc(userId, subjectId)

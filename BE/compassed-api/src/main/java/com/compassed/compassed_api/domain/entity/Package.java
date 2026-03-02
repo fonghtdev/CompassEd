@@ -9,40 +9,33 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "subscriptions")
+@Table(name = "packages")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Subscription {
+public class Package {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
     @Column(nullable = false)
-    private Long userId;
+    private String name;
+    
+    private String description;
     
     @Column(nullable = false)
-    private Long subjectId;
+    private Double price;
     
     @Column(nullable = false)
-    private Long packageId;
+    private Integer durationDays;
     
     @Column(nullable = false)
-    private Long paymentId;
-    
-    @Column(nullable = false)
-    private LocalDateTime startDate;
-    
-    @Column(nullable = false)
-    private LocalDateTime endDate;
+    private Boolean isPlacementPackage;
     
     @Column(nullable = false)
     private Boolean isActive;
-    
-    @Column(nullable = false)
-    private Boolean placementUnlocked;
     
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -55,8 +48,8 @@ public class Subscription {
         if (isActive == null) {
             isActive = true;
         }
-        if (placementUnlocked == null) {
-            placementUnlocked = false;
+        if (isPlacementPackage == null) {
+            isPlacementPackage = false;
         }
     }
     

@@ -65,6 +65,10 @@ def admin_login():
 def admin_dashboard():
     return render_template("admin/adminDashboard.html")
 
+@app.route("/simple-admin")
+def simple_admin():
+    return render_template("admin/simple-admin.html")
+
 @app.route("/admin/question-bank")
 def admin_question_bank():
     return render_template("admin/adminQuestionBank.html")
