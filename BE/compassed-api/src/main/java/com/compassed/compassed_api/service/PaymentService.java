@@ -193,7 +193,8 @@ public class PaymentService {
     public Map<String, Object> getPaymentStatusForUser(Long userId, Long paymentId) {
         Payment payment = paymentRepository.findByIdAndUserId(paymentId, userId)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
-        payment = maybeAutoConfirmWithPayOs(payment);
+        // Force refresh with PayOS on status polling so FE can unlock near real-time after paid.
+        payment = refreshPayOsStatus(payment, true);
         return paymentStatusPayload(payment);
     }
 
