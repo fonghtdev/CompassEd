@@ -22,6 +22,10 @@ public class GlobalExceptionHandler {
         String normalized = msg.toLowerCase();
         if (normalized.contains("unauthorized") || normalized.contains("invalid token")) {
             status = HttpStatus.UNAUTHORIZED;
+        } else if (normalized.contains("invalid email or password")
+                || normalized.contains("email is not verified")
+                || normalized.contains("google token audience mismatch")) {
+            status = HttpStatus.UNAUTHORIZED;
         } else if (normalized.contains("forbidden")) {
             status = HttpStatus.FORBIDDEN;
         } else if (normalized.contains("not found")) {
