@@ -1,13 +1,12 @@
 package com.compassed.compassed_api.domain.entity;
 
-import com.compassed.compassed_api.domain.enums.PaymentMethod;
-import com.compassed.compassed_api.domain.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -25,43 +24,53 @@ public class Payment {
     @Column(nullable = false)
     private Long userId;
     
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal amount;
+    
+    @Column(length = 10)
+    private String currency = "VND";
+    
+    @Column(name = "payment_method", length = 50)
+    private String paymentMethod;
+    
+    @Column(name = "payment_gateway", length = 50)
+    private String paymentGateway;
+    
+    @Column(name = "transaction_id", length = 255)
+    private String transactionId;
+
+    @Column(name = "payment_reference", length = 64)
+    private String paymentReference;
+
+    @Column(name = "last_checked_at")
+    private LocalDateTime lastCheckedAt;
+    
+    @Column(nullable = false, length = 50)
+    private String status; // PENDING, SUCCESS, FAILED, CANCELLED
+    
+    @Column(name = "subject_id")
     private Long subjectId;
     
-    @Column(nullable = false)
-    private Long packageId;
-    
-    @Column(nullable = false)
-    private Double amount;
-    
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private PaymentMethod paymentMethod;
-    
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private PaymentStatus status;
-    
-    @Column(unique = true)
-    private String transactionId;
-    
-    private String paymentUrl;
-    
-    @Column(nullable = false)
+    @Column(name = "package_type", length = 50)
+    private String packageType; // PLACEMENT_PACK, SUBSCRIPTION_MONTHLY, etc.
+
+    @Column(name = "transfer_note", length = 255)
+    private String transferNote;
+
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-    
-    private LocalDateTime updatedAt;
+
+    @Column(name = "submitted_at")
+    private LocalDateTime submittedAt;
+
+    @Column(name = "confirmed_at")
+    private LocalDateTime confirmedAt;
     
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         if (status == null) {
-            status = PaymentStatus.PENDING;
+            status = "PENDING";
         }
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 }

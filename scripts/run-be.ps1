@@ -30,6 +30,9 @@ $params = @{
 
 Push-Location $beDir
 try {
+  if ($script:DEV_ENV.OPENAI_API_KEY -and $script:DEV_ENV.OPENAI_API_KEY.Trim() -ne "") {
+    $env:OPENAI_API_KEY = $script:DEV_ENV.OPENAI_API_KEY
+  }
   if ($script:DEV_ENV.GOOGLE_CLIENT_ID -and $script:DEV_ENV.GOOGLE_CLIENT_ID.Trim() -ne "") {
     $env:GOOGLE_CLIENT_ID = $script:DEV_ENV.GOOGLE_CLIENT_ID
   }
