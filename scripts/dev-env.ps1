@@ -7,15 +7,15 @@ $script:DEV_ENV = @{
 
   JWT_SECRET = "this-is-a-very-strong-jwt-secret-min-32"
   OPENAI_API_KEY = ""
-  GOOGLE_CLIENT_ID = "759011701592-v4npda3hrmcrsh8s8cnq2jh5jcuc755o.apps.googleusercontent.com"
+  GOOGLE_CLIENT_ID = "418581116582-qet8ant9k0t319hkd3640dtsa54eg07v.apps.googleusercontent.com"
   ADMIN_EMAIL = ""
   ADMIN_PASSWORD = ""
 
   MAIL_HOST = "smtp.gmail.com"
   MAIL_PORT = "587"
-  MAIL_USERNAME = "compassed.edu@gmail.com"
-  MAIL_PASSWORD = "mulvscrsplqufrig"
-  MAIL_FROM = "CompassEd"
+  MAIL_USERNAME = "fonght.dev@gmail.com"
+  MAIL_PASSWORD = "yylmvpdohcxcvhzl"
+  MAIL_FROM = "fonght.dev@gmail.com"
 
   PAYOS_ENABLED = "true"
   CHECKOUT_QR_ACCOUNT_NAME = "COMPASSED"
@@ -29,4 +29,5 @@ $script:DEV_ENV = @{
 
   BE_PORT = "8080"
   FE_PORT = "3000"
+  FE_API_BASE = "http://localhost:8080"
 }
