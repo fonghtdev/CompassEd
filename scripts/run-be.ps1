@@ -25,6 +25,14 @@ $params = @{
   MailUsername = $script:DEV_ENV.MAIL_USERNAME
   MailPassword = $script:DEV_ENV.MAIL_PASSWORD
   MailFrom = $script:DEV_ENV.MAIL_FROM
+  PayOsEnabled = [bool]::Parse([string]$script:DEV_ENV.PAYOS_ENABLED)
+  PayOsClientId = $script:DEV_ENV.PAYOS_CLIENT_ID
+  PayOsApiKey = $script:DEV_ENV.PAYOS_API_KEY
+  PayOsChecksumKey = $script:DEV_ENV.PAYOS_CHECKSUM_KEY
+  PayOsBaseUrl = $script:DEV_ENV.PAYOS_BASE_URL
+  PayOsReturnUrl = $script:DEV_ENV.PAYOS_RETURN_URL
+  PayOsCancelUrl = $script:DEV_ENV.PAYOS_CANCEL_URL
+  PayOsCheckCooldownSeconds = [int]$script:DEV_ENV.PAYOS_CHECK_COOLDOWN_SECONDS
   ServerPort = [int]$script:DEV_ENV.BE_PORT
 }
 

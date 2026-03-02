@@ -32,12 +32,14 @@ services:
       CHECKOUT_QR_ACCOUNT_NO: 8990186866886
       CHECKOUT_QR_BANK: VietQR
       CHECKOUT_QR_BANK_BIN: 970422
-      CASSO_ENABLED: "true"
-      CASSO_API_KEY: "***REMOVED***"
-      CASSO_BASE_URL: https://oauth.casso.vn/v2
-      CASSO_ACCOUNT_NUMBER: "8990186866886"
-      CASSO_PAGE_SIZE: 50
-      CASSO_CHECK_COOLDOWN_SECONDS: 20
+      PAYOS_ENABLED: "true"
+      PAYOS_CLIENT_ID: "***REMOVED***"
+      PAYOS_API_KEY: "***REMOVED***"
+      PAYOS_CHECKSUM_KEY: "***REMOVED***"
+      PAYOS_BASE_URL: https://api-merchant.payos.vn
+      PAYOS_RETURN_URL: https://compassed.io.vn/checkout
+      PAYOS_CANCEL_URL: https://compassed.io.vn/checkout
+      PAYOS_CHECK_COOLDOWN_SECONDS: 15
     ports:
       - "8080:8080"
 
