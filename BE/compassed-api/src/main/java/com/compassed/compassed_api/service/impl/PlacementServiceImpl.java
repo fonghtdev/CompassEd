@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Random;
 
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import com.compassed.compassed_api.api.dto.PlacementStartResponse;
@@ -211,7 +212,7 @@ public class PlacementServiceImpl implements PlacementService {
     private String generatePlacementPaperJson(String subjectCode, Long subjectId, int gradeLevel) {
         try {
             List<Map<String, Object>> paper = new ArrayList<>();
-            var rows = questionBankRepository.findRandomQuestions(subjectId, "L1", gradeLevel, 50);
+            var rows = questionBankRepository.findRandomQuestions(subjectId, "L1", gradeLevel, PageRequest.of(0, 50));
             if (rows != null && !rows.isEmpty()) {
                 for (var qrow : rows) {
                     Map<String, Object> q = new LinkedHashMap<>();

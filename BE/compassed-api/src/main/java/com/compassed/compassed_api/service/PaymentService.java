@@ -105,7 +105,13 @@ public class PaymentService {
         BigDecimal amount = calculateAmount(packageType);
         
         // Create payment record
-        Payment payment = new Payment(userId, amount, "VNPAY", subjectId, packageType);
+        Payment payment = Payment.builder()
+                .userId(userId)
+                .amount(amount)
+                .paymentMethod("VNPAY")
+                .subjectId(subjectId)
+                .packageType(packageType)
+                .build();
         payment = paymentRepository.save(payment);
         
         // Generate VNPay URL
@@ -515,16 +521,16 @@ public class PaymentService {
         Subject subject = subjectRepository.findById(subjectId)
             .orElseThrow(() -> new RuntimeException("Subject not found"));
 
-        Optional<Subscription> existingOpt = subscriptionRepository.findByUser_IdAndSubject_Id(userId, subjectId);
-        if (existingOpt.isPresent() && Boolean.TRUE.equals(existingOpt.get().isActive())) {
+        Optional<Subscription> existingOpt = subscriptionRepository.findByUserIdAndSubjectId(userId, subjectId);
+        if (existingOpt.isPresent() && Boolean.TRUE.equals(existingOpt.get().getIsActive())) {
             return;
         }
 
         Subscription subscription = existingOpt.orElseGet(Subscription::new);
-        subscription.setUser(user);
-        subscription.setSubject(subject);
-        subscription.setActive(true);
-        subscription.setActivatedAt(LocalDateTime.now());
+        subscription.setUserId(userId);
+        subscription.setSubjectId(subjectId);
+        subscription.setIsActive(true);
+        subscription.setStartDate(LocalDateTime.now());
 
         subscriptionRepository.save(subscription);
         log.info("Created subscription for userId={}, subjectId={}", userId, subjectId);

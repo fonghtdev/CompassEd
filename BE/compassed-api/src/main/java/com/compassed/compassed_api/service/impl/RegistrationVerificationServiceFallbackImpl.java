@@ -32,6 +32,9 @@ public class RegistrationVerificationServiceFallbackImpl implements Registration
     @Value("${auth.mail.from:no-reply@compassed.local}")
     private String mailFrom;
 
+    @Value("${spring.mail.username:}")
+    private String mailUsername;
+
     public RegistrationVerificationServiceFallbackImpl(AuthService authService, JavaMailSender mailSender) {
         this.authService = authService;
         this.mailSender = mailSender;
@@ -82,6 +85,13 @@ public class RegistrationVerificationServiceFallbackImpl implements Registration
     }
 
     private void sendVerificationEmail(String email, String code, String fullName) {
+        // If SMTP credentials are not configured, log the code to console instead of sending email
+        if (mailUsername == null || mailUsername.isBlank()) {
+            log.warn("==============================================================");
+            log.warn("MAIL NOT CONFIGURED - Verification code for {}: {}", email, code);
+            log.warn("==============================================================");
+            return;
+        }
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(mailFrom);
@@ -92,8 +102,8 @@ public class RegistrationVerificationServiceFallbackImpl implements Registration
                     + "\nThis code expires in 10 minutes.\n\nCompassED Team");
             mailSender.send(message);
         } catch (Exception ex) {
-            log.warn("Cannot send verification email to {}. Error={}", email, ex.getMessage());
-            throw new RuntimeException("Cannot send verification email: " + ex.getMessage());
+            log.warn("Cannot send verification email to {}. Code={}. Error={}", email, ex.getMessage(), code);
+            log.warn("Use the code above to verify manually during development.");
         }
     }
 

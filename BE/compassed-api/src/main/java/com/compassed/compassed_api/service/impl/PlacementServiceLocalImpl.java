@@ -50,8 +50,8 @@ public class PlacementServiceLocalImpl implements PlacementService {
 
         int grade = gradeLevel != null ? gradeLevel : 10;
         // Kiểm tra xem có câu hỏi nào trong QuestionBank không
-        List<QuestionBank> questions = questionBankRepository.findBySubjectIdAndLevelAndGradeLevelAndIsActiveTrue(
-                subjectId, QuestionBank.Level.L1, grade);
+        List<QuestionBank> questions = questionBankRepository.findBySubjectIdAndLevelAndIsActiveTrue(
+                subjectId, QuestionBank.Level.L1);
         if (questions.isEmpty()) {
             throw new RuntimeException("No questions found for subject: " + subjectId);
         }
@@ -158,8 +158,8 @@ public class PlacementServiceLocalImpl implements PlacementService {
             return generateFallbackPaperJson(subjectCode, gradeLevel);
         }
         // Lấy câu hỏi từ database thay vì hardcode
-        List<QuestionBank> questions = questionBankRepository.findBySubjectIdAndLevelAndGradeLevelAndIsActiveTrue(
-            getSubjectIdByCode(subjectCode), com.compassed.compassed_api.domain.QuestionBank.Level.L1, gradeLevel);
+        List<QuestionBank> questions = questionBankRepository.findBySubjectIdAndLevelAndIsActiveTrue(
+            getSubjectIdByCode(subjectCode), com.compassed.compassed_api.domain.QuestionBank.Level.L1);
         
         if (questions.isEmpty()) {
             // Fallback to dummy if no questions in DB
