@@ -14,7 +14,7 @@ public interface QuestionBankService {
     /**
      * Lấy tất cả câu hỏi với phân trang và filter
      */
-    Page<QuestionBankDTO> getAllQuestions(Long subjectId, Level level, String skillType, Boolean isActive, Integer gradeLevel, Pageable pageable);
+    Page<QuestionBankDTO> getAllQuestions(Long subjectId, Level level, String gradeBand, String skillType, Boolean isActive, Pageable pageable);
     
     /**
      * Lấy chi tiết 1 câu hỏi

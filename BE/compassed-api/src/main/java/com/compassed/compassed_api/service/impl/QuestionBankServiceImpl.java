@@ -33,8 +33,8 @@ public class QuestionBankServiceImpl implements QuestionBankService {
     }
 
     @Override
-    public Page<QuestionBankDTO> getAllQuestions(Long subjectId, Level level, String skillType,
-                                                 Boolean isActive, Integer gradeLevel, Pageable pageable) {
+    public Page<QuestionBankDTO> getAllQuestions(Long subjectId, Level level, String gradeBand, String skillType, 
+                                                 Boolean isActive, Pageable pageable) {
         Specification<QuestionBank> spec = (root, query, cb) -> cb.conjunction();
         
         if (subjectId != null) {
@@ -47,9 +47,9 @@ public class QuestionBankServiceImpl implements QuestionBankService {
                 cb.equal(root.get("level"), level));
         }
 
-        if (gradeLevel != null) {
+        if (gradeBand != null && !gradeBand.isBlank()) {
             spec = spec.and((root, query, cb) ->
-                cb.equal(root.get("gradeLevel"), gradeLevel));
+                cb.equal(cb.upper(root.get("gradeBand")), gradeBand.trim().toUpperCase()));
         }
         
         if (skillType != null && !skillType.isEmpty()) {
@@ -80,7 +80,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         QuestionBank question = new QuestionBank();
         question.setSubject(subject);
         question.setLevel(request.getLevel());
-        question.setGradeLevel(request.getGradeLevel() != null ? request.getGradeLevel() : 10);
+        question.setGradeBand(normalizeGradeBand(request.getGradeBand()));
         question.setSkillType(request.getSkillType());
         question.setQuestionType(request.getQuestionType());
         question.setQuestionText(request.getQuestionText());
@@ -106,7 +106,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         }
 
         if (request.getLevel() != null) question.setLevel(request.getLevel());
-        if (request.getGradeLevel() != null) question.setGradeLevel(request.getGradeLevel());
+        if (request.getGradeBand() != null) question.setGradeBand(normalizeGradeBand(request.getGradeBand()));
         if (request.getSkillType() != null) question.setSkillType(request.getSkillType());
         if (request.getQuestionType() != null) question.setQuestionType(request.getQuestionType());
         if (request.getQuestionText() != null) question.setQuestionText(request.getQuestionText());
@@ -165,7 +165,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         dto.setSubjectId(question.getSubject().getId());
         dto.setSubjectName(question.getSubject().getName());
         dto.setLevel(question.getLevel());
-        dto.setGradeLevel(question.getGradeLevel());
+        dto.setGradeBand(question.getGradeBand());
         dto.setSkillType(question.getSkillType());
         dto.setQuestionType(question.getQuestionType());
         dto.setQuestionText(question.getQuestionText());
@@ -175,5 +175,16 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         dto.setDifficulty(question.getDifficulty());
         dto.setIsActive(question.getIsActive());
         return dto;
+    }
+
+    private String normalizeGradeBand(String gradeBand) {
+        String normalized = gradeBand == null ? "" : gradeBand.trim().toUpperCase();
+        if (normalized.isBlank()) {
+            return "GRADE_11";
+        }
+        return switch (normalized) {
+            case "GRADE_11", "GRADE_12", "UNI_PREP" -> normalized;
+            default -> throw new RuntimeException("gradeBand must be GRADE_11, GRADE_12 or UNI_PREP");
+        };
     }
 }

@@ -32,6 +32,9 @@ public class UserProfile {
 
     private Integer targetScore;
 
+    @Column(length = 20)
+    private String academicTrack = "GRADE_11";
+
     @Column(nullable = false)
     private boolean notifyEmail = false;
 

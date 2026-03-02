@@ -8,6 +8,7 @@ public class CreateQuestionRequest {
     private Long subjectId;
     private Integer gradeLevel;
     private Level level;
+    private String gradeBand;
     private String skillType;
     private QuestionType questionType;
     private String questionText;
@@ -39,6 +40,14 @@ public class CreateQuestionRequest {
 
     public void setGradeLevel(Integer gradeLevel) {
         this.gradeLevel = gradeLevel;
+    }
+
+    public String getGradeBand() {
+        return gradeBand;
+    }
+
+    public void setGradeBand(String gradeBand) {
+        this.gradeBand = gradeBand;
     }
 
     public String getSkillType() {

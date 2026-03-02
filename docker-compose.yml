@@ -1,4 +1,46 @@
 services:
+  fe:
+    build:
+      context: ./FE
+    container_name: compassed-fe
+    restart: unless-stopped
+    environment:
+      FE_HOST: 0.0.0.0
+      FE_PORT: 3000
+      API_BASE: https://compassed.io.vn
+      GOOGLE_CLIENT_ID: "759011701592-v4npda3hrmcrsh8s8cnq2jh5jcuc755o.apps.googleusercontent.com"
+    ports:
+      - "3000:3000"
+
+  be:
+    build:
+      context: ./BE/compassed-api
+    container_name: compassed-be
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql
+      MYSQL_URL: jdbc:mysql://mysql:3306/compassed?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 1234
+      JWT_SECRET: this-is-a-very-strong-jwt-secret-min-32
+      SERVER_PORT: 8080
+      CHECKOUT_QR_IMAGE_URL: https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=CompassED_Payment_Placeholder
+      CHECKOUT_QR_ACCOUNT_NAME: COMPASSED
+      CHECKOUT_QR_ACCOUNT_NO: 8990186866886
+      CHECKOUT_QR_BANK: VietQR
+      CHECKOUT_QR_BANK_BIN: 970422
+      CASSO_ENABLED: "true"
+      CASSO_API_KEY: "aadc0296-82a6-4510-b689-df6605bdb6d7"
+      CASSO_BASE_URL: https://oauth.casso.vn/v2
+      CASSO_ACCOUNT_NUMBER: "8990186866886"
+      CASSO_PAGE_SIZE: 50
+      CASSO_CHECK_COOLDOWN_SECONDS: 20
+    ports:
+      - "8080:8080"
+
   mysql:
     image: mysql:8.0
     container_name: compassed-mysql
@@ -11,7 +53,7 @@ services:
     volumes:
       - compassed_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p1234"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "mysql", "-uroot", "-p1234"]
       interval: 10s
       timeout: 5s
       retries: 10

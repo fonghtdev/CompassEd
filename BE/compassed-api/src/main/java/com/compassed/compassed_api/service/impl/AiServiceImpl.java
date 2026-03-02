@@ -90,6 +90,48 @@ public class AiServiceImpl implements AiService {
     return output;
   }
 
+  @Override
+  public String generatePersonalizedRoadmapGuide(
+      String subjectCode,
+      String level,
+      String academicTrack,
+      double placementScorePercent,
+      String availableSkillsJson) {
+    String prompt = """
+        Bạn là AI học tập cho CompassED.
+        Hãy sinh roadmap hướng dẫn học tập CÁ NHÂN HÓA cho học sinh theo thông tin sau:
+
+        - Môn: %s
+        - Level hiện tại: %s
+        - Hệ/lớp: %s (GRADE_11/GRADE_12/UNI_PREP)
+        - Điểm placement: %.1f
+        - Danh sách kỹ năng/chủ đề có trong QuestionBank (JSON): %s
+
+        Yêu cầu bắt buộc:
+        1) Chỉ bám theo level hiện tại (ví dụ L2 thì chỉ nội dung phù hợp L2).
+        2) Chỉ bám theo hệ/lớp hiện tại (ví dụ GRADE_11 thì nội dung lớp 11).
+        3) Trả về JSON thuần (không markdown) theo format:
+        {
+          "objective": "...",
+          "roadmapSteps": [
+            { "week": 1, "title": "...", "focusSkills": ["..."], "studyGuide": "...", "targetScore": 0-100 }
+          ],
+          "miniTestBlueprint": {
+            "questionCount": 10,
+            "skillsDistribution": [{"skill":"...","count":2}]
+          },
+          "finalTestBlueprint": {
+            "questionCount": 20,
+            "skillsDistribution": [{"skill":"...","count":4}]
+          }
+        }
+        """.formatted(subjectCode, level, academicTrack, placementScorePercent, availableSkillsJson);
+
+    String output = openAiClient.callChatGpt(model, prompt);
+    persistAiLog("GENERATE_PERSONALIZED_ROADMAP", subjectCode, prompt, output);
+    return output;
+  }
+
   // ===== JSON GIẢ =====
   private String mockSkillAnalysis(String subjectCode) {
     return """
