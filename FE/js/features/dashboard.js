@@ -1,6 +1,7 @@
 import { api, checkSession, clearAuth, currentRole, hideLoading, nav, showLoading, toast } from "./core.js";
 import { getLang, t } from "./i18n.js";
 import { openInlineProfilePanel } from "./inlineProfilePanel.js";
+// import { initQuestions } from "./questions.js";
 
 function renderList(targetId, rows, renderer) {
   const wrap = document.getElementById(targetId);

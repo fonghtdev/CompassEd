@@ -134,9 +134,12 @@ public class PaymentService {
         Payment payment = Payment.builder()
                 .userId(userId)
                 .amount(amount)
+                .currency("VND")
                 .paymentMethod("VNPAY")
+                .paymentGateway("VNPAY")
                 .subjectId(subjectId)
                 .packageType(packageType)
+                .status("PENDING")
                 .build();
         payment = paymentRepository.save(payment);
 
