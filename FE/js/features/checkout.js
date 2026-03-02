@@ -36,10 +36,125 @@ async function initCheckout() {
   const tipEl = document.getElementById("checkout-tip");
   const payBtn = document.getElementById("checkout-pay");
   const payText = document.getElementById("checkout-pay-text");
+  const qrImageEl = document.getElementById("checkout-qr-image");
+  const qrPlaceholderEl = document.getElementById("checkout-qr-placeholder");
+  const qrStatusEl = document.getElementById("checkout-qr-status");
+  const bankNameEl = document.getElementById("checkout-bank-name");
+  const accountNoEl = document.getElementById("checkout-account-no");
+  const accountNameEl = document.getElementById("checkout-account-name");
+  const transferContentEl = document.getElementById("checkout-transfer-content");
   const loginLink = document.getElementById("landing-login-link");
   const getStartedTop = document.getElementById("landing-get-started-top");
   const notifWrap = document.getElementById("landing-notif-wrap");
   if (!listEl || !totalEl) return;
+
+  const state = {
+    paymentId: null,
+    selectedSubjectIds: [],
+    pollTimer: null,
+    unlocked: false
+  };
+
+  const stopPolling = () => {
+    if (state.pollTimer) {
+      clearInterval(state.pollTimer);
+      state.pollTimer = null;
+    }
+  };
+
+  const setPayText = (text) => {
+    if (payText) payText.textContent = text;
+  };
+
+  const setQrStatus = (text) => {
+    if (qrStatusEl) qrStatusEl.textContent = text;
+  };
+
+  const renderQrInfo = (payload) => {
+    if (qrImageEl) {
+      const url = payload && payload.qrImageUrl;
+      if (url) {
+        qrImageEl.src = url;
+        qrImageEl.classList.remove("hidden");
+        if (qrPlaceholderEl) qrPlaceholderEl.classList.add("hidden");
+      }
+    }
+    if (bankNameEl) bankNameEl.textContent = (payload && payload.bankName) || "-";
+    if (accountNoEl) accountNoEl.textContent = (payload && payload.accountNo) || "-";
+    if (accountNameEl) accountNameEl.textContent = (payload && payload.accountName) || "-";
+    if (transferContentEl) transferContentEl.textContent = (payload && payload.transferContent) || "-";
+  };
+
+  const lockSelection = (boxes, lock) => {
+    boxes.forEach((box) => {
+      box.disabled = lock;
+    });
+  };
+
+  const updateByStatus = async (statusPayload) => {
+    const status = String((statusPayload && statusPayload.status) || "").toUpperCase();
+    if (status === "SUCCESS") {
+      setQrStatus("Transfer confirmed");
+      setPayText("Roadmap Unlocked");
+      payBtn.disabled = true;
+      stopPolling();
+      if (!state.unlocked) {
+        state.unlocked = true;
+        const ids = Array.isArray(statusPayload.subjectIds) && statusPayload.subjectIds.length
+          ? statusPayload.subjectIds.map((id) => Number(id)).filter(Boolean)
+          : state.selectedSubjectIds;
+        const sub = await api("/api/subscriptions/checkout", "POST", { subjectIds: ids }, true);
+        localStorage.setItem(KEYS.subscription, JSON.stringify(sub));
+        if (ids[0]) {
+          localStorage.setItem(KEYS.subjectId, String(ids[0]));
+          nav(`/learning-roadmap?subjectId=${ids[0]}`, `coursesDetail.html?subjectId=${ids[0]}`);
+        } else {
+          nav("/roadmap-dashboard", "roadmapDashboard.html");
+        }
+      }
+      return;
+    }
+
+    if (status === "SUBMITTED") {
+      setQrStatus("Processing payment...");
+      setPayText("Waiting Auto Confirmation...");
+      payBtn.disabled = true;
+      return;
+    }
+
+    if (status === "FAILED" || status === "CANCELLED") {
+      stopPolling();
+      setQrStatus("Payment failed");
+      setPayText("Start Payment");
+      payBtn.disabled = false;
+      toast("Payment was rejected/failed. Please create a new checkout.", "warn");
+      state.paymentId = null;
+      return;
+    }
+
+    if (state.paymentId) {
+      setQrStatus("Waiting for transfer...");
+      setPayText("Waiting For Payment...");
+      payBtn.disabled = true;
+      return;
+    }
+    setQrStatus("Waiting for payment...");
+    setPayText("Start Payment");
+    payBtn.disabled = false;
+  };
+
+  const startPolling = (paymentId) => {
+    if (!paymentId) return;
+    stopPolling();
+    state.pollTimer = setInterval(async () => {
+      try {
+        const statusPayload = await api(`/api/payments/${paymentId}/status`, "GET", null, true);
+        await updateByStatus(statusPayload);
+      } catch (err) {
+        stopPolling();
+      }
+    }, 30000);
+  };
 
   if (notifWrap) notifWrap.classList.add("hidden");
   if (loginLink) {
@@ -155,6 +270,8 @@ async function initCheckout() {
     }
 
     rerenderTotal();
+    setPayText("Start Payment");
+    setQrStatus("Waiting for payment...");
 
     if (payBtn) {
       payBtn.addEventListener("click", async () => {
@@ -166,19 +283,30 @@ async function initCheckout() {
 
         showLoading("Processing checkout...");
         payBtn.disabled = true;
-        if (payText) payText.textContent = "Processing...";
+        setPayText("Processing...");
 
         try {
-          const sub = await api("/api/subscriptions/checkout", "POST", { subjectIds: ids }, true);
-          localStorage.setItem(KEYS.subscription, JSON.stringify(sub));
-          localStorage.setItem(KEYS.subjectId, String(ids[0]));
-          nav(`/learning-roadmap?subjectId=${ids[0]}`, `coursesDetail.html?subjectId=${ids[0]}`);
+          if (!state.paymentId) {
+            const created = await api("/api/payments/checkout-qr", "POST", { subjectIds: ids }, true);
+            state.paymentId = Number(created.paymentId);
+            state.selectedSubjectIds = ids;
+            renderQrInfo(created);
+            lockSelection(boxes, true);
+            setQrStatus("Transfer pending");
+            setPayText("Waiting For Payment...");
+            payBtn.disabled = true;
+            startPolling(state.paymentId);
+            toast("QR created. Hệ thống sẽ tự xác nhận sau khi nhận giao dịch.", "ok");
+          } else {
+            payBtn.disabled = true;
+            setPayText("Waiting For Payment...");
+          }
         } catch (err) {
           toast(`Checkout failed: ${err.message}`, "error");
+          payBtn.disabled = false;
+          setPayText("Start Payment");
         } finally {
           hideLoading();
-          payBtn.disabled = false;
-          if (payText) payText.textContent = "Pay and Unlock Roadmap";
         }
       });
     }
@@ -187,6 +315,8 @@ async function initCheckout() {
   } finally {
     hideLoading();
   }
+
+  window.addEventListener("beforeunload", stopPolling);
 }
 
 export { initCheckout };

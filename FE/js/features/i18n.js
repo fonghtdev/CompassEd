@@ -189,7 +189,7 @@ function applyLanguage() {
   setText("checkout-subtitle", t("checkoutSubtitle"));
   setText("checkout-total-label", t("checkoutTotal"));
   setText("checkout-back", t("checkoutBack"));
-  setText("checkout-pay", t("checkoutPay"));
+  setText("checkout-pay-text", t("checkoutPay"));
   setText("auth-intro", t("authIntro"));
   setText("auth-bullet-1", t("authBullet1"));
   setText("auth-bullet-2", t("authBullet2"));
