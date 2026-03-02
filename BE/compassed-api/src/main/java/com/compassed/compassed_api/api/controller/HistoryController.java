@@ -12,7 +12,7 @@ import com.compassed.compassed_api.local.LocalDataStore;
 import com.compassed.compassed_api.security.CurrentUserService;
 
 @RestController
-@Profile("local")
+@Profile("removed-local")
 @RequestMapping("/api/history")
 public class HistoryController {
 
@@ -40,3 +40,4 @@ public class HistoryController {
         }).toList();
     }
 }
+

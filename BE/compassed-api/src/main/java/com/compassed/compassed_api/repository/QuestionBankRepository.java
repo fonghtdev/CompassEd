@@ -2,6 +2,7 @@ package com.compassed.compassed_api.repository;
 
 import com.compassed.compassed_api.domain.QuestionBank;
 import com.compassed.compassed_api.domain.QuestionBank.Level;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -33,13 +34,12 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, Long
             "AND level = :level " +
             "AND grade_level = :gradeLevel " +
             "AND is_active = 1 " +
-            "ORDER BY RAND() " +
-            "LIMIT :limit", nativeQuery = true)
+            "ORDER BY RAND()", nativeQuery = true)
     List<QuestionBank> findRandomQuestions(
             @Param("subjectId") Long subjectId,
             @Param("level") String level,
             @Param("gradeLevel") int gradeLevel,
-            @Param("limit") int limit);
+            Pageable pageable);
 
     /**
      * Random N câu hỏi theo subject, level và skill type
@@ -50,14 +50,13 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, Long
             "AND grade_level = :gradeLevel " +
             "AND skill_type = :skillType " +
             "AND is_active = 1 " +
-            "ORDER BY RAND() " +
-            "LIMIT :limit", nativeQuery = true)
+            "ORDER BY RAND()", nativeQuery = true)
     List<QuestionBank> findRandomQuestionsBySkill(
             @Param("subjectId") Long subjectId,
             @Param("level") String level,
             @Param("gradeLevel") int gradeLevel,
             @Param("skillType") String skillType,
-            @Param("limit") int limit);
+            Pageable pageable);
 
     /**
      * Đếm số câu hỏi theo subject và level

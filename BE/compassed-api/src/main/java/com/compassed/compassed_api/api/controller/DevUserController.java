@@ -11,7 +11,7 @@ import com.compassed.compassed_api.domain.entity.User;
 import com.compassed.compassed_api.local.LocalDataStore;
 
 @RestController
-@Profile("local")
+@Profile("removed-local")
 @RequestMapping("/api/dev")
 public class DevUserController {
 
@@ -26,3 +26,4 @@ public class DevUserController {
         return localDataStore.createUser(req.getEmail(), req.getFullName());
     }
 }
+

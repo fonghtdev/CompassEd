@@ -50,7 +50,8 @@ public class DevController {
         admin.setEmail(normalizedEmail);
         admin.setFullName(fullName != null ? fullName : "Admin");
         admin.setPasswordHash(passwordEncoder.encode(password));
-        admin.setProvider("local");
+        admin.setOauthProvider("local");
+        admin.setOauthProviderUserId("local_dev_" + System.currentTimeMillis());
         admin.setRole(UserRole.ADMIN); // SET ROLE = ADMIN
 
         admin = userRepository.save(admin);
