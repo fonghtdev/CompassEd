@@ -28,7 +28,7 @@ services:
       MAIL_USERNAME: fonght.dev@gmail.com
       MAIL_PASSWORD: yylmvpdohcxcvhzl
       MAIL_FROM: fonght.dev@gmail.com
-      MYSQL_URL: jdbc:mysql://mysql:3306/compassed-db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      MYSQL_URL: jdbc:mysql://mysql:3306/compassed?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       MYSQL_USER: root
       MYSQL_PASSWORD: 1234
       JWT_SECRET: this-is-a-very-strong-jwt-secret-min-32
@@ -55,7 +55,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: 1234
-      MYSQL_DATABASE: compassed-db
+      MYSQL_DATABASE: compassed
     ports:
       - "3307:3306"
     volumes:

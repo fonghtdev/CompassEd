@@ -247,17 +247,48 @@ public class PaymentService {
         if (payload == null) {
             return Map.of("ok", true, "message", "ignored");
         }
-        Object dataObj = payload.get("data");
-        if (!(dataObj instanceof Map<?, ?> rawData)) {
-            return Map.of("ok", true, "message", "ignored");
-        }
-        Map<String, Object> data = toStringKeyMap(rawData);
+        Map<String, Object> top = toStringKeyMap(payload);
+        Object dataObj = top.get("data");
+        Map<String, Object> data = dataObj instanceof Map<?, ?> rawData ? toStringKeyMap(rawData) : Map.of();
+
         String orderCode = Objects.toString(data.get("orderCode"), "").trim();
+        if (orderCode.isEmpty()) {
+            orderCode = Objects.toString(top.get("orderCode"), "").trim();
+        }
         if (orderCode.isEmpty()) {
             return Map.of("ok", true, "message", "ignored");
         }
+
         Payment payment = paymentRepository.findByPaymentReference(orderCode)
                 .orElseThrow(() -> new RuntimeException("Payment not found for orderCode=" + orderCode));
+
+        String webhookStatus = resolveWebhookPayOsStatus(top, data);
+        if ("PAID".equals(webhookStatus) || "SUCCESS".equals(webhookStatus)) {
+            List<Long> subjectIds = resolveSubjectIds(payment);
+            for (Long subjectId : subjectIds) {
+                createSubscriptionAfterPayment(payment.getUserId(), subjectId);
+            }
+            payment.setStatus("SUCCESS");
+            payment.setConfirmedAt(LocalDateTime.now());
+            String paymentLinkId = Objects.toString(data.get("paymentLinkId"), "").trim();
+            if (paymentLinkId.isEmpty()) {
+                paymentLinkId = Objects.toString(data.get("id"), "").trim();
+            }
+            if (!paymentLinkId.isEmpty()) {
+                payment.setTransactionId(paymentLinkId);
+            }
+            payment = paymentRepository.save(payment);
+        } else if ("CANCELLED".equals(webhookStatus) || "FAILED".equals(webhookStatus) || "EXPIRED".equals(webhookStatus)) {
+            if (!"SUCCESS".equalsIgnoreCase(payment.getStatus())) {
+                payment.setStatus("FAILED");
+                String reason = extractPayOsCancellationReason(data);
+                if (reason != null && !reason.isBlank()) {
+                    payment.setTransferNote(sanitizeTransferNote("PAYOS_" + webhookStatus + ": " + reason));
+                }
+                payment = paymentRepository.save(payment);
+            }
+        }
+
         Payment synced = refreshPayOsStatus(payment, true);
         return Map.of(
                 "ok", true,
@@ -985,6 +1016,29 @@ public class PaymentService {
             reason = Objects.toString(payload.get("desc"), "").trim();
         }
         return reason;
+    }
+
+    private String resolveWebhookPayOsStatus(Map<String, Object> top, Map<String, Object> data) {
+        String status = extractPayOsStatus(data);
+        if (status.isBlank()) {
+            status = extractPayOsStatus(top);
+        }
+        if (!status.isBlank()) {
+            return status;
+        }
+
+        // Many PayOS webhook payloads use code=00 to indicate a successful paid event.
+        String dataCode = Objects.toString(data.get("code"), "").trim();
+        String topCode = Objects.toString(top.get("code"), "").trim();
+        if ("00".equals(dataCode) || "00".equals(topCode)) {
+            return "PAID";
+        }
+
+        String transactionDateTime = Objects.toString(data.get("transactionDateTime"), "").trim();
+        if (!transactionDateTime.isBlank()) {
+            return "PAID";
+        }
+        return "";
     }
 
     private String buildSafePayOsItemName(Subject subject) {
