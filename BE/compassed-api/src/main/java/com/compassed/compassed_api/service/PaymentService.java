@@ -10,18 +10,20 @@ import com.compassed.compassed_api.repository.PaymentSubjectItemRepository;
 import com.compassed.compassed_api.repository.SubscriptionRepository;
 import com.compassed.compassed_api.repository.SubjectRepository;
 import com.compassed.compassed_api.repository.UserRepository;
-import com.compassed.compassed_api.service.PricingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import jakarta.annotation.PostConstruct;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
@@ -29,12 +31,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -42,7 +38,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentService {
-    
+
     private final PaymentRepository paymentRepository;
     private final PaymentSubjectItemRepository paymentSubjectItemRepository;
     private final SubscriptionRepository subscriptionRepository;
@@ -50,16 +46,16 @@ public class PaymentService {
     private final SubjectRepository subjectRepository;
     private final PricingService pricingService;
     private final RestTemplate restTemplate = new RestTemplate();
-    
+
     @Value("${vnpay.tmn-code:DEMO}")
     private String vnpTmnCode;
-    
+
     @Value("${vnpay.hash-secret:DEMO_SECRET_KEY}")
     private String vnpHashSecret;
-    
+
     @Value("${vnpay.url:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}")
     private String vnpUrl;
-    
+
     @Value("${vnpay.return-url:http://localhost:3000/payment/callback}")
     private String vnpReturnUrl;
 
@@ -78,126 +74,152 @@ public class PaymentService {
     @Value("${checkout.qr.bank-bin:970422}")
     private String checkoutQrBankBin;
 
-    @Value("${casso.enabled:false}")
-    private boolean cassoEnabled;
+    @Value("${payos.enabled:false}")
+    private boolean payOsEnabled;
 
-    @Value("${casso.api-key:}")
-    private String cassoApiKey;
+    @Value("${payos.client-id:}")
+    private String payOsClientId;
 
-    @Value("${casso.base-url:https://oauth.casso.vn/v2}")
-    private String cassoBaseUrl;
+    @Value("${payos.api-key:}")
+    private String payOsApiKey;
 
-    @Value("${casso.account-number:}")
-    private String cassoAccountNumber;
+    @Value("${payos.checksum-key:}")
+    private String payOsChecksumKey;
 
-    @Value("${casso.page-size:50}")
-    private int cassoPageSize;
+    @Value("${payos.base-url:https://api-merchant.payos.vn}")
+    private String payOsBaseUrl;
 
-    @Value("${casso.check-cooldown-seconds:20}")
-    private long cassoCheckCooldownSeconds;
-    
-    /**
-     * Tạo payment record và generate VNPay URL
-     */
-    @Transactional
-    public Map<String, Object> createPayment(Long userId, Long subjectId, String packageType) {
-        // Tính amount dựa vào package type
-        BigDecimal amount = calculateAmount(packageType);
-        
-        // Create payment record
-        Payment payment = new Payment(userId, amount, "VNPAY", subjectId, packageType);
-        payment = paymentRepository.save(payment);
-        
-        // Generate VNPay URL
-        String paymentUrl = generateVNPayUrl(payment);
-        
-        return Map.of(
-            "paymentId", payment.getId(),
-            "amount", amount,
-            "currency", "VND",
-            "paymentUrl", paymentUrl,
-            "status", "PENDING"
+    @Value("${payos.return-url:https://compassed.io.vn/checkout}")
+    private String payOsReturnUrl;
+
+    @Value("${payos.cancel-url:https://compassed.io.vn/checkout}")
+    private String payOsCancelUrl;
+
+    @Value("${payos.check-cooldown-seconds:15}")
+    private long payOsCheckCooldownSeconds;
+
+    @PostConstruct
+    void logPayOsConfigSummary() {
+        log.info(
+                "PayOS config: enabled={}, clientIdSet={}, apiKeyLen={}, checksumKeyLen={}, baseUrl={}",
+                payOsEnabled,
+                !isBlank(payOsClientId),
+                payOsApiKey == null ? 0 : payOsApiKey.length(),
+                payOsChecksumKey == null ? 0 : payOsChecksumKey.length(),
+                payOsBaseUrl
         );
     }
-    
-    /**
-     * Verify VNPay callback
-     */
+
+    @Transactional
+    public Map<String, Object> createPayment(Long userId, Long subjectId, String packageType) {
+        BigDecimal amount = calculateAmount(packageType);
+
+        Payment payment = new Payment(userId, amount, "VNPAY", subjectId, packageType);
+        payment = paymentRepository.save(payment);
+
+        String paymentUrl = generateVNPayUrl(payment);
+
+        return Map.of(
+                "paymentId", payment.getId(),
+                "amount", amount,
+                "currency", "VND",
+                "paymentUrl", paymentUrl,
+                "status", "PENDING"
+        );
+    }
+
     @Transactional
     public Map<String, Object> verifyPaymentCallback(Map<String, String> params) {
         try {
             String vnpSecureHash = params.get("vnp_SecureHash");
             params.remove("vnp_SecureHashType");
             params.remove("vnp_SecureHash");
-            
+
             String signValue = hashAllFields(params);
-            
+
             if (!signValue.equals(vnpSecureHash)) {
                 log.error("Invalid signature");
                 return Map.of("success", false, "message", "Invalid signature");
             }
-            
+
             String transactionId = params.get("vnp_TxnRef");
             String responseCode = params.get("vnp_ResponseCode");
-            
+
             Optional<Payment> paymentOpt = paymentRepository.findByTransactionId(transactionId);
             if (paymentOpt.isEmpty()) {
-                // Extract paymentId from transactionId (format: PAY{paymentId})
                 String paymentIdStr = transactionId.replace("PAY", "");
                 Long paymentId = Long.parseLong(paymentIdStr);
                 paymentOpt = paymentRepository.findById(paymentId);
             }
-            
+
             if (paymentOpt.isEmpty()) {
                 return Map.of("success", false, "message", "Payment not found");
             }
-            
+
             Payment payment = paymentOpt.get();
-            
+
             if ("00".equals(responseCode)) {
-                // Payment success
                 payment.setStatus("SUCCESS");
                 payment.setTransactionId(params.get("vnp_TransactionNo"));
                 payment.setConfirmedAt(LocalDateTime.now());
                 paymentRepository.save(payment);
-                
-                // Create subscription
+
                 createSubscriptionAfterPayment(payment.getUserId(), payment.getSubjectId());
-                
+
                 return Map.of(
-                    "success", true,
-                    "message", "Payment successful",
-                    "paymentId", payment.getId(),
-                    "amount", payment.getAmount()
+                        "success", true,
+                        "message", "Payment successful",
+                        "paymentId", payment.getId(),
+                        "amount", payment.getAmount()
                 );
-            } else {
-                // Payment failed
-                payment.setStatus("FAILED");
-                paymentRepository.save(payment);
-                
-                return Map.of("success", false, "message", "Payment failed: " + responseCode);
             }
-            
+
+            payment.setStatus("FAILED");
+            paymentRepository.save(payment);
+            return Map.of("success", false, "message", "Payment failed: " + responseCode);
+
         } catch (Exception e) {
             log.error("Error verifying payment", e);
             return Map.of("success", false, "message", e.getMessage());
         }
     }
-    
-    /**
-     * Get payment status
-     */
+
     public Map<String, Object> getPaymentStatus(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
-            .orElseThrow(() -> new RuntimeException("Payment not found"));
+                .orElseThrow(() -> new RuntimeException("Payment not found"));
         return paymentStatusPayload(payment);
     }
 
     public Map<String, Object> getPaymentStatusForUser(Long userId, Long paymentId) {
         Payment payment = paymentRepository.findByIdAndUserId(paymentId, userId)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
-        payment = maybeAutoConfirmWithCasso(payment);
+        payment = maybeAutoConfirmWithPayOs(payment);
         return paymentStatusPayload(payment);
+    }
+
+    @Transactional
+    public Map<String, Object> handlePayOsWebhook(Map<String, Object> payload) {
+        if (payload == null) {
+            return Map.of("ok", true, "message", "ignored");
+        }
+        Object dataObj = payload.get("data");
+        if (!(dataObj instanceof Map<?, ?> rawData)) {
+            return Map.of("ok", true, "message", "ignored");
+        }
+        Map<String, Object> data = toStringKeyMap(rawData);
+        String orderCode = Objects.toString(data.get("orderCode"), "").trim();
+        if (orderCode.isEmpty()) {
+            return Map.of("ok", true, "message", "ignored");
+        }
+        Payment payment = paymentRepository.findByPaymentReference(orderCode)
+                .orElseThrow(() -> new RuntimeException("Payment not found for orderCode=" + orderCode));
+        Payment synced = refreshPayOsStatus(payment, true);
+        return Map.of(
+                "ok", true,
+                "paymentId", synced.getId(),
+                "status", synced.getStatus(),
+                "orderCode", orderCode
+        );
     }
 
     public List<Map<String, Object>> getPaymentsForAdmin(String status) {
@@ -222,6 +244,9 @@ public class PaymentService {
         if (subjectIds.isEmpty()) {
             throw new RuntimeException("Must select at least 1 subject");
         }
+        if (!payOsEnabled || isBlank(payOsClientId) || isBlank(payOsApiKey) || isBlank(payOsChecksumKey)) {
+            throw new RuntimeException("PayOS is not configured");
+        }
 
         List<Subject> subjects = subjectRepository.findAllById(subjectIds);
         if (subjects.size() != subjectIds.size()) {
@@ -234,17 +259,23 @@ public class PaymentService {
         payment.setUserId(userId);
         payment.setAmount(BigDecimal.valueOf(totalAmountVnd));
         payment.setCurrency("VND");
-        payment.setPaymentMethod("BANK_TRANSFER");
-        payment.setPaymentGateway("CASSO_QR");
+        payment.setPaymentMethod("PAYOS");
+        payment.setPaymentGateway("PAYOS");
         payment.setPackageType("SUBJECT_BUNDLE_" + subjectIds.size());
         payment.setStatus("PENDING");
         Payment persistedPayment = paymentRepository.save(payment);
-        String paymentReference = buildPaymentReference(persistedPayment.getId());
-        persistedPayment.setPaymentReference(paymentReference);
-        persistedPayment.setTransferNote(paymentReference);
-        persistedPayment = paymentRepository.save(persistedPayment);
-        Payment paymentForItems = persistedPayment;
 
+        long orderCode = buildOrderCode(persistedPayment.getId());
+        String orderCodeStr = String.valueOf(orderCode);
+        String description = buildPaymentDescription(persistedPayment.getId());
+        Map<String, Object> payOsData = createPayOsPaymentLink(orderCode, totalAmountVnd, description, subjects);
+
+        persistedPayment.setPaymentReference(orderCodeStr);
+        persistedPayment.setTransferNote(description);
+        persistedPayment.setTransactionId(Objects.toString(payOsData.get("paymentLinkId"), null));
+        persistedPayment = paymentRepository.save(persistedPayment);
+
+        Payment paymentForItems = persistedPayment;
         List<PaymentSubjectItem> items = subjectIds.stream().map(subjectId -> {
             PaymentSubjectItem item = new PaymentSubjectItem();
             item.setPayment(paymentForItems);
@@ -253,15 +284,22 @@ public class PaymentService {
         }).toList();
         paymentSubjectItemRepository.saveAll(items);
 
+        String qrCodeText = Objects.toString(payOsData.get("qrCode"), "");
+        String bin = Objects.toString(payOsData.get("bin"), checkoutQrBankBin);
+        String accountNumber = Objects.toString(payOsData.get("accountNumber"), checkoutQrAccountNo);
+        String accountName = Objects.toString(payOsData.get("accountName"), checkoutQrAccountName);
+
         Map<String, Object> payload = paymentStatusPayload(persistedPayment);
         payload.put("subjectIds", subjectIds);
         payload.put("subjectCount", subjectIds.size());
-        payload.put("qrImageUrl", buildCheckoutQrUrl(totalAmountVnd, paymentReference));
+        payload.put("qrImageUrl", buildCheckoutQrImageUrlFromText(qrCodeText));
+        payload.put("qrCode", qrCodeText);
+        payload.put("checkoutUrl", payOsData.get("checkoutUrl"));
         payload.put("bankName", checkoutQrBank);
-        payload.put("bankBin", checkoutQrBankBin);
-        payload.put("accountNo", checkoutQrAccountNo);
-        payload.put("accountName", checkoutQrAccountName);
-        payload.put("transferContent", paymentReference);
+        payload.put("bankBin", bin);
+        payload.put("accountNo", accountNumber);
+        payload.put("accountName", accountName);
+        payload.put("transferContent", description);
         return payload;
     }
 
@@ -272,10 +310,6 @@ public class PaymentService {
 
         if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
             return paymentStatusPayload(payment);
-        }
-
-        if (!"PENDING".equalsIgnoreCase(payment.getStatus()) && !"SUBMITTED".equalsIgnoreCase(payment.getStatus())) {
-            throw new RuntimeException("Cannot submit transfer for status=" + payment.getStatus());
         }
 
         payment.setStatus("SUBMITTED");
@@ -328,16 +362,23 @@ public class PaymentService {
         return paymentStatusPayload(payment);
     }
 
-    private Payment maybeAutoConfirmWithCasso(Payment payment) {
+    private Payment maybeAutoConfirmWithPayOs(Payment payment) {
+        return refreshPayOsStatus(payment, false);
+    }
+
+    private Payment refreshPayOsStatus(Payment payment, boolean forceCheck) {
         String status = String.valueOf(payment.getStatus()).toUpperCase();
         if (!"PENDING".equals(status) && !"SUBMITTED".equals(status)) {
             return payment;
         }
-        if (!cassoEnabled || cassoApiKey == null || cassoApiKey.isBlank()) {
+        if (!payOsEnabled || isBlank(payOsClientId) || isBlank(payOsApiKey)) {
+            return payment;
+        }
+        if (payment.getPaymentReference() == null || payment.getPaymentReference().isBlank()) {
             return payment;
         }
         LocalDateTime lastCheckedAt = payment.getLastCheckedAt();
-        if (lastCheckedAt != null && lastCheckedAt.isAfter(LocalDateTime.now().minusSeconds(cassoCheckCooldownSeconds))) {
+        if (!forceCheck && lastCheckedAt != null && lastCheckedAt.isAfter(LocalDateTime.now().minusSeconds(payOsCheckCooldownSeconds))) {
             return payment;
         }
 
@@ -345,105 +386,140 @@ public class PaymentService {
         paymentRepository.save(payment);
 
         try {
-            Optional<Map<String, Object>> matchedTx = findMatchingCassoTransaction(payment);
-            if (matchedTx.isEmpty()) {
+            Map<String, Object> payOsStatus = fetchPayOsPaymentStatus(payment.getPaymentReference());
+            if (payOsStatus.isEmpty()) {
                 return payment;
             }
-            Map<String, Object> tx = matchedTx.get();
-            String txId = Objects.toString(tx.get("id"), null);
-            if (txId == null || txId.isBlank()) {
-                txId = Objects.toString(tx.get("tid"), null);
-            }
-            if (txId == null || txId.isBlank()) {
-                txId = Objects.toString(tx.get("referenceNum"), null);
+
+            String statusValue = Objects.toString(payOsStatus.get("status"), "").toUpperCase();
+            String cancellationReason = Objects.toString(payOsStatus.get("cancellationReason"), null);
+            String paymentLinkId = Objects.toString(payOsStatus.get("id"), null);
+
+            if ("PAID".equals(statusValue)) {
+                List<Long> subjectIds = resolveSubjectIds(payment);
+                for (Long subjectId : subjectIds) {
+                    createSubscriptionAfterPayment(payment.getUserId(), subjectId);
+                }
+                payment.setStatus("SUCCESS");
+                payment.setConfirmedAt(LocalDateTime.now());
+                if (paymentLinkId != null && !paymentLinkId.isBlank()) {
+                    payment.setTransactionId(paymentLinkId);
+                }
+                return paymentRepository.save(payment);
             }
 
-            List<Long> subjectIds = resolveSubjectIds(payment);
-            for (Long subjectId : subjectIds) {
-                createSubscriptionAfterPayment(payment.getUserId(), subjectId);
+            if ("CANCELLED".equals(statusValue) || "EXPIRED".equals(statusValue)) {
+                payment.setStatus("FAILED");
+                if (cancellationReason != null && !cancellationReason.isBlank()) {
+                    payment.setTransferNote(sanitizeTransferNote("PAYOS_" + statusValue + ": " + cancellationReason));
+                }
+                return paymentRepository.save(payment);
             }
-            payment.setStatus("SUCCESS");
-            payment.setConfirmedAt(LocalDateTime.now());
-            if (txId != null) {
-                payment.setTransactionId(txId);
-            }
-            payment = paymentRepository.save(payment);
+
             return payment;
         } catch (Exception ex) {
-            log.warn("Casso check failed for paymentId={}: {}", payment.getId(), ex.getMessage());
+            log.warn("PayOS check failed for paymentId={}: {}", payment.getId(), ex.getMessage());
             return payment;
         }
     }
 
-    private Optional<Map<String, Object>> findMatchingCassoTransaction(Payment payment) {
-        String paymentRef = payment.getPaymentReference();
-        if (paymentRef == null || paymentRef.isBlank()) {
-            return Optional.empty();
-        }
-
-        String fromDate = payment.getCreatedAt() == null
-                ? LocalDateTime.now().minusDays(2).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                : payment.getCreatedAt().minusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        String toDate = LocalDateTime.now().plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-
-        StringBuilder url = new StringBuilder(cassoBaseUrl);
-        if (!cassoBaseUrl.endsWith("/")) {
-            url.append('/');
-        }
-        url.append("transactions?page=1&pageSize=").append(Math.max(10, cassoPageSize))
-                .append("&sort=DESC")
-                .append("&fromDate=").append(encodeQueryValue(fromDate))
-                .append("&toDate=").append(encodeQueryValue(toDate));
-        if (cassoAccountNumber != null && !cassoAccountNumber.isBlank()) {
-            url.append("&bankSubAccId=").append(encodeQueryValue(cassoAccountNumber));
-        }
+    private Map<String, Object> fetchPayOsPaymentStatus(String orderCode) {
+        String normalizedBase = normalizeBaseUrl(payOsBaseUrl);
+        String url = normalizedBase + "/v2/payment-requests/" + orderCode;
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Apikey " + cassoApiKey.trim());
+        headers.set("x-client-id", safeTrim(payOsClientId));
+        headers.set("x-api-key", safeTrim(payOsApiKey));
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<Map> response = restTemplate.exchange(url.toString(), HttpMethod.GET, entity, Map.class);
-        Map<?, ?> body = response.getBody();
-        if (body == null) {
-            return Optional.empty();
-        }
 
-        Object data = body.get("data");
+        ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+        Map<?, ?> responseBody = response.getBody();
+        if (responseBody == null) {
+            return Map.of();
+        }
+        Object code = responseBody.get("code");
+        if (code != null && !"00".equals(String.valueOf(code))) {
+            return Map.of();
+        }
+        Object data = responseBody.get("data");
         if (!(data instanceof Map<?, ?> dataMap)) {
-            return Optional.empty();
+            return Map.of();
         }
-        Object recordsObj = dataMap.get("records");
-        if (!(recordsObj instanceof List<?> records)) {
-            return Optional.empty();
-        }
-
-        long expectedAmount = payment.getAmount() == null ? 0L : payment.getAmount().longValue();
-        for (Object recordObj : records) {
-            if (!(recordObj instanceof Map<?, ?> raw)) {
-                continue;
-            }
-            Map<String, Object> record = raw.entrySet().stream()
-                    .collect(Collectors.toMap(
-                            e -> String.valueOf(e.getKey()),
-                            Map.Entry::getValue,
-                            (a, b) -> a,
-                            LinkedHashMap::new));
-
-            long amount = parseLong(record.get("amount"));
-            if (amount <= 0 || amount != expectedAmount) {
-                continue;
-            }
-            String description = Objects.toString(
-                    firstNonNull(record.get("description"), record.get("desc"), record.get("content")), "");
-            if (description.toUpperCase().contains(paymentRef.toUpperCase())) {
-                return Optional.of(record);
-            }
-        }
-        return Optional.empty();
+        return toStringKeyMap(dataMap);
     }
-    
-    /**
-     * Generate VNPay payment URL
-     */
+
+    private Map<String, Object> createPayOsPaymentLink(
+            long orderCode,
+            long amountVnd,
+            String description,
+            List<Subject> subjects) {
+        String normalizedBase = normalizeBaseUrl(payOsBaseUrl);
+        String url = normalizedBase + "/v2/payment-requests";
+
+        List<Map<String, Object>> items = buildPayOsItems(amountVnd, subjects);
+
+        Map<String, Object> requestBody = new LinkedHashMap<>();
+        requestBody.put("orderCode", orderCode);
+        requestBody.put("amount", amountVnd);
+        requestBody.put("description", description);
+        requestBody.put("returnUrl", payOsReturnUrl);
+        requestBody.put("cancelUrl", payOsCancelUrl);
+        requestBody.put("items", items);
+        requestBody.put("signature", signPayOsCreateRequest(orderCode, amountVnd, description));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("x-client-id", safeTrim(payOsClientId));
+        headers.set("x-api-key", safeTrim(payOsApiKey));
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+        try {
+            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
+            Map<?, ?> responseBody = response.getBody();
+            if (responseBody == null) {
+                throw new RuntimeException("PayOS create payment returned empty body");
+            }
+            Object code = responseBody.get("code");
+            if (code != null && !"00".equals(String.valueOf(code))) {
+                String desc = Objects.toString(responseBody.get("desc"), "PayOS create payment failed");
+                throw new RuntimeException("PayOS error: " + desc);
+            }
+            Object data = responseBody.get("data");
+            if (!(data instanceof Map<?, ?> dataMap)) {
+                throw new RuntimeException("PayOS create payment missing data");
+            }
+            return toStringKeyMap(dataMap);
+        } catch (HttpStatusCodeException ex) {
+            throw new RuntimeException("PayOS create payment failed: " + ex.getResponseBodyAsString());
+        }
+    }
+
+    private List<Map<String, Object>> buildPayOsItems(long amountVnd, List<Subject> subjects) {
+        if (subjects.isEmpty()) {
+            return List.of();
+        }
+        long basePrice = amountVnd / subjects.size();
+        long remainder = amountVnd - (basePrice * subjects.size());
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (int i = 0; i < subjects.size(); i++) {
+            Subject subject = subjects.get(i);
+            long itemPrice = basePrice + (i == 0 ? remainder : 0);
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("name", buildSafePayOsItemName(subject));
+            item.put("quantity", 1);
+            item.put("price", itemPrice);
+            items.add(item);
+        }
+        return items;
+    }
+
+    private String normalizeBaseUrl(String baseUrl) {
+        if (baseUrl == null || baseUrl.isBlank()) {
+            return "https://api-merchant.payos.vn";
+        }
+        return baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+    }
+
     private String generateVNPayUrl(Payment payment) {
         try {
             Map<String, String> vnpParams = new HashMap<>();
@@ -458,21 +534,21 @@ public class PaymentService {
             vnpParams.put("vnp_Locale", "vn");
             vnpParams.put("vnp_ReturnUrl", vnpReturnUrl);
             vnpParams.put("vnp_IpAddr", "127.0.0.1");
-            
+
             Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
             SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
             String vnpCreateDate = formatter.format(cld.getTime());
             vnpParams.put("vnp_CreateDate", vnpCreateDate);
-            
+
             cld.add(Calendar.MINUTE, 15);
             String vnpExpireDate = formatter.format(cld.getTime());
             vnpParams.put("vnp_ExpireDate", vnpExpireDate);
-            
+
             List<String> fieldNames = new ArrayList<>(vnpParams.keySet());
             Collections.sort(fieldNames);
             StringBuilder hashData = new StringBuilder();
             StringBuilder query = new StringBuilder();
-            
+
             Iterator<String> itr = fieldNames.iterator();
             while (itr.hasNext()) {
                 String fieldName = itr.next();
@@ -490,30 +566,27 @@ public class PaymentService {
                     }
                 }
             }
-            
+
             String queryUrl = query.toString();
             String vnpSecureHash = hmacSHA512(vnpHashSecret, hashData.toString());
             queryUrl += "&vnp_SecureHash=" + vnpSecureHash;
-            
+
             return vnpUrl + "?" + queryUrl;
-            
+
         } catch (Exception e) {
             log.error("Error generating VNPay URL", e);
             throw new RuntimeException("Error generating payment URL");
         }
     }
-    
-    /**
-     * Create subscription after successful payment
-     */
+
     private void createSubscriptionAfterPayment(Long userId, Long subjectId) {
         if (subjectId == null) {
             return;
         }
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
         Subject subject = subjectRepository.findById(subjectId)
-            .orElseThrow(() -> new RuntimeException("Subject not found"));
+                .orElseThrow(() -> new RuntimeException("Subject not found"));
 
         Optional<Subscription> existingOpt = subscriptionRepository.findByUser_IdAndSubject_Id(userId, subjectId);
         if (existingOpt.isPresent() && Boolean.TRUE.equals(existingOpt.get().isActive())) {
@@ -529,34 +602,17 @@ public class PaymentService {
         subscriptionRepository.save(subscription);
         log.info("Created subscription for userId={}, subjectId={}", userId, subjectId);
     }
-    
-    /**
-     * Calculate amount based on package type
-     */
+
     private BigDecimal calculateAmount(String packageType) {
         return switch (packageType) {
-            case "PLACEMENT_PACK" -> new BigDecimal("299000"); // 299k for placement pack
-            case "SUBSCRIPTION_MONTHLY" -> new BigDecimal("499000"); // 499k per month
-            case "SUBSCRIPTION_3MONTHS" -> new BigDecimal("1299000"); // 1.299M for 3 months
-            case "SUBSCRIPTION_6MONTHS" -> new BigDecimal("2499000"); // 2.499M for 6 months
+            case "PLACEMENT_PACK" -> new BigDecimal("299000");
+            case "SUBSCRIPTION_MONTHLY" -> new BigDecimal("499000");
+            case "SUBSCRIPTION_3MONTHS" -> new BigDecimal("1299000");
+            case "SUBSCRIPTION_6MONTHS" -> new BigDecimal("2499000");
             default -> new BigDecimal("299000");
         };
     }
-    
-    /**
-     * Get subscription duration in months
-     */
-    private int getSubscriptionDuration(String packageType) {
-        return switch (packageType) {
-            case "SUBSCRIPTION_3MONTHS" -> 3;
-            case "SUBSCRIPTION_6MONTHS" -> 6;
-            default -> 1;
-        };
-    }
-    
-    /**
-     * HMAC SHA512
-     */
+
     private String hmacSHA512(String key, String data) {
         try {
             Mac hmac512 = Mac.getInstance("HmacSHA512");
@@ -573,10 +629,7 @@ public class PaymentService {
             return "";
         }
     }
-    
-    /**
-     * Hash all fields for signature verification
-     */
+
     private String hashAllFields(Map<String, String> fields) {
         List<String> fieldNames = new ArrayList<>(fields.keySet());
         Collections.sort(fieldNames);
@@ -612,7 +665,7 @@ public class PaymentService {
 
     private Map<String, Object> paymentStatusPayload(Payment payment) {
         Map<String, Object> payload = new LinkedHashMap<>();
-        Payment checkedPayment = maybeAutoConfirmWithCasso(payment);
+        Payment checkedPayment = maybeAutoConfirmWithPayOs(payment);
         payload.put("paymentId", checkedPayment.getId());
         payload.put("status", checkedPayment.getStatus());
         payload.put("amount", checkedPayment.getAmount());
@@ -638,21 +691,20 @@ public class PaymentService {
         return trimmed.length() <= 255 ? trimmed : trimmed.substring(0, 255);
     }
 
-    private String buildPaymentReference(Long paymentId) {
+    private long buildOrderCode(Long paymentId) {
+        long base = System.currentTimeMillis() % 1_000_000_000L;
+        return base * 1000L + (paymentId % 1000L);
+    }
+
+    private String buildPaymentDescription(Long paymentId) {
         return "CE" + paymentId;
     }
 
-    private String buildCheckoutQrUrl(long amountVnd, String paymentReference) {
-        if (checkoutQrBankBin == null || checkoutQrBankBin.isBlank()
-                || checkoutQrAccountNo == null || checkoutQrAccountNo.isBlank()) {
+    private String buildCheckoutQrImageUrlFromText(String qrCodeText) {
+        if (qrCodeText == null || qrCodeText.isBlank()) {
             return checkoutQrImageUrl;
         }
-        String addInfo = encodeQueryValue(paymentReference);
-        String accountName = encodeQueryValue(checkoutQrAccountName == null ? "COMPASSED" : checkoutQrAccountName);
-        return "https://img.vietqr.io/image/" + checkoutQrBankBin.trim() + "-" + checkoutQrAccountNo.trim()
-                + "-compact2.png?amount=" + amountVnd
-                + "&addInfo=" + addInfo
-                + "&accountName=" + accountName;
+        return "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeQueryValue(qrCodeText);
     }
 
     private String encodeQueryValue(String value) {
@@ -662,26 +714,79 @@ public class PaymentService {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
-    private long parseLong(Object value) {
-        if (value == null) {
-            return 0L;
+    private String signPayOsCreateRequest(long orderCode, long amountVnd, String description) {
+        if (isBlank(payOsChecksumKey)) {
+            throw new RuntimeException("PAYOS_CHECKSUM_KEY is missing");
         }
+        String payload = "amount=" + amountVnd
+                + "&cancelUrl=" + payOsCancelUrl
+                + "&description=" + description
+                + "&orderCode=" + orderCode
+                + "&returnUrl=" + payOsReturnUrl;
+        return hmacSHA256(payOsChecksumKey, payload);
+    }
+
+    private String hmacSHA256(String key, String data) {
         try {
-            if (value instanceof Number number) {
-                return number.longValue();
+            Mac hmac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            hmac.init(secretKey);
+            byte[] bytes = hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(bytes.length * 2);
+            for (byte b : bytes) {
+                sb.append(String.format("%02x", b));
             }
-            return Long.parseLong(String.valueOf(value).replace(",", "").trim());
+            return sb.toString();
         } catch (Exception ex) {
-            return 0L;
+            throw new RuntimeException("Cannot sign PayOS request", ex);
         }
     }
 
-    private Object firstNonNull(Object... values) {
-        for (Object value : values) {
-            if (value != null) {
-                return value;
-            }
+    private Map<String, Object> toStringKeyMap(Map<?, ?> source) {
+        Map<String, Object> output = new LinkedHashMap<>();
+        if (source == null) {
+            return output;
         }
-        return null;
+        for (Map.Entry<?, ?> entry : source.entrySet()) {
+            String key = String.valueOf(entry.getKey());
+            output.put(key, entry.getValue());
+        }
+        return output;
+    }
+
+    private String trimForPayOs(String value, int maxLen) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = value.trim();
+        if (normalized.length() <= maxLen) {
+            return normalized;
+        }
+        return normalized.substring(0, maxLen);
+    }
+
+    private String safeTrim(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private String buildSafePayOsItemName(Subject subject) {
+        String raw = subject == null ? "" : String.valueOf(subject.getName());
+        String cleaned = raw
+                .replaceAll("[^A-Za-z0-9\\s]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+        if (cleaned.isBlank()) {
+            String code = subject == null ? "" : String.valueOf(subject.getCode());
+            cleaned = code == null ? "" : code.replaceAll("[^A-Za-z0-9]", "");
+        }
+        if (cleaned.isBlank()) {
+            long id = subject == null || subject.getId() == null ? 0L : subject.getId();
+            cleaned = "Subject " + id;
+        }
+        return trimForPayOs(cleaned, 25);
     }
 }
