@@ -7,6 +7,7 @@
 CREATE TABLE IF NOT EXISTS question_bank (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     subject_id BIGINT NOT NULL,
+    grade_level INT NOT NULL DEFAULT 10 COMMENT 'Khối lớp 10/11/12',
     level ENUM('L1', 'L2', 'L3') NOT NULL,
     skill_type VARCHAR(100) NOT NULL COMMENT 'Đại số, Hình học, Ngữ pháp, Reading...',
     question_type ENUM('MULTIPLE_CHOICE', 'ESSAY', 'TRUE_FALSE') DEFAULT 'MULTIPLE_CHOICE',
@@ -110,7 +111,28 @@ CREATE TABLE IF NOT EXISTS mini_test_attempts (
     INDEX idx_mta_minitest (mini_test_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 7. PAYMENTS (Lịch sử thanh toán)
+-- 7. SUBSCRIPTIONS (Gói học)
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    subject_id BIGINT NOT NULL,
+    package_id BIGINT,
+    payment_id BIGINT,
+    start_date DATETIME,
+    end_date DATETIME,
+    is_active BOOLEAN DEFAULT TRUE,
+    placement_unlocked BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_subscriptions_user_subject (user_id, subject_id),
+    INDEX idx_sub_user (user_id),
+    INDEX idx_sub_subject (subject_id),
+    INDEX idx_sub_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 8. PAYMENTS (Lịch sử thanh toán)
 CREATE TABLE IF NOT EXISTS payments (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
@@ -130,7 +152,7 @@ CREATE TABLE IF NOT EXISTS payments (
     INDEX idx_payment_transaction (transaction_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 8. SUBJECT CONFIG (Cấu hình môn học)
+-- 9. SUBJECT CONFIG (Cấu hình môn học)
 CREATE TABLE IF NOT EXISTS subject_config (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     subject_id BIGINT NOT NULL UNIQUE,
@@ -145,7 +167,7 @@ CREATE TABLE IF NOT EXISTS subject_config (
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 9. SKILL ANALYSIS (Phân tích kỹ năng chi tiết)
+-- 10. SKILL ANALYSIS (Phân tích kỹ năng chi tiết)
 CREATE TABLE IF NOT EXISTS skill_analysis (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     placement_result_id BIGINT,
@@ -159,7 +181,7 @@ CREATE TABLE IF NOT EXISTS skill_analysis (
     INDEX idx_sa_result (placement_result_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 10. ADMIN LOGS (Log hoạt động admin)
+-- 11. ADMIN LOGS (Log hoạt động admin)
 CREATE TABLE IF NOT EXISTS admin_logs (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     admin_id BIGINT NOT NULL,

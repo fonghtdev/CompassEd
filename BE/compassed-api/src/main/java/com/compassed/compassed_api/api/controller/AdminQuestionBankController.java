@@ -34,6 +34,7 @@ public class AdminQuestionBankController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllQuestions(
             @RequestParam(required = false) Long subjectId,
+            @RequestParam(required = false) Integer gradeLevel,
             @RequestParam(required = false) Level level,
             @RequestParam(required = false) String gradeBand,
             @RequestParam(required = false) String skillType,

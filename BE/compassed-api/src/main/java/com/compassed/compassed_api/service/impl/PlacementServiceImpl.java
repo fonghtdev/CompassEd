@@ -22,6 +22,7 @@ import com.compassed.compassed_api.domain.enums.AttemptStatus;
 import com.compassed.compassed_api.domain.enums.Level;
 import com.compassed.compassed_api.repository.PlacementAttemptRepository;
 import com.compassed.compassed_api.repository.PlacementResultRepository;
+import com.compassed.compassed_api.repository.QuestionBankRepository;
 import com.compassed.compassed_api.repository.SubjectRepository;
 import com.compassed.compassed_api.repository.SubscriptionRepository;
 import com.compassed.compassed_api.repository.UserRepository;
@@ -41,6 +42,7 @@ public class PlacementServiceImpl implements PlacementService {
     private final SubscriptionRepository subscriptionRepository;
     private final PlacementAttemptRepository attemptRepository;
     private final PlacementResultRepository resultRepository;
+    private final QuestionBankRepository questionBankRepository;
     private final AiService aiService;
     private final ObjectMapper objectMapper;
 
@@ -51,6 +53,7 @@ public class PlacementServiceImpl implements PlacementService {
             SubscriptionRepository subscriptionRepository,
             PlacementAttemptRepository attemptRepository,
             PlacementResultRepository resultRepository,
+            QuestionBankRepository questionBankRepository,
             ObjectMapper objectMapper,
             AiService aiService) {
         this.subjectRepository = subjectRepository;
@@ -59,12 +62,13 @@ public class PlacementServiceImpl implements PlacementService {
         this.subscriptionRepository = subscriptionRepository;
         this.attemptRepository = attemptRepository;
         this.resultRepository = resultRepository;
+        this.questionBankRepository = questionBankRepository;
         this.aiService = aiService;
         this.objectMapper = objectMapper;
     }
 
     @Override
-    public PlacementStartResponse startPlacement(Long userId, Long subjectId) {
+    public PlacementStartResponse startPlacement(Long userId, Long subjectId, Integer gradeLevel) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
@@ -73,7 +77,7 @@ public class PlacementServiceImpl implements PlacementService {
 
         // 1) Check FREE 1 lần / môn
         UserSubjectFreeAttempt free = freeAttemptRepository
-                .findByUser_IdAndSubject_Id(userId, subjectId)
+                .findByUserIdAndSubjectId(userId, subjectId)
                 .orElseGet(() -> {
                     UserSubjectFreeAttempt x = new UserSubjectFreeAttempt();
                     x.setUser(user);
@@ -86,7 +90,7 @@ public class PlacementServiceImpl implements PlacementService {
 
         // 2) Nếu hết FREE: yêu cầu đã mua subscription mới được làm placement
         if (!canUseFree) {
-            boolean hasSub = subscriptionRepository.existsByUser_IdAndSubject_IdAndActiveTrue(userId, subjectId);
+            boolean hasSub = subscriptionRepository.existsByUserIdAndSubjectIdAndIsActiveTrue(userId, subjectId);
             if (!hasSub) {
                 throw new RuntimeException("PAYMENT_REQUIRED: Need subscription to start placement");
             }
@@ -96,8 +100,10 @@ public class PlacementServiceImpl implements PlacementService {
             freeAttemptRepository.save(free);
         }
 
-        // 3) Tạo đề (V1: gen local dummy paper JSON)
-        String paperJson = generateDummyPaperJson(subject.getCode());
+        int grade = gradeLevel != null ? gradeLevel : 10;
+
+        // 3) Tạo đề (V1: lấy L1 theo khối lớp, fallback dummy)
+        String paperJson = generatePlacementPaperJson(subject.getCode(), subjectId, grade);
 
         PlacementAttempt attempt = new PlacementAttempt();
         attempt.setUser(user);
@@ -159,9 +165,9 @@ public class PlacementServiceImpl implements PlacementService {
     }
 
     private Level decideLevel(double scorePercent) {
-        if (scorePercent < 40.0)
+        if (scorePercent < 50.0)
             return Level.L1;
-        if (scorePercent < 70.0)
+        if (scorePercent < 90.0)
             return Level.L2;
         return Level.L3;
     }
@@ -202,17 +208,44 @@ public class PlacementServiceImpl implements PlacementService {
         }
     }
 
-    private String generateDummyPaperJson(String subjectCode) {
-        // V1: tạo 10 câu dummy, mỗi câu có correct answer
+    private String generatePlacementPaperJson(String subjectCode, Long subjectId, int gradeLevel) {
+        try {
+            List<Map<String, Object>> paper = new ArrayList<>();
+            var rows = questionBankRepository.findRandomQuestions(subjectId, "L1", gradeLevel, 50);
+            if (rows != null && !rows.isEmpty()) {
+                for (var qrow : rows) {
+                    Map<String, Object> q = new LinkedHashMap<>();
+                    q.put("id", qrow.getId());
+                    q.put("q", qrow.getQuestionText());
+                    try {
+                        List<String> options = objectMapper.readValue(qrow.getOptions(), new TypeReference<List<String>>() {});
+                        q.put("options", options);
+                    } catch (Exception e) {
+                        q.put("options", List.of("A. Option A", "B. Option B", "C. Option C", "D. Option D"));
+                    }
+                    q.put("correct", qrow.getCorrectAnswer());
+                    q.put("skill", qrow.getSkillType());
+                    paper.add(q);
+                }
+                return objectMapper.writeValueAsString(paper);
+            }
+        } catch (Exception e) {
+            // fallback below
+        }
+        return generateDummyPaperJson(subjectCode, gradeLevel);
+    }
+
+    private String generateDummyPaperJson(String subjectCode, int gradeLevel) {
+        // V1: tạo 50 câu dummy, mỗi câu có correct answer
         // FE sẽ render theo field q/options/id
         List<Map<String, Object>> paper = new ArrayList<>();
         String[] opts = new String[] { "A", "B", "C", "D" };
 
         Random rnd = new Random();
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= 50; i++) {
             Map<String, Object> q = new LinkedHashMap<>();
             q.put("id", i);
-            q.put("q", "[" + subjectCode + "] Câu " + i + ": chọn đáp án đúng (demo)");
+            q.put("q", "[" + subjectCode + " | Lớp " + gradeLevel + "] Câu " + i + ": chọn đáp án đúng (demo)");
             q.put("options", List.of(
                     "A. Đáp án A",
                     "B. Đáp án B",
@@ -238,7 +271,7 @@ public class PlacementServiceImpl implements PlacementService {
                 .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
         
         UserSubjectFreeAttempt free = freeAttemptRepository
-                .findByUser_IdAndSubject_Id(userId, subjectId)
+                .findByUserIdAndSubjectId(userId, subjectId)
                 .orElseGet(() -> {
                     UserSubjectFreeAttempt x = new UserSubjectFreeAttempt();
                     x.setUser(user);
@@ -258,7 +291,7 @@ public class PlacementServiceImpl implements PlacementService {
                 .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
         
         UserSubjectFreeAttempt free = freeAttemptRepository
-                .findByUser_IdAndSubject_Id(userId, subjectId)
+                .findByUserIdAndSubjectId(userId, subjectId)
                 .orElseGet(() -> {
                     UserSubjectFreeAttempt x = new UserSubjectFreeAttempt();
                     x.setUser(user);

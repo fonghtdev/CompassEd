@@ -6,6 +6,7 @@ import com.compassed.compassed_api.domain.QuestionBank.QuestionType;
 public class CreateQuestionRequest {
     
     private Long subjectId;
+    private Integer gradeLevel;
     private Level level;
     private String gradeBand;
     private String skillType;
@@ -31,6 +32,14 @@ public class CreateQuestionRequest {
 
     public void setLevel(Level level) {
         this.level = level;
+    }
+
+    public Integer getGradeLevel() {
+        return gradeLevel;
+    }
+
+    public void setGradeLevel(Integer gradeLevel) {
+        this.gradeLevel = gradeLevel;
     }
 
     public String getGradeBand() {
