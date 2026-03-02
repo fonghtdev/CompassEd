@@ -15,6 +15,7 @@
 
 const CHECKOUT_PAYMENT_ID_KEY = "compassed_checkout_payment_id";
 const CHECKOUT_SUBJECT_IDS_KEY = "compassed_checkout_subject_ids";
+const CHECKOUT_OWNER_KEY = "compassed_checkout_owner";
 
 function priceByCount(count, planMap) {
   if (planMap.has(count)) return planMap.get(count);
@@ -58,6 +59,17 @@ async function initCheckout() {
     unlocked: false
   };
 
+  const userScope = (() => {
+    const { user } = getAuth();
+    if (user && user.id != null) return `id_${user.id}`;
+    if (user && user.email) return `email_${String(user.email).toLowerCase()}`;
+    return "anonymous";
+  })();
+  const ownerValue = userScope;
+  const scopedPaymentKey = `${CHECKOUT_PAYMENT_ID_KEY}_${userScope}`;
+  const scopedSubjectsKey = `${CHECKOUT_SUBJECT_IDS_KEY}_${userScope}`;
+  const scopedOwnerKey = `${CHECKOUT_OWNER_KEY}_${userScope}`;
+
   const stopPolling = () => {
     if (state.pollTimer) {
       clearInterval(state.pollTimer);
@@ -74,20 +86,33 @@ async function initCheckout() {
   };
 
   const clearPendingCheckoutState = () => {
+    localStorage.removeItem(scopedPaymentKey);
+    localStorage.removeItem(scopedSubjectsKey);
+    localStorage.removeItem(scopedOwnerKey);
+    // Cleanup old global keys from previous versions to avoid cross-account leakage.
     localStorage.removeItem(CHECKOUT_PAYMENT_ID_KEY);
     localStorage.removeItem(CHECKOUT_SUBJECT_IDS_KEY);
+    localStorage.removeItem(CHECKOUT_OWNER_KEY);
   };
 
   const savePendingCheckoutState = (paymentId, subjectIds) => {
-    if (paymentId) localStorage.setItem(CHECKOUT_PAYMENT_ID_KEY, String(paymentId));
-    if (Array.isArray(subjectIds)) localStorage.setItem(CHECKOUT_SUBJECT_IDS_KEY, JSON.stringify(subjectIds));
+    if (paymentId) localStorage.setItem(scopedPaymentKey, String(paymentId));
+    if (Array.isArray(subjectIds)) localStorage.setItem(scopedSubjectsKey, JSON.stringify(subjectIds));
+    localStorage.setItem(scopedOwnerKey, ownerValue);
   };
 
   const restorePendingCheckoutState = () => {
-    const paymentId = Number(localStorage.getItem(CHECKOUT_PAYMENT_ID_KEY) || 0);
+    const storedOwner = localStorage.getItem(scopedOwnerKey);
+    if (storedOwner && storedOwner !== ownerValue) {
+      return {
+        paymentId: null,
+        subjectIds: []
+      };
+    }
+    const paymentId = Number(localStorage.getItem(scopedPaymentKey) || 0);
     let subjectIds = [];
     try {
-      subjectIds = JSON.parse(localStorage.getItem(CHECKOUT_SUBJECT_IDS_KEY) || "[]");
+      subjectIds = JSON.parse(localStorage.getItem(scopedSubjectsKey) || "[]");
     } catch {
       subjectIds = [];
     }
@@ -129,7 +154,7 @@ async function initCheckout() {
   const updateByStatus = async (statusPayload) => {
     const status = String((statusPayload && statusPayload.status) || "").toUpperCase();
 
-    if (status === "SUCCESS") {
+    if (status === "SUCCESS" || status === "PAID") {
       setQrStatus("Payment confirmed");
       setPayText("Roadmap Unlocked");
       payBtn.disabled = true;
@@ -141,8 +166,14 @@ async function initCheckout() {
         const ids = Array.isArray(statusPayload.subjectIds) && statusPayload.subjectIds.length
           ? statusPayload.subjectIds.map((id) => Number(id)).filter(Boolean)
           : state.selectedSubjectIds;
-        const sub = await api("/api/subscriptions/checkout", "POST", { subjectIds: ids }, true);
-        localStorage.setItem(KEYS.subscription, JSON.stringify(sub));
+        try {
+          if (ids.length) {
+            const sub = await api("/api/subscriptions/checkout", "POST", { subjectIds: ids }, true);
+            localStorage.setItem(KEYS.subscription, JSON.stringify(sub));
+          }
+        } catch (_) {
+          // Payment already confirmed; still redirect user.
+        }
         toast("Thanh toan thanh cong. Dang chuyen toi Roadmap Dashboard...", "ok");
         setTimeout(() => nav("/roadmap-dashboard", "roadmapDashboard.html"), 900);
       }
@@ -190,8 +221,21 @@ async function initCheckout() {
       try {
         const statusPayload = await api(`/api/payments/${paymentId}/status`, "GET", null, true);
         await updateByStatus(statusPayload);
-      } catch {
-        // Keep polling on transient issues.
+      } catch (err) {
+        const msg = String((err && err.message) || "");
+        if (msg.includes("Payment not found") || msg.includes("Not authenticated")) {
+          stopPolling();
+          clearPendingCheckoutState();
+          state.paymentId = null;
+          setQrStatus("Waiting for payment...");
+          setPayText("Start Payment");
+          payBtn.disabled = false;
+          return;
+        }
+        // Keep checking continuously on transient errors (e.g. temporary 502/network).
+        setQrStatus("Reconnecting to payment status...");
+        setPayText("Waiting For Payment...");
+        payBtn.disabled = true;
       } finally {
         inFlight = false;
       }
@@ -247,14 +291,13 @@ async function initCheckout() {
     subjectRows.forEach((subject) => {
       const purchased = purchasedSubjectIds.has(Number(subject.id));
       const row = document.createElement("label");
-      row.className = `group relative flex flex-col gap-5 rounded-xl border bg-white p-6 transition-all shadow-sm ${
-        purchased ? "border-emerald-200 bg-emerald-50/40" : "cursor-pointer border-slate-200 hover:border-primary/50"
-      }`;
+      row.className = `group relative flex flex-col gap-5 rounded-xl border bg-white p-6 transition-all shadow-sm ${purchased ? "border-emerald-200 bg-emerald-50/40" : "cursor-pointer border-slate-200 hover:border-primary/50"
+        }`;
       row.innerHTML = `
         <div class="absolute top-4 right-4">
           ${purchased
-            ? '<span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-700"><span class="material-symbols-outlined text-base">check_circle</span>Purchased</span>'
-            : `<input class="checkout-subject size-5 rounded border-slate-300 text-primary focus:ring-primary" type="checkbox" value="${subject.id}" />`}
+          ? '<span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-700"><span class="material-symbols-outlined text-base">check_circle</span>Purchased</span>'
+          : `<input class="checkout-subject size-5 rounded border-slate-300 text-primary focus:ring-primary" type="checkbox" value="${subject.id}" />`}
         </div>
         <div class="flex flex-col gap-2">
           <div class="flex items-center gap-2">
@@ -295,8 +338,8 @@ async function initCheckout() {
         selectedListEl.innerHTML = !picked.length
           ? '<div class="text-slate-400">No subject selected</div>'
           : picked
-              .map((s) => `<div class="flex justify-between items-center"><span class="text-slate-500">${s.name}</span><span class="text-slate-700">${formatVnd(single)}</span></div>`)
-              .join("");
+            .map((s) => `<div class="flex justify-between items-center"><span class="text-slate-500">${s.name}</span><span class="text-slate-700">${formatVnd(single)}</span></div>`)
+            .join("");
       }
 
       const original = ids.length * single;
@@ -349,6 +392,31 @@ async function initCheckout() {
       startPolling(state.paymentId);
     }
 
+    // Fallback: if no local paymentId (new tab/device), ask backend for latest active payment.
+    if (!state.unlocked && !state.paymentId) {
+      try {
+        const latest = await api("/api/payments/latest-active/status", "GET", null, true);
+        const latestId = Number((latest && latest.paymentId) || 0);
+        if (latestId) {
+          state.paymentId = latestId;
+          state.selectedSubjectIds = Array.isArray(latest.subjectIds)
+            ? latest.subjectIds.map((id) => Number(id)).filter(Boolean)
+            : [];
+          savePendingCheckoutState(state.paymentId, state.selectedSubjectIds);
+          await updateByStatus(latest);
+          if (!state.unlocked) {
+            lockSelection(boxes, true);
+            setPayText("Waiting For Payment...");
+            setQrStatus("Checking payment status...");
+            payBtn.disabled = true;
+            startPolling(state.paymentId);
+          }
+        }
+      } catch (_) {
+        // no active payment
+      }
+    }
+
     payBtn.addEventListener("click", async () => {
       const ids = selectedIds();
       if (!ids.length) {
@@ -396,3 +464,4 @@ async function initCheckout() {
 }
 
 export { initCheckout };
+

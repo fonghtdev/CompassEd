@@ -82,6 +82,18 @@ public class PaymentController {
         }
     }
 
+    @GetMapping("/latest-active/status")
+    public ResponseEntity<?> getLatestActivePaymentStatus() {
+        try {
+            Long userId = currentUserService.requireCurrentUserId();
+            Map<String, Object> result = paymentService.getLatestActivePaymentStatusForUser(userId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error getting latest active payment status", e);
+            return ResponseEntity.badRequest().body(Map.of("error", safeError(e)));
+        }
+    }
+
     @PostMapping("/checkout-qr")
     public ResponseEntity<?> createCheckoutQr(@RequestBody Map<String, Object> request) {
         try {
