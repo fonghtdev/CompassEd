@@ -36,7 +36,8 @@ public class PaymentController {
      * Body: { "userId": 1, "subjectId": 1, "packageType": "PLACEMENT_PACK" }
      */
     @PostMapping("/create")
-    public ResponseEntity<?> createPayment(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<?> createPayment(
+            @RequestBody Map<String, Object> request) {
         try {
             Long userId = currentUserService.requireCurrentUserId();
             Long subjectId = Long.parseLong(request.get("subjectId").toString());
@@ -56,7 +57,8 @@ public class PaymentController {
      * GET /api/payments/{paymentId}/status
      */
     @GetMapping("/{paymentId}/status")
-    public ResponseEntity<?> getPaymentStatus(@PathVariable Long paymentId) {
+    public ResponseEntity<?> getPaymentStatus(
+            @PathVariable Long paymentId) {
         try {
             Long userId = currentUserService.requireCurrentUserId();
             Map<String, Object> result = paymentService.getPaymentStatusForUser(userId, paymentId);
