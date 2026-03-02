@@ -224,13 +224,16 @@ function renderSubjects(subjects, activeBySubjectId, keyword) {
   return { total: filtered.length, enrolled: enrolledCount };
 }
 
-function updateTopStats(stats) {
+function updateTopStats(stats, learningStats = {}) {
+  const rank = document.getElementById("rm-stat-rank");
+  const streak = document.getElementById("rm-stat-streak");
   const subscribed = document.getElementById("rm-stat-subscribed");
-  const ready = document.getElementById("rm-stat-ready");
-  const total = document.getElementById("rm-stat-total");
-  if (subscribed) subscribed.textContent = `${stats.enrolled} subjects`;
-  if (ready) ready.textContent = `${Math.max(0, stats.enrolled)} active`;
-  if (total) total.textContent = `${stats.total} subjects`;
+  const rankValue = Number(learningStats.rank || 0);
+  const totalLearners = Math.max(1, Number(learningStats.totalLearners || 1));
+  const streakDays = Math.max(0, Number(learningStats.studyStreakDays || 0));
+  if (rank) rank.textContent = rankValue > 0 ? `#${rankValue}/${totalLearners}` : "--";
+  if (streak) streak.textContent = `${streakDays} day(s)`;
+  if (subscribed) subscribed.textContent = `${Math.max(0, Number(stats.enrolled || 0))} subject(s)`;
 }
 
 function ensureRoadmapChoiceModal() {
@@ -360,10 +363,10 @@ async function initRoadmapDashboard() {
   const startRecommended = document.getElementById("rm-start-recommended");
   const dailyPlan = document.getElementById("rm-view-daily-plan");
   const analytics = document.getElementById("rm-detailed-analytics");
-  const switchFocus = document.getElementById("rm-switch-focus-btn");
 
   let latestSubjects = [];
   let latestActiveMap = new Map();
+  let latestLearningStats = { rank: 0, totalLearners: 1, studyStreakDays: 0 };
 
   const openFirstAvailable = async () => {
     const enrolledSubjects = latestSubjects.filter((s) => latestActiveMap.has(Number(s.id)));
@@ -400,10 +403,6 @@ async function initRoadmapDashboard() {
     });
   }
   if (analytics) analytics.addEventListener("click", () => nav("/dashboard", "dashboard.html"));
-  if (switchFocus) switchFocus.addEventListener("click", () => {
-    const input = document.getElementById("rm-search-input");
-    if (input) input.focus();
-  });
 
   try {
     const [subjects, subData] = await Promise.all([
@@ -413,6 +412,11 @@ async function initRoadmapDashboard() {
     latestSubjects = Array.isArray(subjects) ? subjects : [];
     const activeRows = (subData && subData.activeSubscriptions) || [];
     latestActiveMap = new Map(activeRows.map((x) => [Number(x.subjectId), x]));
+    latestLearningStats = {
+      rank: Number((subData && subData.rank) || 0),
+      totalLearners: Number((subData && subData.totalLearners) || 1),
+      studyStreakDays: Number((subData && subData.studyStreakDays) || 0)
+    };
 
     if (startRecommended) {
       if (activeRows.length > 0) {
@@ -434,7 +438,7 @@ async function initRoadmapDashboard() {
     const searchInput = document.getElementById("rm-search-input");
     const render = () => {
       const stats = renderSubjects(latestSubjects, latestActiveMap, searchInput ? searchInput.value : "");
-      updateTopStats(stats);
+      updateTopStats(stats, latestLearningStats);
     };
 
     render();

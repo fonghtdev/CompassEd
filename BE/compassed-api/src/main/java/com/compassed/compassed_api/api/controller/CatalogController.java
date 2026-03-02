@@ -13,7 +13,7 @@ import com.compassed.compassed_api.local.LocalDataStore;
 import com.compassed.compassed_api.service.PricingService;
 
 @RestController
-@Profile("local")
+@Profile("removed-local")
 @RequestMapping("/api")
 public class CatalogController {
 
@@ -40,3 +40,4 @@ public class CatalogController {
                 new PricingPlanResponse(3, pricingService.calculateTotalAmountVnd(3)));
     }
 }
+

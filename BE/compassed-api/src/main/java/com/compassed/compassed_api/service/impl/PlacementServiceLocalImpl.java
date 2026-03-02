@@ -24,16 +24,17 @@ import com.compassed.compassed_api.repository.QuestionBankRepository;
 import com.compassed.compassed_api.service.PlacementService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.lang.Nullable;
 
 @Service
-@Profile("local")
+@Profile("removed-local")
 public class PlacementServiceLocalImpl implements PlacementService {
 
     private final LocalDataStore localDataStore;
     private final ObjectMapper objectMapper;
     private final QuestionBankRepository questionBankRepository;
 
-    public PlacementServiceLocalImpl(LocalDataStore localDataStore, ObjectMapper objectMapper, QuestionBankRepository questionBankRepository) {
+    public PlacementServiceLocalImpl(LocalDataStore localDataStore, ObjectMapper objectMapper, @Nullable QuestionBankRepository questionBankRepository) {
         this.localDataStore = localDataStore;
         this.objectMapper = objectMapper;
         this.questionBankRepository = questionBankRepository;
@@ -153,6 +154,9 @@ public class PlacementServiceLocalImpl implements PlacementService {
     }
 
     private String generateDummyPaperJson(String subjectCode, int gradeLevel) {
+        if (questionBankRepository == null) {
+            return generateFallbackPaperJson(subjectCode, gradeLevel);
+        }
         // Lấy câu hỏi từ database thay vì hardcode
         List<QuestionBank> questions = questionBankRepository.findBySubjectIdAndLevelAndGradeLevelAndIsActiveTrue(
             getSubjectIdByCode(subjectCode), com.compassed.compassed_api.domain.QuestionBank.Level.L1, gradeLevel);
@@ -265,3 +269,5 @@ public class PlacementServiceLocalImpl implements PlacementService {
         localDataStore.markFreeAttemptUsed(userId, subjectId);
     }
 }
+
+

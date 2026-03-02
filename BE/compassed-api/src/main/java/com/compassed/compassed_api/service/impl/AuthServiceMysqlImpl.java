@@ -1,7 +1,6 @@
 package com.compassed.compassed_api.service.impl;
 
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.compassed.compassed_api.api.dto.AuthLoginRequest;
-import com.compassed.compassed_api.api.dto.AuthMockOauthRequest;
 import com.compassed.compassed_api.api.dto.AuthRegisterRequest;
 import com.compassed.compassed_api.api.dto.AuthResponse;
 import com.compassed.compassed_api.api.dto.AuthUserDto;
@@ -20,6 +18,7 @@ import com.compassed.compassed_api.domain.enums.UserRole;
 import com.compassed.compassed_api.repository.UserRepository;
 import com.compassed.compassed_api.security.JwtTokenService;
 import com.compassed.compassed_api.service.AuthService;
+import com.compassed.compassed_api.service.LoginActivityService;
 import com.compassed.compassed_api.service.RoleAccessService;
 
 @Service
@@ -29,6 +28,7 @@ public class AuthServiceMysqlImpl implements AuthService {
     private final UserRepository userRepository;
     private final JwtTokenService jwtTokenService;
     private final RoleAccessService roleAccessService;
+    private final LoginActivityService loginActivityService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final WebClient googleClient = WebClient.builder().baseUrl("https://oauth2.googleapis.com").build();
 
@@ -38,32 +38,17 @@ public class AuthServiceMysqlImpl implements AuthService {
     public AuthServiceMysqlImpl(
             UserRepository userRepository,
             JwtTokenService jwtTokenService,
-            RoleAccessService roleAccessService) {
+            RoleAccessService roleAccessService,
+            LoginActivityService loginActivityService) {
         this.userRepository = userRepository;
         this.jwtTokenService = jwtTokenService;
         this.roleAccessService = roleAccessService;
+        this.loginActivityService = loginActivityService;
     }
 
     @Override
     public AuthResponse register(AuthRegisterRequest request) {
-        String email = normalizeEmail(request.getEmail());
-        if (email.isBlank()) {
-            throw new RuntimeException("Email is required");
-        }
-        if (request.getPassword() == null || request.getPassword().length() < 6) {
-            throw new RuntimeException("Password must be at least 6 characters");
-        }
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("Email already exists");
-        }
-
-        User user = new User();
-        user.setEmail(email);
-        user.setFullName(request.getFullName());
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user = userRepository.save(user);
-        roleAccessService.assignRole(user, UserRole.USER);
-        return authResponseForUser(user);
+        throw new RuntimeException("Direct register is disabled. Use /api/auth/register/request-code then /api/auth/register/verify");
     }
 
     @Override
@@ -74,6 +59,9 @@ public class AuthServiceMysqlImpl implements AuthService {
         if (user.getPasswordHash() == null
                 || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new RuntimeException("Invalid email or password");
+        }
+        if (!user.isEmailVerified()) {
+            throw new RuntimeException("Email is not verified");
         }
         return authResponseForUser(user);
     }
@@ -107,21 +95,9 @@ public class AuthServiceMysqlImpl implements AuthService {
             throw new RuntimeException("Google token payload missing sub/email");
         }
         User user = upsertOAuthUser("google", sub, email, name);
-        return authResponseForUser(user);
-    }
-
-    @Override
-    public AuthResponse loginWithMockProvider(AuthMockOauthRequest request) {
-        if (request.getProvider() == null || request.getProvider().isBlank()) {
-            throw new RuntimeException("Provider is required");
+        if (isAdmin(user)) {
+            throw new RuntimeException("Admin account must sign in with email/password");
         }
-        String email = normalizeEmail(request.getEmail());
-        if (email.isBlank()) {
-            throw new RuntimeException("Email is required");
-        }
-        String provider = request.getProvider().trim().toLowerCase();
-        String providerUserId = provider + "_" + UUID.randomUUID();
-        User user = upsertOAuthUser(provider, providerUserId, email, request.getFullName());
         return authResponseForUser(user);
     }
 
@@ -137,11 +113,15 @@ public class AuthServiceMysqlImpl implements AuthService {
         return userRepository.findByOauthProviderAndOauthProviderUserId(provider, providerUserId)
                 .or(() -> userRepository.findByEmail(email))
                 .map(existing -> {
+                    if (isAdmin(existing)) {
+                        throw new RuntimeException("Admin account must sign in with email/password");
+                    }
                     if (fullName != null && !fullName.isBlank()) {
                         existing.setFullName(fullName);
                     }
                     existing.setOauthProvider(provider);
                     existing.setOauthProviderUserId(providerUserId);
+                    existing.setEmailVerified(true);
                     User saved = userRepository.save(existing);
                     if (saved.getRole() == null) {
                         roleAccessService.assignRole(saved, UserRole.USER);
@@ -154,6 +134,7 @@ public class AuthServiceMysqlImpl implements AuthService {
                     user.setFullName(fullName);
                     user.setOauthProvider(provider);
                     user.setOauthProviderUserId(providerUserId);
+                    user.setEmailVerified(true);
                     User saved = userRepository.save(user);
                     roleAccessService.assignRole(saved, UserRole.USER);
                     return saved;
@@ -161,6 +142,7 @@ public class AuthServiceMysqlImpl implements AuthService {
     }
 
     private AuthResponse authResponseForUser(User user) {
+        loginActivityService.recordLogin(user.getId());
         String role = roleAccessService.resolveRoleName(user);
         String token = jwtTokenService.generateToken(user.getId(), user.getEmail(), role);
 
@@ -198,5 +180,9 @@ public class AuthServiceMysqlImpl implements AuthService {
 
     private String asString(Object value) {
         return value == null ? null : String.valueOf(value);
+    }
+
+    private boolean isAdmin(User user) {
+        return "ADMIN".equalsIgnoreCase(roleAccessService.resolveRoleName(user));
     }
 }
