@@ -18,7 +18,7 @@ import com.compassed.compassed_api.service.PricingService;
 import com.compassed.compassed_api.service.SubscriptionService;
 
 @Service
-@Profile("local")
+@Profile("removed-local")
 public class SubscriptionServiceLocalImpl implements SubscriptionService {
 
     private final LocalDataStore localDataStore;
@@ -85,3 +85,4 @@ public class SubscriptionServiceLocalImpl implements SubscriptionService {
         };
     }
 }
+

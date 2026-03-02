@@ -7,7 +7,7 @@ import com.compassed.compassed_api.local.LocalDataStore;
 import com.compassed.compassed_api.service.UserDevService;
 
 @Service
-@Profile("local")
+@Profile("removed-local")
 public class UserDevServiceLocalImpl implements UserDevService {
 
     private final LocalDataStore localDataStore;
@@ -23,3 +23,4 @@ public class UserDevServiceLocalImpl implements UserDevService {
         }
     }
 }
+
