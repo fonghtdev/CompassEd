@@ -1,7 +1,7 @@
 import { api, checkSession, clearAuth, currentRole, hideLoading, nav, showLoading, toast } from "./core.js";
 import { getLang, t } from "./i18n.js";
 import { openInlineProfilePanel } from "./inlineProfilePanel.js";
-import { initQuestions } from "./questions.js";
+// import { initQuestions } from "./questions.js";
 
 function renderList(targetId, rows, renderer) {
   const wrap = document.getElementById(targetId);
@@ -309,16 +309,16 @@ async function loadQuestionBank() {
     const subjectId = localStorage.getItem("question_subject_filter") || "";
     const level = localStorage.getItem("question_level_filter") || "";
     const gradeLevel = subjectId ? localStorage.getItem(`compassed_grade_level_${subjectId}`) || "" : "";
-    
+
     const params = [];
     if (subjectId) params.push(`subjectId=${subjectId}`);
     if (gradeLevel) params.push(`gradeLevel=${gradeLevel}`);
     if (level) params.push(`level=${level}`);
     const query = params.length ? "?" + params.join("&") : "";
-    
+
     const data = await api(`/api/questions${query}`, "GET", null, false);
     const questions = data.questions || [];
-    
+
     renderQuestions(questions);
   } catch (err) {
     const wrap = document.getElementById("user-question-list");
@@ -368,7 +368,7 @@ function setupQuestionFilters() {
   const filterBtn = document.getElementById("question-filter-btn");
   const subjectFilter = document.getElementById("question-subject-filter");
   const levelFilter = document.getElementById("question-level-filter");
-  
+
   if (filterBtn) {
     filterBtn.addEventListener("click", async () => {
       if (subjectFilter) localStorage.setItem("question_subject_filter", subjectFilter.value);
@@ -376,7 +376,7 @@ function setupQuestionFilters() {
       await loadQuestionBank();
     });
   }
-  
+
   // Load subjects for filter
   loadSubjectsForFilter();
 }
