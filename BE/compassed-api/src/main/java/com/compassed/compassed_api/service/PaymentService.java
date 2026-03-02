@@ -27,6 +27,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -112,6 +113,10 @@ public class PaymentService {
 
     @PostConstruct
     void logPayOsConfigSummary() {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(5000);
+        requestFactory.setReadTimeout(10000);
+        restTemplate.setRequestFactory(requestFactory);
         log.info(
                 "PayOS config: enabled={}, clientIdSet={}, apiKeyLen={}, checksumKeyLen={}, baseUrl={}",
                 payOsEnabled,
@@ -435,7 +440,7 @@ public class PaymentService {
 
             return payment;
         } catch (Exception ex) {
-            log.warn("PayOS check failed for paymentId={}: {}", payment.getId(), ex.getMessage());
+            log.warn("PayOS check failed for paymentId={}, orderCode={}: {}", payment.getId(), payment.getPaymentReference(), ex.getMessage());
             return payment;
         }
     }

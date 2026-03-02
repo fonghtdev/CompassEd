@@ -174,13 +174,18 @@ async function initCheckout() {
   const startPolling = (paymentId) => {
     if (!paymentId) return;
     stopPolling();
+    let inFlight = false;
 
     const tick = async () => {
+      if (inFlight) return;
+      inFlight = true;
       try {
         const statusPayload = await api(`/api/payments/${paymentId}/status`, "GET", null, true);
         await updateByStatus(statusPayload);
       } catch {
         // Keep polling on transient issues.
+      } finally {
+        inFlight = false;
       }
     };
 
