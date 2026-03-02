@@ -1,17 +1,26 @@
 package com.compassed.compassed_api.service;
 
-import com.compassed.compassed_api.domain.entity.Payment;
-import com.compassed.compassed_api.domain.entity.PaymentSubjectItem;
-import com.compassed.compassed_api.domain.entity.Subscription;
-import com.compassed.compassed_api.domain.entity.Subject;
-import com.compassed.compassed_api.domain.entity.User;
-import com.compassed.compassed_api.repository.PaymentRepository;
-import com.compassed.compassed_api.repository.PaymentSubjectItemRepository;
-import com.compassed.compassed_api.repository.SubscriptionRepository;
-import com.compassed.compassed_api.repository.SubjectRepository;
-import com.compassed.compassed_api.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -23,16 +32,19 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import com.compassed.compassed_api.domain.entity.Payment;
+import com.compassed.compassed_api.domain.entity.PaymentSubjectItem;
+import com.compassed.compassed_api.domain.entity.Subject;
+import com.compassed.compassed_api.domain.entity.Subscription;
+import com.compassed.compassed_api.repository.PaymentRepository;
+import com.compassed.compassed_api.repository.PaymentSubjectItemRepository;
+import com.compassed.compassed_api.repository.SubjectRepository;
+import com.compassed.compassed_api.repository.SubscriptionRepository;
+import com.compassed.compassed_api.repository.UserRepository;
+
 import jakarta.annotation.PostConstruct;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.math.BigDecimal;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -106,8 +118,7 @@ public class PaymentService {
                 !isBlank(payOsClientId),
                 payOsApiKey == null ? 0 : payOsApiKey.length(),
                 payOsChecksumKey == null ? 0 : payOsChecksumKey.length(),
-                payOsBaseUrl
-        );
+                payOsBaseUrl);
     }
 
     @Transactional
@@ -130,8 +141,7 @@ public class PaymentService {
                 "amount", amount,
                 "currency", "VND",
                 "paymentUrl", paymentUrl,
-                "status", "PENDING"
-        );
+                "status", "PENDING");
     }
 
     @Transactional
@@ -176,8 +186,7 @@ public class PaymentService {
                         "success", true,
                         "message", "Payment successful",
                         "paymentId", payment.getId(),
-                        "amount", payment.getAmount()
-                );
+                        "amount", payment.getAmount());
             }
 
             payment.setStatus("FAILED");
@@ -199,7 +208,8 @@ public class PaymentService {
     public Map<String, Object> getPaymentStatusForUser(Long userId, Long paymentId) {
         Payment payment = paymentRepository.findByIdAndUserId(paymentId, userId)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
-        // Force refresh with PayOS on status polling so FE can unlock near real-time after paid.
+        // Force refresh with PayOS on status polling so FE can unlock near real-time
+        // after paid.
         payment = refreshPayOsStatus(payment, true);
         return paymentStatusPayload(payment);
     }
@@ -225,8 +235,7 @@ public class PaymentService {
                 "ok", true,
                 "paymentId", synced.getId(),
                 "status", synced.getStatus(),
-                "orderCode", orderCode
-        );
+                "orderCode", orderCode);
     }
 
     public List<Map<String, Object>> getPaymentsForAdmin(String status) {
@@ -385,7 +394,8 @@ public class PaymentService {
             return payment;
         }
         LocalDateTime lastCheckedAt = payment.getLastCheckedAt();
-        if (!forceCheck && lastCheckedAt != null && lastCheckedAt.isAfter(LocalDateTime.now().minusSeconds(payOsCheckCooldownSeconds))) {
+        if (!forceCheck && lastCheckedAt != null
+                && lastCheckedAt.isAfter(LocalDateTime.now().minusSeconds(payOsCheckCooldownSeconds))) {
             return payment;
         }
 
@@ -590,9 +600,9 @@ public class PaymentService {
         if (subjectId == null) {
             return;
         }
-        User user = userRepository.findById(userId)
+        userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        Subject subject = subjectRepository.findById(subjectId)
+        subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new RuntimeException("Subject not found"));
 
         Optional<Subscription> existingOpt = subscriptionRepository.findByUserIdAndSubjectId(userId, subjectId);
@@ -603,8 +613,22 @@ public class PaymentService {
         Subscription subscription = existingOpt.orElseGet(Subscription::new);
         subscription.setUserId(userId);
         subscription.setSubjectId(subjectId);
+        if (subscription.getPackageId() == null) {
+            subscription.setPackageId(0L);
+        }
+        if (subscription.getPaymentId() == null) {
+            subscription.setPaymentId(0L);
+        }
+        if (subscription.getStartDate() == null) {
+            subscription.setStartDate(LocalDateTime.now());
+        }
+        if (subscription.getEndDate() == null) {
+            subscription.setEndDate(LocalDateTime.now().plusYears(1));
+        }
         subscription.setIsActive(true);
-        subscription.setStartDate(LocalDateTime.now());
+        if (subscription.getPlacementUnlocked() == null) {
+            subscription.setPlacementUnlocked(false);
+        }
 
         subscriptionRepository.save(subscription);
         log.info("Created subscription for userId={}, subjectId={}", userId, subjectId);
