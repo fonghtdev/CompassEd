@@ -41,10 +41,12 @@ checkout:
     bank: ${CHECKOUT_QR_BANK:VietQR}
     bank-bin: ${CHECKOUT_QR_BANK_BIN:970422}
 
-casso:
-  enabled: ${CASSO_ENABLED:false}
-  api-key: ${CASSO_API_KEY:}
-  base-url: ${CASSO_BASE_URL:https://oauth.casso.vn/v2}
-  account-number: ${CASSO_ACCOUNT_NUMBER:}
-  page-size: ${CASSO_PAGE_SIZE:50}
-  check-cooldown-seconds: ${CASSO_CHECK_COOLDOWN_SECONDS:20}
+payos:
+  enabled: ${PAYOS_ENABLED:false}
+  client-id: ${PAYOS_CLIENT_ID:}
+  api-key: ${PAYOS_API_KEY:}
+  checksum-key: ${PAYOS_CHECKSUM_KEY:}
+  base-url: ${PAYOS_BASE_URL:https://api-merchant.payos.vn}
+  return-url: ${PAYOS_RETURN_URL:https://compassed.io.vn/checkout}
+  cancel-url: ${PAYOS_CANCEL_URL:https://compassed.io.vn/checkout}
+  check-cooldown-seconds: ${PAYOS_CHECK_COOLDOWN_SECONDS:15}

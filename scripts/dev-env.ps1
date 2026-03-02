@@ -17,6 +17,16 @@ $script:DEV_ENV = @{
   MAIL_PASSWORD = "mulvscrsplqufrig"
   MAIL_FROM = "CompassEd"
 
+  PAYOS_ENABLED = "true"
+  CHECKOUT_QR_ACCOUNT_NAME = "COMPASSED"
+  PAYOS_CLIENT_ID = "22709ee0-2bae-4f51-890c-476e614d7324"
+  PAYOS_API_KEY = "121b07c3-8f97-42fb-9f06-3ed6a5a624be"
+  PAYOS_CHECKSUM_KEY = "a321cca7d82aafcd411cfe31079256c4bc9b5564ee98f3bdbb751d9ef8a62caa"
+  PAYOS_BASE_URL = "https://api-merchant.payos.vn"
+  PAYOS_RETURN_URL = "https://compassed.io.vn/checkout"
+  PAYOS_CANCEL_URL = "https://compassed.io.vn/checkout"
+  PAYOS_CHECK_COOLDOWN_SECONDS = "15"
+
   BE_PORT = "8080"
   FE_PORT = "3000"
 }
