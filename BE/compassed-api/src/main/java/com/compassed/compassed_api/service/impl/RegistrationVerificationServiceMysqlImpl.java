@@ -135,6 +135,7 @@ public class RegistrationVerificationServiceMysqlImpl implements RegistrationVer
             log.warn("==============================================================");
             return;
         }
+        
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(mailFrom);
@@ -144,9 +145,15 @@ public class RegistrationVerificationServiceMysqlImpl implements RegistrationVer
             message.setText("Hi " + name + ",\n\nYour CompassED verification code is: " + code
                     + "\nThis code expires in " + CODE_EXPIRE_MINUTES + " minutes.\n\nCompassED Team");
             mailSender.send(message);
+            log.info("Verification email sent successfully to {}", email);
         } catch (Exception ex) {
-            log.warn("Cannot send verification email to {}. Code={}. Error={}", email, code, ex.getMessage());
-            log.warn("Use the code above to verify manually during development.");
+            // Fallback: log the code to console if email sending fails
+            log.warn("==============================================================");
+            log.warn("Cannot send email to {} - Error: {}", email, ex.getMessage());
+            log.warn("VERIFICATION CODE for {}: {}", email, code);
+            log.warn("Use this code to complete registration (expires in {} minutes)", CODE_EXPIRE_MINUTES);
+            log.warn("==============================================================");
+            // Do NOT throw exception - allow registration to continue with manual code entry
         }
     }
 
