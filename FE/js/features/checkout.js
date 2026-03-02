@@ -105,12 +105,8 @@ async function initCheckout() {
           : state.selectedSubjectIds;
         const sub = await api("/api/subscriptions/checkout", "POST", { subjectIds: ids }, true);
         localStorage.setItem(KEYS.subscription, JSON.stringify(sub));
-        if (ids[0]) {
-          localStorage.setItem(KEYS.subjectId, String(ids[0]));
-          nav(`/learning-roadmap?subjectId=${ids[0]}`, `coursesDetail.html?subjectId=${ids[0]}`);
-        } else {
-          nav("/roadmap-dashboard", "roadmapDashboard.html");
-        }
+        toast("Thanh toán thành công. Roadmap đã được mở khóa.", "ok");
+        nav("/roadmap-dashboard", "roadmapDashboard.html");
       }
       return;
     }
@@ -182,23 +178,36 @@ async function initCheckout() {
 
   showLoading("Loading checkout...");
   try {
-    const [subjects, plans] = await Promise.all([
+    const [subjects, plans, mySubs] = await Promise.all([
       api("/api/subjects", "GET", null, false),
-      api("/api/pricing/plans", "GET", null, false)
+      api("/api/pricing/plans", "GET", null, false),
+      api("/api/me/subscriptions", "GET", null, true)
     ]);
 
     const subjectRows = Array.isArray(subjects) ? subjects : [];
     const planMap = new Map((plans || []).map((p) => [Number(p.subjectCount), Number(p.amountVnd)]));
     const single = priceByCount(1, planMap);
+    const purchasedSubjectIds = new Set(
+      ((mySubs && mySubs.activeSubscriptions) || [])
+        .map((row) => Number(row.subjectId))
+        .filter(Boolean)
+    );
 
     listEl.innerHTML = "";
     subjectRows.forEach((subject) => {
+      const purchased = purchasedSubjectIds.has(Number(subject.id));
       const row = document.createElement("label");
       row.className =
-        "group relative flex cursor-pointer flex-col gap-5 rounded-xl border border-slate-200 bg-white p-6 hover:border-primary/50 transition-all shadow-sm";
+        `group relative flex flex-col gap-5 rounded-xl border bg-white p-6 transition-all shadow-sm ${
+          purchased
+            ? "border-emerald-200 bg-emerald-50/40"
+            : "cursor-pointer border-slate-200 hover:border-primary/50"
+        }`;
       row.innerHTML = `
         <div class="absolute top-4 right-4">
-          <input class="checkout-subject size-5 rounded border-slate-300 text-primary focus:ring-primary" type="checkbox" value="${subject.id}" />
+          ${purchased
+            ? '<span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-700"><span class="material-symbols-outlined text-base">check_circle</span>Purchased</span>'
+            : `<input class="checkout-subject size-5 rounded border-slate-300 text-primary focus:ring-primary" type="checkbox" value="${subject.id}" />`}
         </div>
         <div class="flex flex-col gap-2">
           <div class="flex items-center gap-2">
