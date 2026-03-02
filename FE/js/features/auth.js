@@ -142,30 +142,51 @@ function askVerificationCode(email) {
   });
 }
 
-async function redirectToPlacementAfterAuth() {
-  if (currentRole() === "ADMIN") {
-    redirectAfterAuthDefault();
+async function runPlacementOnboarding(user) {
+  const wantsPlacement = await askPlacementChoice();
+  if (!wantsPlacement) {
+    localStorage.setItem(onboardingKey(user), "1");
+    clearAfterAuthRedirect();
+    nav("/landing", "landingPage.html");
     return;
   }
+
+  let subjectId = resolvePlacementSubjectId();
   try {
-    const rows = await api("/api/history/placements", "GET", null, true);
-    if (Array.isArray(rows) && rows.length > 0) {
-      clearAfterAuthRedirect();
-      nav("/roadmap-dashboard", "roadmapDashboard.html");
-      return;
+    const subjects = await api("/api/subjects", "GET", null, false);
+    if (Array.isArray(subjects) && subjects.length > 0) {
+      const selected = await chooseSubjectForPlacement(subjects);
+      if (!selected) {
+        localStorage.setItem(onboardingKey(user), "1");
+        clearAfterAuthRedirect();
+        nav("/landing", "landingPage.html");
+        return;
+      }
+      subjectId = Number(selected);
     }
   } catch (e) {
-    // ignore and continue to placement
+    // keep fallback subject id
   }
-  const subjectId = resolvePlacementSubjectId();
+
+  localStorage.setItem("compassed_subject_id", String(subjectId));
+  localStorage.setItem(onboardingKey(user), "1");
   const gradeLevel = resolvePlacementGrade(subjectId);
   clearAfterAuthRedirect();
   nav(`/placement-test?subjectId=${subjectId}&grade=${gradeLevel}`, `placementTest.html?subjectId=${subjectId}&grade=${gradeLevel}`);
 }
 
-async function handleFirstLoginAfterRegister(user) {
-  if (user) localStorage.setItem(onboardingKey(user), "1");
-  await redirectToPlacementAfterAuth();
+async function handlePostAuthNavigation(user) {
+  if (currentRole() === "ADMIN") {
+    redirectAfterAuthDefault();
+    return;
+  }
+  const key = onboardingKey(user);
+  const done = localStorage.getItem(key) === "1";
+  if (!done) {
+    await runPlacementOnboarding(user);
+    return;
+  }
+  redirectAfterAuthDefault();
 }
 
 function setupAuthTabs() {
@@ -193,7 +214,7 @@ function setupAuthTabs() {
 
 function initAuth() {
   checkSession().then((ok) => {
-    if (ok) redirectToPlacementAfterAuth();
+    if (ok) redirectAfterAuthDefault();
   });
   setupAuthTabs();
 
@@ -208,7 +229,7 @@ function initAuth() {
         const resp = await api("/api/auth/login", "POST", { email, password }, false);
         saveAuth(resp);
         toast("Login successful");
-        redirectToPlacementAfterAuth();
+        await handlePostAuthNavigation(resp.user);
       } catch (err) {
         toast(`Login failed: ${err.message}`, "error");
       } finally {
@@ -239,7 +260,7 @@ function initAuth() {
         saveAuth(resp);
         toast("Register successful");
         localStorage.removeItem(onboardingKey(resp.user));
-        await handleFirstLoginAfterRegister(resp.user);
+        await handlePostAuthNavigation(resp.user);
       } catch (err) {
         toast(`Register failed: ${err.message}`, "error");
       } finally {
@@ -259,7 +280,7 @@ function initAuth() {
         const resp = await api("/api/auth/oauth/mock", "POST", { provider: "github", email, fullName }, false);
         saveAuth(resp);
         toast("GitHub login successful");
-        redirectToPlacementAfterAuth();
+        await handlePostAuthNavigation(resp.user);
       } catch (err) {
         toast(`GitHub login failed: ${err.message}`, "error");
       } finally {
@@ -277,7 +298,7 @@ function initAuth() {
           const resp = await api("/api/auth/oauth/google", "POST", { idToken: response.credential }, false);
           saveAuth(resp);
           toast("Google login successful");
-          redirectToPlacementAfterAuth();
+          await handlePostAuthNavigation(resp.user);
         } catch (err) {
           toast(`Google login failed: ${err.message}`, "error");
         } finally {

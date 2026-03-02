@@ -42,7 +42,7 @@ public class RegistrationVerificationServiceMysqlImpl implements RegistrationVer
     private final JavaMailSender mailSender;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    @Value("${auth.mail.from:no-reply@compassed.local}")
+    @Value("${auth.mail.from:compassed.edu@gmail.com}")
     private String mailFrom;
 
     @Value("${spring.mail.username:}")
@@ -89,7 +89,7 @@ public class RegistrationVerificationServiceMysqlImpl implements RegistrationVer
         sendVerificationEmail(email, code, request.getFullName());
 
         Map<String, Object> response = new LinkedHashMap<>();
-        response.put("message", "Verification code sent to email");
+        response.put("message", "OTP sent successfully to your email");
         response.put("expiresInMinutes", CODE_EXPIRE_MINUTES);
         return response;
     }
@@ -128,32 +128,27 @@ public class RegistrationVerificationServiceMysqlImpl implements RegistrationVer
     }
 
     private void sendVerificationEmail(String email, String code, String fullName) {
-        // If SMTP credentials are not configured, log the code to console instead of sending email
         if (mailUsername == null || mailUsername.isBlank()) {
-            log.warn("==============================================================");
-            log.warn("MAIL NOT CONFIGURED - Verification code for {}: {}", email, code);
-            log.warn("==============================================================");
-            return;
+            throw new RuntimeException("SMTP is not configured. Please set MAIL_USERNAME and MAIL_PASSWORD.");
         }
         
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(mailFrom);
+            String sender = (mailFrom == null || mailFrom.isBlank()) ? "compassed.edu@gmail.com" : mailFrom.trim();
+            message.setFrom(sender);
             message.setTo(email);
-            message.setSubject("CompassED - Verification code");
+            message.setSubject("CompassED - OTP Verification");
             String name = (fullName == null || fullName.isBlank()) ? "there" : fullName.trim();
-            message.setText("Hi " + name + ",\n\nYour CompassED verification code is: " + code
-                    + "\nThis code expires in " + CODE_EXPIRE_MINUTES + " minutes.\n\nCompassED Team");
+            message.setText("Hi " + name + ",\n\nYour CompassED OTP code is: " + code
+                    + "\nThis OTP expires in " + CODE_EXPIRE_MINUTES + " minutes."
+                    + "\n\nPlease do not share this code with anyone.\n\nCompassED Team");
             mailSender.send(message);
             log.info("Verification email sent successfully to {}", email);
         } catch (Exception ex) {
-            // Fallback: log the code to console if email sending fails
-            log.warn("==============================================================");
-            log.warn("Cannot send email to {} - Error: {}", email, ex.getMessage());
-            log.warn("VERIFICATION CODE for {}: {}", email, code);
-            log.warn("Use this code to complete registration (expires in {} minutes)", CODE_EXPIRE_MINUTES);
-            log.warn("==============================================================");
-            // Do NOT throw exception - allow registration to continue with manual code entry
+
+            log.error("Cannot send OTP email to {}. Error={}", email, ex.getMessage(), ex);
+            throw new RuntimeException("Cannot send OTP email. Please check SMTP configuration.");
+
         }
     }
 

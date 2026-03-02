@@ -1,4 +1,4 @@
-import {
+﻿import {
   KEYS,
   api,
   checkSession,
@@ -12,6 +12,9 @@ import {
   showLoading,
   toast
 } from "./core.js";
+
+const CHECKOUT_PAYMENT_ID_KEY = "compassed_checkout_payment_id";
+const CHECKOUT_SUBJECT_IDS_KEY = "compassed_checkout_subject_ids";
 
 function priceByCount(count, planMap) {
   if (planMap.has(count)) return planMap.get(count);
@@ -46,7 +49,7 @@ async function initCheckout() {
   const loginLink = document.getElementById("landing-login-link");
   const getStartedTop = document.getElementById("landing-get-started-top");
   const notifWrap = document.getElementById("landing-notif-wrap");
-  if (!listEl || !totalEl) return;
+  if (!listEl || !totalEl || !payBtn) return;
 
   const state = {
     paymentId: null,
@@ -68,6 +71,30 @@ async function initCheckout() {
 
   const setQrStatus = (text) => {
     if (qrStatusEl) qrStatusEl.textContent = text;
+  };
+
+  const clearPendingCheckoutState = () => {
+    localStorage.removeItem(CHECKOUT_PAYMENT_ID_KEY);
+    localStorage.removeItem(CHECKOUT_SUBJECT_IDS_KEY);
+  };
+
+  const savePendingCheckoutState = (paymentId, subjectIds) => {
+    if (paymentId) localStorage.setItem(CHECKOUT_PAYMENT_ID_KEY, String(paymentId));
+    if (Array.isArray(subjectIds)) localStorage.setItem(CHECKOUT_SUBJECT_IDS_KEY, JSON.stringify(subjectIds));
+  };
+
+  const restorePendingCheckoutState = () => {
+    const paymentId = Number(localStorage.getItem(CHECKOUT_PAYMENT_ID_KEY) || 0);
+    let subjectIds = [];
+    try {
+      subjectIds = JSON.parse(localStorage.getItem(CHECKOUT_SUBJECT_IDS_KEY) || "[]");
+    } catch {
+      subjectIds = [];
+    }
+    return {
+      paymentId: paymentId || null,
+      subjectIds: Array.isArray(subjectIds) ? subjectIds.map((x) => Number(x)).filter(Boolean) : []
+    };
   };
 
   const renderQrInfo = (payload) => {
@@ -93,11 +120,14 @@ async function initCheckout() {
 
   const updateByStatus = async (statusPayload) => {
     const status = String((statusPayload && statusPayload.status) || "").toUpperCase();
+
     if (status === "SUCCESS") {
-      setQrStatus("Transfer confirmed");
+      setQrStatus("Payment confirmed");
       setPayText("Roadmap Unlocked");
       payBtn.disabled = true;
       stopPolling();
+      clearPendingCheckoutState();
+
       if (!state.unlocked) {
         state.unlocked = true;
         const ids = Array.isArray(statusPayload.subjectIds) && statusPayload.subjectIds.length
@@ -105,35 +135,37 @@ async function initCheckout() {
           : state.selectedSubjectIds;
         const sub = await api("/api/subscriptions/checkout", "POST", { subjectIds: ids }, true);
         localStorage.setItem(KEYS.subscription, JSON.stringify(sub));
-        toast("Thanh toán thành công. Roadmap đã được mở khóa.", "ok");
-        nav("/roadmap-dashboard", "roadmapDashboard.html");
+        toast("Thanh toan thanh cong. Dang chuyen toi Roadmap Dashboard...", "ok");
+        setTimeout(() => nav("/roadmap-dashboard", "roadmapDashboard.html"), 900);
       }
       return;
     }
 
     if (status === "SUBMITTED") {
       setQrStatus("Processing payment...");
-      setPayText("Waiting Auto Confirmation...");
+      setPayText("Waiting auto confirmation...");
       payBtn.disabled = true;
       return;
     }
 
     if (status === "FAILED" || status === "CANCELLED") {
       stopPolling();
+      clearPendingCheckoutState();
       setQrStatus("Payment failed");
       setPayText("Start Payment");
       payBtn.disabled = false;
-      toast("Payment was rejected/failed. Please create a new checkout.", "warn");
       state.paymentId = null;
+      toast("Payment failed or cancelled. Please create a new checkout.", "warn");
       return;
     }
 
     if (state.paymentId) {
-      setQrStatus("Waiting for transfer...");
+      setQrStatus("Waiting for payment...");
       setPayText("Waiting For Payment...");
       payBtn.disabled = true;
       return;
     }
+
     setQrStatus("Waiting for payment...");
     setPayText("Start Payment");
     payBtn.disabled = false;
@@ -142,14 +174,18 @@ async function initCheckout() {
   const startPolling = (paymentId) => {
     if (!paymentId) return;
     stopPolling();
-    state.pollTimer = setInterval(async () => {
+
+    const tick = async () => {
       try {
         const statusPayload = await api(`/api/payments/${paymentId}/status`, "GET", null, true);
         await updateByStatus(statusPayload);
-      } catch (err) {
-        stopPolling();
+      } catch {
+        // Keep polling on transient issues.
       }
-    }, 30000);
+    };
+
+    tick();
+    state.pollTimer = setInterval(tick, 5000);
   };
 
   if (notifWrap) notifWrap.classList.add("hidden");
@@ -165,6 +201,7 @@ async function initCheckout() {
       nav("/dashboard", "dashboard.html");
     };
   }
+
   if (getStartedTop) {
     getStartedTop.textContent = currentRole() === "ADMIN" ? "Admin Dashboard" : "Dashboard";
     getStartedTop.onclick = () => {
@@ -197,12 +234,9 @@ async function initCheckout() {
     subjectRows.forEach((subject) => {
       const purchased = purchasedSubjectIds.has(Number(subject.id));
       const row = document.createElement("label");
-      row.className =
-        `group relative flex flex-col gap-5 rounded-xl border bg-white p-6 transition-all shadow-sm ${
-          purchased
-            ? "border-emerald-200 bg-emerald-50/40"
-            : "cursor-pointer border-slate-200 hover:border-primary/50"
-        }`;
+      row.className = `group relative flex flex-col gap-5 rounded-xl border bg-white p-6 transition-all shadow-sm ${
+        purchased ? "border-emerald-200 bg-emerald-50/40" : "cursor-pointer border-slate-200 hover:border-primary/50"
+      }`;
       row.innerHTML = `
         <div class="absolute top-4 right-4">
           ${purchased
@@ -221,14 +255,8 @@ async function initCheckout() {
           </div>
         </div>
         <ul class="space-y-3">
-          <li class="flex items-center gap-2 text-sm text-slate-600">
-            <span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>
-            Personalized roadmap
-          </li>
-          <li class="flex items-center gap-2 text-sm text-slate-600">
-            <span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>
-            Progress tracking
-          </li>
+          <li class="flex items-center gap-2 text-sm text-slate-600"><span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>Personalized roadmap</li>
+          <li class="flex items-center gap-2 text-sm text-slate-600"><span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>Progress tracking</li>
         </ul>`;
       listEl.appendChild(row);
     });
@@ -247,20 +275,15 @@ async function initCheckout() {
       const ids = selectedIds();
       const total = priceByCount(ids.length, planMap);
       totalEl.textContent = formatVnd(total);
-
-      if (selectedCountEl) {
-        selectedCountEl.textContent = `${ids.length}/${subjectRows.length}`;
-      }
+      if (selectedCountEl) selectedCountEl.textContent = `${ids.length}/${subjectRows.length}`;
 
       if (selectedListEl) {
         const picked = subjectRows.filter((s) => ids.includes(Number(s.id)));
-        if (!picked.length) {
-          selectedListEl.innerHTML = '<div class="text-slate-400">No subject selected</div>';
-        } else {
-          selectedListEl.innerHTML = picked
-            .map((s) => `<div class="flex justify-between items-center"><span class="text-slate-500">${s.name}</span><span class="text-slate-700">${formatVnd(single)}</span></div>`)
-            .join("");
-        }
+        selectedListEl.innerHTML = !picked.length
+          ? '<div class="text-slate-400">No subject selected</div>'
+          : picked
+              .map((s) => `<div class="flex justify-between items-center"><span class="text-slate-500">${s.name}</span><span class="text-slate-700">${formatVnd(single)}</span></div>`)
+              .join("");
       }
 
       const original = ids.length * single;
@@ -268,13 +291,9 @@ async function initCheckout() {
       if (discountEl) discountEl.textContent = formatVnd(discount);
 
       if (tipEl) {
-        if (ids.length >= 3) {
-          tipEl.textContent = "Best value bundle applied.";
-        } else if (ids.length === 2) {
-          tipEl.textContent = "Great! You are saving with 2-subject bundle.";
-        } else {
-          tipEl.textContent = "Tip: Buy 2 subjects to save more.";
-        }
+        if (ids.length >= 3) tipEl.textContent = "Best value bundle applied.";
+        else if (ids.length === 2) tipEl.textContent = "Great! You are saving with 2-subject bundle.";
+        else tipEl.textContent = "Tip: Buy 2 subjects to save more.";
       }
     }
 
@@ -282,43 +301,54 @@ async function initCheckout() {
     setPayText("Start Payment");
     setQrStatus("Waiting for payment...");
 
-    if (payBtn) {
-      payBtn.addEventListener("click", async () => {
-        const ids = selectedIds();
-        if (!ids.length) {
-          toast("Select at least 1 subject", "warn");
+    const restored = restorePendingCheckoutState();
+    if (restored.paymentId) {
+      state.paymentId = restored.paymentId;
+      state.selectedSubjectIds = restored.subjectIds;
+      lockSelection(boxes, true);
+      setPayText("Waiting For Payment...");
+      setQrStatus("Checking payment status...");
+      payBtn.disabled = true;
+      startPolling(state.paymentId);
+    }
+
+    payBtn.addEventListener("click", async () => {
+      const ids = selectedIds();
+      if (!ids.length) {
+        toast("Select at least 1 subject", "warn");
+        return;
+      }
+
+      showLoading("Processing checkout...");
+      payBtn.disabled = true;
+      setPayText("Processing...");
+
+      try {
+        if (!state.paymentId) {
+          const created = await api("/api/payments/checkout-qr", "POST", { subjectIds: ids }, true);
+          state.paymentId = Number(created.paymentId);
+          state.selectedSubjectIds = ids;
+          savePendingCheckoutState(state.paymentId, state.selectedSubjectIds);
+          renderQrInfo(created);
+          lockSelection(boxes, true);
+          setQrStatus("Transfer pending");
+          setPayText("Waiting For Payment...");
+          payBtn.disabled = true;
+          startPolling(state.paymentId);
+          toast("QR created. He thong se tu dong xac nhan giao dich.", "ok");
           return;
         }
 
-        showLoading("Processing checkout...");
         payBtn.disabled = true;
-        setPayText("Processing...");
-
-        try {
-          if (!state.paymentId) {
-            const created = await api("/api/payments/checkout-qr", "POST", { subjectIds: ids }, true);
-            state.paymentId = Number(created.paymentId);
-            state.selectedSubjectIds = ids;
-            renderQrInfo(created);
-            lockSelection(boxes, true);
-            setQrStatus("Transfer pending");
-            setPayText("Waiting For Payment...");
-            payBtn.disabled = true;
-            startPolling(state.paymentId);
-            toast("QR created. Hệ thống sẽ tự xác nhận sau khi nhận giao dịch.", "ok");
-          } else {
-            payBtn.disabled = true;
-            setPayText("Waiting For Payment...");
-          }
-        } catch (err) {
-          toast(`Checkout failed: ${err.message}`, "error");
-          payBtn.disabled = false;
-          setPayText("Start Payment");
-        } finally {
-          hideLoading();
-        }
-      });
-    }
+        setPayText("Waiting For Payment...");
+      } catch (err) {
+        toast(`Checkout failed: ${err.message}`, "error");
+        payBtn.disabled = false;
+        setPayText("Start Payment");
+      } finally {
+        hideLoading();
+      }
+    });
   } catch (err) {
     toast(`Checkout load failed: ${err.message}`, "error");
   } finally {
