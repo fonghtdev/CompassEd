@@ -29,7 +29,7 @@ public class RegistrationVerificationServiceFallbackImpl implements Registration
     private final JavaMailSender mailSender;
     private final Map<String, PendingRegister> pendingRegisters = new ConcurrentHashMap<>();
 
-    @Value("${auth.mail.from:no-reply@compassed.local}")
+    @Value("${auth.mail.from:compassed.edu@gmail.com}")
     private String mailFrom;
 
     @Value("${spring.mail.username:}")
@@ -53,7 +53,7 @@ public class RegistrationVerificationServiceFallbackImpl implements Registration
         pendingRegisters.put(email, new PendingRegister(request, code, LocalDateTime.now().plusMinutes(10)));
         sendVerificationEmail(email, code, request.getFullName());
         Map<String, Object> response = new LinkedHashMap<>();
-        response.put("message", "Verification code sent to email");
+        response.put("message", "OTP sent successfully to your email");
         response.put("expiresInMinutes", 10);
         return response;
     }
@@ -85,25 +85,23 @@ public class RegistrationVerificationServiceFallbackImpl implements Registration
     }
 
     private void sendVerificationEmail(String email, String code, String fullName) {
-        // If SMTP credentials are not configured, log the code to console instead of sending email
         if (mailUsername == null || mailUsername.isBlank()) {
-            log.warn("==============================================================");
-            log.warn("MAIL NOT CONFIGURED - Verification code for {}: {}", email, code);
-            log.warn("==============================================================");
-            return;
+            throw new RuntimeException("SMTP is not configured. Please set MAIL_USERNAME and MAIL_PASSWORD.");
         }
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(mailFrom);
+            String sender = (mailFrom == null || mailFrom.isBlank()) ? "compassed.edu@gmail.com" : mailFrom.trim();
+            message.setFrom(sender);
             message.setTo(email);
-            message.setSubject("CompassED - Verification code");
+            message.setSubject("CompassED - OTP Verification");
             String name = (fullName == null || fullName.isBlank()) ? "there" : fullName.trim();
-            message.setText("Hi " + name + ",\n\nYour CompassED verification code is: " + code
-                    + "\nThis code expires in 10 minutes.\n\nCompassED Team");
+            message.setText("Hi " + name + ",\n\nYour CompassED OTP code is: " + code
+                    + "\nThis OTP expires in 10 minutes."
+                    + "\n\nPlease do not share this code with anyone.\n\nCompassED Team");
             mailSender.send(message);
         } catch (Exception ex) {
-            log.warn("Cannot send verification email to {}. Code={}. Error={}", email, ex.getMessage(), code);
-            log.warn("Use the code above to verify manually during development.");
+            log.error("Cannot send OTP email to {}. Error={}", email, ex.getMessage(), ex);
+            throw new RuntimeException("Cannot send OTP email. Please check SMTP configuration.");
         }
     }
 
