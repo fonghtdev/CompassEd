@@ -43,7 +43,7 @@ public class UserQuestionBankController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
         Page<QuestionBankDTO> result = questionBankService.getAllQuestions(
-                subjectId, level, skillType, true, gradeLevel, pageable);
+                subjectId, level, null, skillType, true, pageable);
 
         Map<String, Object> response = new HashMap<>();
         response.put("questions", result.getContent());

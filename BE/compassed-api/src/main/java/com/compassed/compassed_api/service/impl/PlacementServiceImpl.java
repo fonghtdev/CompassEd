@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import org.springframework.data.domain.PageRequest;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
@@ -211,7 +212,7 @@ public class PlacementServiceImpl implements PlacementService {
     private String generatePlacementPaperJson(String subjectCode, Long subjectId, int gradeLevel) {
         try {
             List<Map<String, Object>> paper = new ArrayList<>();
-            var rows = questionBankRepository.findRandomQuestions(subjectId, "L1", gradeLevel, 50);
+            var rows = questionBankRepository.findRandomQuestions(subjectId, "L1", gradeLevel, PageRequest.of(0, 50));
             if (rows != null && !rows.isEmpty()) {
                 for (var qrow : rows) {
                     Map<String, Object> q = new LinkedHashMap<>();
