@@ -219,6 +219,17 @@ public class PaymentService {
         return paymentStatusPayload(payment);
     }
 
+    public Map<String, Object> getPaymentStatusForUserByReference(Long userId, String paymentReference) {
+        String ref = paymentReference == null ? "" : paymentReference.trim();
+        if (ref.isBlank()) {
+            throw new RuntimeException("paymentReference is required");
+        }
+        Payment payment = paymentRepository.findByPaymentReferenceAndUserId(ref, userId)
+                .orElseThrow(() -> new RuntimeException("Payment not found"));
+        payment = refreshPayOsStatus(payment, true);
+        return paymentStatusPayload(payment);
+    }
+
     @Transactional
     public Map<String, Object> handlePayOsWebhook(Map<String, Object> payload) {
         if (payload == null) {

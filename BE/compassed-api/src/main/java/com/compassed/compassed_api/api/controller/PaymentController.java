@@ -70,6 +70,18 @@ public class PaymentController {
         }
     }
 
+    @GetMapping("/by-reference/{paymentReference}/status")
+    public ResponseEntity<?> getPaymentStatusByReference(@PathVariable String paymentReference) {
+        try {
+            Long userId = currentUserService.requireCurrentUserId();
+            Map<String, Object> result = paymentService.getPaymentStatusForUserByReference(userId, paymentReference);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error getting payment status by reference", e);
+            return ResponseEntity.badRequest().body(Map.of("error", safeError(e)));
+        }
+    }
+
     @PostMapping("/checkout-qr")
     public ResponseEntity<?> createCheckoutQr(@RequestBody Map<String, Object> request) {
         try {

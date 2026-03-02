@@ -97,6 +97,14 @@ async function initCheckout() {
     };
   };
 
+  const resolvePayOsReturnReference = () => {
+    const params = new URLSearchParams(window.location.search);
+    const orderCode = (params.get("orderCode") || params.get("order_code") || "").trim();
+    const status = (params.get("status") || "").trim().toUpperCase();
+    const paymentLinkId = (params.get("id") || params.get("paymentLinkId") || "").trim();
+    return { orderCode, status, paymentLinkId };
+  };
+
   const renderQrInfo = (payload) => {
     if (qrImageEl) {
       const url = payload && payload.qrImageUrl;
@@ -306,8 +314,32 @@ async function initCheckout() {
     setPayText("Start Payment");
     setQrStatus("Waiting for payment...");
 
+    // If user is redirected back from PayOS, verify immediately by order code.
+    const payOsReturn = resolvePayOsReturnReference();
+    if (payOsReturn.orderCode) {
+      try {
+        setQrStatus("Verifying payment...");
+        const byRef = await api(`/api/payments/by-reference/${encodeURIComponent(payOsReturn.orderCode)}/status`, "GET", null, true);
+        if (byRef && byRef.paymentId) {
+          state.paymentId = Number(byRef.paymentId);
+          state.selectedSubjectIds = Array.isArray(byRef.subjectIds)
+            ? byRef.subjectIds.map((id) => Number(id)).filter(Boolean)
+            : [];
+          savePendingCheckoutState(state.paymentId, state.selectedSubjectIds);
+        }
+        await updateByStatus(byRef);
+        if (!state.unlocked && state.paymentId) {
+          lockSelection(boxes, true);
+          payBtn.disabled = true;
+          startPolling(state.paymentId);
+        }
+      } catch {
+        // fallback to regular restore/polling flow below
+      }
+    }
+
     const restored = restorePendingCheckoutState();
-    if (restored.paymentId) {
+    if (!state.unlocked && restored.paymentId && !state.paymentId) {
       state.paymentId = restored.paymentId;
       state.selectedSubjectIds = restored.subjectIds;
       lockSelection(boxes, true);
