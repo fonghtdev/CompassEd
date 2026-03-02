@@ -46,6 +46,7 @@ public class SecurityConfig {
                                 "/api/auth/register/**",
                                 "/api/auth/login",
                                 "/api/auth/oauth/**",
+                                "/api/payments/callback/payos",
                                 "/api/subjects",
                                 "/api/questions",
                                 "/api/pricing/plans").permitAll()
