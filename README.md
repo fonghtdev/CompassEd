@@ -1,20 +1,44 @@
 ## Run Project
-# START -->
-1. (Optional) Start MySQL container:
-docker compose up -d mysql
 
-2. Configure env once:
-Edit `scripts/dev-env.ps1`
+### macOS / Linux:
+1. Run both Backend & Frontend:
+```bash
+./scripts/run-all.sh
+```
 
-3. Run Backend:
+Or run separately in 2 terminals:
+```bash
+# Terminal 1 - Backend
+./scripts/run-be.sh
+
+# Terminal 2 - Frontend
+./scripts/run-fe.sh
+```
+
+### Windows:
+1. Run Backend:
+```powershell
 .\scripts\run-be.ps1
+```
 
-4. Run Frontend:
+2. Run Frontend:
+```powershell
 .\scripts\run-fe.ps1
+```
 
-5. Run both in 2 terminals:
+3. Run both in 2 terminals:
+```powershell
 .\scripts\run-all.ps1
-## END <--
+```
+
+### Access:
+- **Frontend**: http://127.0.0.1:3000/landing (or http://127.0.0.1:3000)
+- **Backend API**: http://localhost:8080
+
+**Important:**
+- ✅ Flask runs on port **3000** (macOS uses port 5000 for AirPlay)
+- ✅ Use `/landing` route, NOT `/template/landingPage.html` 
+- ✅ MySQL password is `root` (not `1234`)
 
 <!-- # CompassEd
 

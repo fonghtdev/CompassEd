@@ -175,16 +175,16 @@ public class PlacementServiceLocalImpl implements PlacementService {
             item.put("id", q.getId());
             item.put("q", q.getQuestionText());
             
-            // Parse options từ JSON string
-            try {
-                List<String> options = objectMapper.readValue(q.getOptions(), new TypeReference<List<String>>() {});
-                item.put("options", options);
-            } catch (Exception e) {
-                item.put("options", List.of("A. Option A", "B. Option B", "C. Option C", "D. Option D"));
-            }
+            // Build options from separate fields
+            List<String> options = new ArrayList<>();
+            if (q.getOptionA() != null) options.add(q.getOptionA());
+            if (q.getOptionB() != null) options.add(q.getOptionB());
+            if (q.getOptionC() != null) options.add(q.getOptionC());
+            if (q.getOptionD() != null) options.add(q.getOptionD());
+            item.put("options", options);
             
             item.put("correct", q.getCorrectAnswer());
-            item.put("skill", q.getSkillType());
+            item.put("skill", q.getSkillTag());  // Changed from getSkillType
             paper.add(item);
         }
 

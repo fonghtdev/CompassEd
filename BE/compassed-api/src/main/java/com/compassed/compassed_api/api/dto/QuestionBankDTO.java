@@ -1,23 +1,23 @@
 package com.compassed.compassed_api.api.dto;
 
 import com.compassed.compassed_api.domain.QuestionBank.Level;
-import com.compassed.compassed_api.domain.QuestionBank.QuestionType;
 
 public class QuestionBankDTO {
     
     private Long id;
     private Long subjectId;
     private String subjectName;
-    private Integer gradeLevel;
-    private Level level;
-    private String gradeBand;
-    private String skillType;
-    private QuestionType questionType;
+    private String questionId; // e.g., "Literature_L1_12.1"
+    private String subjectCode; // L, M, E
+    private Level level; // L1, L2, L3
+    private String skillTag; // e.g., "Đọc hiểu nghị luận"
     private String questionText;
-    private String options; // JSON string
-    private String correctAnswer;
-    private String explanation;
-    private Integer difficulty;
+    private String optionA;
+    private String optionB;
+    private String optionC;
+    private String optionD;
+    private String correctAnswer; // A, B, C, D
+    private String className; // e.g., "lớp 11"
     private Boolean isActive;
 
     // Constructors
@@ -48,12 +48,20 @@ public class QuestionBankDTO {
         this.subjectName = subjectName;
     }
 
-    public Integer getGradeLevel() {
-        return gradeLevel;
+    public String getQuestionId() {
+        return questionId;
     }
 
-    public void setGradeLevel(Integer gradeLevel) {
-        this.gradeLevel = gradeLevel;
+    public void setQuestionId(String questionId) {
+        this.questionId = questionId;
+    }
+
+    public String getSubjectCode() {
+        return subjectCode;
+    }
+
+    public void setSubjectCode(String subjectCode) {
+        this.subjectCode = subjectCode;
     }
 
     public Level getLevel() {
@@ -64,28 +72,12 @@ public class QuestionBankDTO {
         this.level = level;
     }
 
-    public String getGradeBand() {
-        return gradeBand;
+    public String getSkillTag() {
+        return skillTag;
     }
 
-    public void setGradeBand(String gradeBand) {
-        this.gradeBand = gradeBand;
-    }
-
-    public String getSkillType() {
-        return skillType;
-    }
-
-    public void setSkillType(String skillType) {
-        this.skillType = skillType;
-    }
-
-    public QuestionType getQuestionType() {
-        return questionType;
-    }
-
-    public void setQuestionType(QuestionType questionType) {
-        this.questionType = questionType;
+    public void setSkillTag(String skillTag) {
+        this.skillTag = skillTag;
     }
 
     public String getQuestionText() {
@@ -96,12 +88,36 @@ public class QuestionBankDTO {
         this.questionText = questionText;
     }
 
-    public String getOptions() {
-        return options;
+    public String getOptionA() {
+        return optionA;
     }
 
-    public void setOptions(String options) {
-        this.options = options;
+    public void setOptionA(String optionA) {
+        this.optionA = optionA;
+    }
+
+    public String getOptionB() {
+        return optionB;
+    }
+
+    public void setOptionB(String optionB) {
+        this.optionB = optionB;
+    }
+
+    public String getOptionC() {
+        return optionC;
+    }
+
+    public void setOptionC(String optionC) {
+        this.optionC = optionC;
+    }
+
+    public String getOptionD() {
+        return optionD;
+    }
+
+    public void setOptionD(String optionD) {
+        this.optionD = optionD;
     }
 
     public String getCorrectAnswer() {
@@ -112,20 +128,12 @@ public class QuestionBankDTO {
         this.correctAnswer = correctAnswer;
     }
 
-    public String getExplanation() {
-        return explanation;
+    public String getClassName() {
+        return className;
     }
 
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
-    }
-
-    public Integer getDifficulty() {
-        return difficulty;
-    }
-
-    public void setDifficulty(Integer difficulty) {
-        this.difficulty = difficulty;
+    public void setClassName(String className) {
+        this.className = className;
     }
 
     public Boolean getIsActive() {
