@@ -13,42 +13,44 @@ public class QuestionBank {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "question_id", unique = true, length = 50)
+    private String questionId; // e.g., "Literature_L1_12.1"
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id", nullable = false)
     @JsonIgnore
     private Subject subject;
 
+    @Column(name = "subject_code", nullable = false, length = 10)
+    private String subjectCode; // L (Literature), M (Math), E (English)
+
     @Column(nullable = false, length = 10)
     @Enumerated(EnumType.STRING)
     private Level level;
 
-    @Column(name = "grade_level", nullable = false)
-    private Integer gradeLevel; // 10/11/12
-
-    @Column(name = "skill_type", nullable = false, length = 100)
-    private String skillType; // Đại số, Hình học, Ngữ pháp, Reading...
-
-    @Column(name = "question_type", length = 20)
-    @Enumerated(EnumType.STRING)
-    private QuestionType questionType;
-
-    @Column(name = "grade_band", length = 20)
-    private String gradeBand; // GRADE_11, GRADE_12, UNI_PREP
+    @Column(name = "skill_tag", nullable = false, length = 200)
+    private String skillTag; // e.g., "Đọc hiểu nghị luận"
 
     @Column(name = "question_text", nullable = false, columnDefinition = "TEXT")
     private String questionText;
 
-    @Column(columnDefinition = "JSON")
-    private String options; // JSON array: ["A. ...", "B. ...", "C. ...", "D. ..."]
+    @Column(name = "option_a", columnDefinition = "TEXT")
+    private String optionA;
+
+    @Column(name = "option_b", columnDefinition = "TEXT")
+    private String optionB;
+
+    @Column(name = "option_c", columnDefinition = "TEXT")
+    private String optionC;
+
+    @Column(name = "option_d", columnDefinition = "TEXT")
+    private String optionD;
 
     @Column(name = "correct_answer", length = 10)
-    private String correctAnswer; // A, B, C, D hoặc A,B (multiple)
+    private String correctAnswer; // A, B, C, D
 
-    @Column(columnDefinition = "TEXT")
-    private String explanation;
-
-    @Column
-    private Integer difficulty; // 1-5
+    @Column(name = "class_name", length = 50)
+    private String className; // e.g., "lớp 11"
 
     @Column(name = "is_active")
     private Boolean isActive = true;
@@ -63,19 +65,10 @@ public class QuestionBank {
         L1, L2, L3
     }
 
-    public enum QuestionType {
-        MULTIPLE_CHOICE,
-        ESSAY,
-        TRUE_FALSE
-    }
-
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (gradeLevel == null) {
-            gradeLevel = 10;
-        }
     }
 
     @PreUpdate
@@ -92,12 +85,28 @@ public class QuestionBank {
         this.id = id;
     }
 
+    public String getQuestionId() {
+        return questionId;
+    }
+
+    public void setQuestionId(String questionId) {
+        this.questionId = questionId;
+    }
+
     public Subject getSubject() {
         return subject;
     }
 
     public void setSubject(Subject subject) {
         this.subject = subject;
+    }
+
+    public String getSubjectCode() {
+        return subjectCode;
+    }
+
+    public void setSubjectCode(String subjectCode) {
+        this.subjectCode = subjectCode;
     }
 
     public Level getLevel() {
@@ -108,36 +117,12 @@ public class QuestionBank {
         this.level = level;
     }
 
-    public Integer getGradeLevel() {
-        return gradeLevel;
+    public String getSkillTag() {
+        return skillTag;
     }
 
-    public void setGradeLevel(Integer gradeLevel) {
-        this.gradeLevel = gradeLevel;
-    }
-
-    public String getSkillType() {
-        return skillType;
-    }
-
-    public void setSkillType(String skillType) {
-        this.skillType = skillType;
-    }
-
-    public QuestionType getQuestionType() {
-        return questionType;
-    }
-
-    public void setQuestionType(QuestionType questionType) {
-        this.questionType = questionType;
-    }
-
-    public String getGradeBand() {
-        return gradeBand;
-    }
-
-    public void setGradeBand(String gradeBand) {
-        this.gradeBand = gradeBand;
+    public void setSkillTag(String skillTag) {
+        this.skillTag = skillTag;
     }
 
     public String getQuestionText() {
@@ -148,12 +133,36 @@ public class QuestionBank {
         this.questionText = questionText;
     }
 
-    public String getOptions() {
-        return options;
+    public String getOptionA() {
+        return optionA;
     }
 
-    public void setOptions(String options) {
-        this.options = options;
+    public void setOptionA(String optionA) {
+        this.optionA = optionA;
+    }
+
+    public String getOptionB() {
+        return optionB;
+    }
+
+    public void setOptionB(String optionB) {
+        this.optionB = optionB;
+    }
+
+    public String getOptionC() {
+        return optionC;
+    }
+
+    public void setOptionC(String optionC) {
+        this.optionC = optionC;
+    }
+
+    public String getOptionD() {
+        return optionD;
+    }
+
+    public void setOptionD(String optionD) {
+        this.optionD = optionD;
     }
 
     public String getCorrectAnswer() {
@@ -164,20 +173,12 @@ public class QuestionBank {
         this.correctAnswer = correctAnswer;
     }
 
-    public String getExplanation() {
-        return explanation;
+    public String getClassName() {
+        return className;
     }
 
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
-    }
-
-    public Integer getDifficulty() {
-        return difficulty;
-    }
-
-    public void setDifficulty(Integer difficulty) {
-        this.difficulty = difficulty;
+    public void setClassName(String className) {
+        this.className = className;
     }
 
     public Boolean getIsActive() {

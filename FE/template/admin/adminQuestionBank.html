@@ -70,14 +70,6 @@
                 <span class="material-symbols-outlined text-xl">quiz</span>
                 <span class="text-sm font-medium">Question Bank</span>
             </a>
-            <a id="admin-nav-content-bank" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="/admin-dashboard">
-                <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">library_books</span>
-                <span class="text-sm font-medium">Content Bank</span>
-            </a>
-            <a id="admin-nav-roadmaps" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="/admin-dashboard">
-                <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">map</span>
-                <span class="text-sm font-medium">Roadmap Config</span>
-            </a>
             <a id="admin-nav-analytics" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="/admin-dashboard">
                 <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">analytics</span>
                 <span class="text-sm font-medium">Analytics</span>
@@ -229,14 +221,13 @@
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Level</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Kỹ năng</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Câu hỏi</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Độ khó</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Trạng thái</th>
                                 <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="questions-tbody" class="divide-y divide-slate-100">
                             <tr>
-                                <td colspan="9" class="px-6 py-12 text-center">
+                                <td colspan="8" class="px-6 py-12 text-center">
                                     <div class="flex flex-col items-center gap-3">
                                         <span class="material-symbols-outlined text-6xl text-slate-300">quiz</span>
                                         <p class="text-slate-500 font-medium">Đang tải câu hỏi...</p>
@@ -283,6 +274,30 @@
         <form id="question-form" class="p-6 space-y-4">
             <input type="hidden" id="question-id">
             
+            <!-- Question ID -->
+            <div>
+                <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+                    <span class="material-symbols-outlined text-primary text-lg">fingerprint</span>
+                    <span>Mã câu hỏi (tùy chọn)</span>
+                </label>
+                <input type="text" id="input-question-id" placeholder="VD: Literature_L1_12.1" 
+                    class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+            </div>
+            
+            <!-- Subject Code -->
+            <div>
+                <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+                    <span class="material-symbols-outlined text-primary text-lg">code</span>
+                    <span>Mã môn *</span>
+                </label>
+                <select id="input-subject-code" required class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                    <option value="">Chọn mã môn</option>
+                    <option value="L">L - Văn học (Literature)</option>
+                    <option value="M">M - Toán (Math)</option>
+                    <option value="E">E - Anh văn (English)</option>
+                </select>
+            </div>
+            
             <div>
                 <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
                     <span class="material-symbols-outlined text-primary text-lg">school</span>
@@ -312,31 +327,19 @@
                             <span>Khối lớp *</span>
                     </label>
                         <select id="input-grade" required class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
-                            <option value="10">Lớp 10</option>
-                            <option value="11">Lớp 11</option>
-                            <option value="12">Lớp 12</option>
+                            <option value="lớp 10">lớp 10</option>
+                            <option value="lớp 11">lớp 11</option>
+                            <option value="lớp 12">lớp 12</option>
                         </select>
                 </div>
             </div>
 
             <div>
                 <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-                    <span class="material-symbols-outlined text-primary text-lg">category</span>
-                    <span>Loại câu hỏi *</span>
-                </label>
-                <select id="input-type" required class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
-                    <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
-                    <option value="ESSAY">Tự luận</option>
-                    <option value="TRUE_FALSE">Đúng/Sai</option>
-                </select>
-            </div>
-            
-            <div>
-                <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
                     <span class="material-symbols-outlined text-primary text-lg">psychology</span>
-                    <span>Kỹ năng *</span>
+                    <span>Skill Tag *</span>
                 </label>
-                <input type="text" id="input-skill" required placeholder="VD: Đại số, Ngữ pháp, Grammar..." 
+                <input type="text" id="input-skill" required placeholder="VD: Đọc hiểu nghị luận, Phép tính logarit..." 
                        class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
             </div>
             
@@ -349,46 +352,50 @@
                           class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"></textarea>
             </div>
             
-            <div>
-                <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+            <!-- 4 Option Fields -->
+            <div class="space-y-3">
+                <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
                     <span class="material-symbols-outlined text-primary text-lg">list</span>
-                    <span>Các đáp án (JSON Array) *</span>
+                    <span>Các đáp án *</span>
                 </label>
-                <textarea id="input-options" required rows="3" placeholder='["A. Đáp án 1", "B. Đáp án 2", "C. Đáp án 3", "D. Đáp án 4"]' 
-                          class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm"></textarea>
-                <p class="flex items-center gap-1 text-xs text-slate-500 mt-1">
-                    <span class="material-symbols-outlined text-xs">info</span>
-                    <span>Nhập dạng JSON array. VD: ["A. Đáp án 1", "B. Đáp án 2"]</span>
-                </p>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
+                
                 <div>
-                    <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-                        <span class="material-symbols-outlined text-primary text-lg">check_circle</span>
-                        <span>Đáp án đúng *</span>
-                    </label>
-                    <input type="text" id="input-answer" required placeholder="A hoặc A,B" 
+                    <label class="text-xs font-medium text-slate-600 mb-1 block">Đáp án A *</label>
+                    <input type="text" id="input-option-a" required placeholder="Nhập đáp án A" 
                            class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
                 </div>
                 
                 <div>
-                    <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-                        <span class="material-symbols-outlined text-primary text-lg">speed</span>
-                        <span>Độ khó (1-5) *</span>
-                    </label>
-                    <input type="number" id="input-difficulty" required min="1" max="5" value="1" 
+                    <label class="text-xs font-medium text-slate-600 mb-1 block">Đáp án B *</label>
+                    <input type="text" id="input-option-b" required placeholder="Nhập đáp án B" 
+                           class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                </div>
+                
+                <div>
+                    <label class="text-xs font-medium text-slate-600 mb-1 block">Đáp án C *</label>
+                    <input type="text" id="input-option-c" required placeholder="Nhập đáp án C" 
+                           class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                </div>
+                
+                <div>
+                    <label class="text-xs font-medium text-slate-600 mb-1 block">Đáp án D *</label>
+                    <input type="text" id="input-option-d" required placeholder="Nhập đáp án D" 
                            class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
                 </div>
             </div>
             
             <div>
                 <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-                    <span class="material-symbols-outlined text-primary text-lg">description</span>
-                    <span>Giải thích</span>
+                    <span class="material-symbols-outlined text-primary text-lg">check_circle</span>
+                    <span>Đáp án đúng *</span>
                 </label>
-                <textarea id="input-explanation" rows="2" placeholder="Giải thích đáp án (tùy chọn)..." 
-                          class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"></textarea>
+                <select id="input-answer" required class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                    <option value="">Chọn đáp án đúng</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
             </div>
         </form>
         

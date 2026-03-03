@@ -11,7 +11,6 @@ import com.compassed.compassed_api.service.QuestionBankService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +32,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
     }
 
     @Override
-    public Page<QuestionBankDTO> getAllQuestions(Long subjectId, Level level, String gradeBand, String skillType, 
+    public Page<QuestionBankDTO> getAllQuestions(Long subjectId, Level level, String className, String skillTag, 
                                                  Boolean isActive, Pageable pageable) {
         Specification<QuestionBank> spec = (root, query, cb) -> cb.conjunction();
         
@@ -47,14 +46,14 @@ public class QuestionBankServiceImpl implements QuestionBankService {
                 cb.equal(root.get("level"), level));
         }
 
-        if (gradeBand != null && !gradeBand.isBlank()) {
+        if (className != null && !className.isBlank()) {
             spec = spec.and((root, query, cb) ->
-                cb.equal(cb.upper(root.get("gradeBand")), gradeBand.trim().toUpperCase()));
+                cb.equal(root.get("className"), className.trim()));
         }
         
-        if (skillType != null && !skillType.isEmpty()) {
+        if (skillTag != null && !skillTag.isEmpty()) {
             spec = spec.and((root, query, cb) -> 
-                cb.equal(root.get("skillType"), skillType));
+                cb.like(root.get("skillTag"), "%" + skillTag + "%"));
         }
         
         if (isActive != null) {
@@ -79,15 +78,17 @@ public class QuestionBankServiceImpl implements QuestionBankService {
 
         QuestionBank question = new QuestionBank();
         question.setSubject(subject);
+        question.setQuestionId(request.getQuestionId());
+        question.setSubjectCode(request.getSubjectCode());
         question.setLevel(request.getLevel());
-        question.setGradeBand(normalizeGradeBand(request.getGradeBand()));
-        question.setSkillType(request.getSkillType());
-        question.setQuestionType(request.getQuestionType());
+        question.setSkillTag(request.getSkillTag());
         question.setQuestionText(request.getQuestionText());
-        question.setOptions(request.getOptions());
+        question.setOptionA(request.getOptionA());
+        question.setOptionB(request.getOptionB());
+        question.setOptionC(request.getOptionC());
+        question.setOptionD(request.getOptionD());
         question.setCorrectAnswer(request.getCorrectAnswer());
-        question.setExplanation(request.getExplanation());
-        question.setDifficulty(request.getDifficulty());
+        question.setClassName(request.getClassName());
         question.setIsActive(true);
 
         QuestionBank saved = questionBankRepository.save(question);
@@ -105,15 +106,17 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             question.setSubject(subject);
         }
 
+        if (request.getQuestionId() != null) question.setQuestionId(request.getQuestionId());
+        if (request.getSubjectCode() != null) question.setSubjectCode(request.getSubjectCode());
         if (request.getLevel() != null) question.setLevel(request.getLevel());
-        if (request.getGradeBand() != null) question.setGradeBand(normalizeGradeBand(request.getGradeBand()));
-        if (request.getSkillType() != null) question.setSkillType(request.getSkillType());
-        if (request.getQuestionType() != null) question.setQuestionType(request.getQuestionType());
+        if (request.getSkillTag() != null) question.setSkillTag(request.getSkillTag());
         if (request.getQuestionText() != null) question.setQuestionText(request.getQuestionText());
-        if (request.getOptions() != null) question.setOptions(request.getOptions());
+        if (request.getOptionA() != null) question.setOptionA(request.getOptionA());
+        if (request.getOptionB() != null) question.setOptionB(request.getOptionB());
+        if (request.getOptionC() != null) question.setOptionC(request.getOptionC());
+        if (request.getOptionD() != null) question.setOptionD(request.getOptionD());
         if (request.getCorrectAnswer() != null) question.setCorrectAnswer(request.getCorrectAnswer());
-        if (request.getExplanation() != null) question.setExplanation(request.getExplanation());
-        if (request.getDifficulty() != null) question.setDifficulty(request.getDifficulty());
+        if (request.getClassName() != null) question.setClassName(request.getClassName());
 
         QuestionBank updated = questionBankRepository.save(question);
         return convertToDTO(updated);
@@ -164,27 +167,18 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         dto.setId(question.getId());
         dto.setSubjectId(question.getSubject().getId());
         dto.setSubjectName(question.getSubject().getName());
+        dto.setQuestionId(question.getQuestionId());
+        dto.setSubjectCode(question.getSubjectCode());
         dto.setLevel(question.getLevel());
-        dto.setGradeBand(question.getGradeBand());
-        dto.setSkillType(question.getSkillType());
-        dto.setQuestionType(question.getQuestionType());
+        dto.setSkillTag(question.getSkillTag());
         dto.setQuestionText(question.getQuestionText());
-        dto.setOptions(question.getOptions());
+        dto.setOptionA(question.getOptionA());
+        dto.setOptionB(question.getOptionB());
+        dto.setOptionC(question.getOptionC());
+        dto.setOptionD(question.getOptionD());
         dto.setCorrectAnswer(question.getCorrectAnswer());
-        dto.setExplanation(question.getExplanation());
-        dto.setDifficulty(question.getDifficulty());
+        dto.setClassName(question.getClassName());
         dto.setIsActive(question.getIsActive());
         return dto;
-    }
-
-    private String normalizeGradeBand(String gradeBand) {
-        String normalized = gradeBand == null ? "" : gradeBand.trim().toUpperCase();
-        if (normalized.isBlank()) {
-            return "GRADE_11";
-        }
-        return switch (normalized) {
-            case "GRADE_11", "GRADE_12", "UNI_PREP" -> normalized;
-            default -> throw new RuntimeException("gradeBand must be GRADE_11, GRADE_12 or UNI_PREP");
-        };
     }
 }

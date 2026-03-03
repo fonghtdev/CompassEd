@@ -212,28 +212,56 @@ public class PlacementServiceImpl implements PlacementService {
     private String generatePlacementPaperJson(String subjectCode, Long subjectId, int gradeLevel) {
         try {
             List<Map<String, Object>> paper = new ArrayList<>();
-            var rows = questionBankRepository.findRandomQuestions(subjectId, "L1", gradeLevel, PageRequest.of(0, 50));
-            if (rows != null && !rows.isEmpty()) {
-                for (var qrow : rows) {
-                    Map<String, Object> q = new LinkedHashMap<>();
-                    q.put("id", qrow.getId());
-                    q.put("q", qrow.getQuestionText());
-                    try {
-                        List<String> options = objectMapper.readValue(qrow.getOptions(), new TypeReference<List<String>>() {});
-                        q.put("options", options);
-                    } catch (Exception e) {
-                        q.put("options", List.of("A. Option A", "B. Option B", "C. Option C", "D. Option D"));
-                    }
-                    q.put("correct", qrow.getCorrectAnswer());
-                    q.put("skill", qrow.getSkillType());
-                    paper.add(q);
-                }
+            
+            // Convert gradeLevel (10/11/12) to className format ("lớp 10"/"lớp 11"/"lớp 12")
+            String className = "lớp " + gradeLevel;
+            
+            // Random 20 câu Level 1, 20 câu Level 2, 10 câu Level 3
+            // Level 1: 20 câu
+            var l1Questions = questionBankRepository.findRandomQuestions(subjectId, "L1", className, PageRequest.of(0, 20));
+            addQuestionsToPaper(paper, l1Questions);
+            
+            // Level 2: 20 câu
+            var l2Questions = questionBankRepository.findRandomQuestions(subjectId, "L2", className, PageRequest.of(0, 20));
+            addQuestionsToPaper(paper, l2Questions);
+            
+            // Level 3: 10 câu
+            var l3Questions = questionBankRepository.findRandomQuestions(subjectId, "L3", className, PageRequest.of(0, 10));
+            addQuestionsToPaper(paper, l3Questions);
+            
+            // Shuffle để trộn các câu hỏi
+            java.util.Collections.shuffle(paper);
+            
+            if (!paper.isEmpty()) {
                 return objectMapper.writeValueAsString(paper);
             }
         } catch (Exception e) {
             // fallback below
         }
         return generateDummyPaperJson(subjectCode, gradeLevel);
+    }
+    
+    private void addQuestionsToPaper(List<Map<String, Object>> paper, List<?> questions) {
+        if (questions != null && !questions.isEmpty()) {
+            for (var qrow : questions) {
+                // Cast to QuestionBank entity
+                com.compassed.compassed_api.domain.QuestionBank q = (com.compassed.compassed_api.domain.QuestionBank) qrow;
+                Map<String, Object> questionMap = new LinkedHashMap<>();
+                questionMap.put("id", q.getId());
+                questionMap.put("q", q.getQuestionText());
+                // Build options array from separate option fields
+                List<String> options = new ArrayList<>();
+                if (q.getOptionA() != null) options.add(q.getOptionA());
+                if (q.getOptionB() != null) options.add(q.getOptionB());
+                if (q.getOptionC() != null) options.add(q.getOptionC());
+                if (q.getOptionD() != null) options.add(q.getOptionD());
+                questionMap.put("options", options);
+                questionMap.put("correct", q.getCorrectAnswer());
+                questionMap.put("skill", q.getSkillTag()); // Changed from getSkillType()
+                questionMap.put("level", q.getLevel().toString());
+                paper.add(questionMap);
+            }
+        }
     }
 
     private String generateDummyPaperJson(String subjectCode, int gradeLevel) {
