@@ -28,6 +28,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -134,9 +135,12 @@ public class PaymentService {
         Payment payment = Payment.builder()
                 .userId(userId)
                 .amount(amount)
+                .currency("VND")
                 .paymentMethod("VNPAY")
+                .paymentGateway("VNPAY")
                 .subjectId(subjectId)
                 .packageType(packageType)
+                .status("PENDING")
                 .build();
         payment = paymentRepository.save(payment);
 
@@ -563,14 +567,25 @@ public class PaymentService {
             return Map.of();
         }
         Object code = responseBody.get("code");
-        if (code != null && !"00".equals(String.valueOf(code))) {
-            return Map.of();
-        }
         Object data = responseBody.get("data");
-        if (!(data instanceof Map<?, ?> dataMap)) {
-            return Map.of();
+
+        // Accept multiple code formats (00 / 0 / null), and fall back to top-level payload
+        // if provider returns status fields directly.
+        if (code != null && !isPayOsSuccessCode(code)) {
+            String desc = Objects.toString(responseBody.get("desc"), "");
+            log.warn("PayOS status API returned non-success code={}, desc={}, orderCode={}", code, desc, orderCode);
+            if (!(data instanceof Map<?, ?>)) {
+                return Map.of();
+            }
         }
-        return toStringKeyMap(dataMap);
+        if (data instanceof Map<?, ?> dataMap) {
+            return toStringKeyMap(dataMap);
+        }
+        Map<String, Object> top = toStringKeyMap(responseBody);
+        if (top.containsKey("status") || top.containsKey("paymentStatus") || top.containsKey("state")) {
+            return top;
+        }
+        return Map.of();
     }
 
     private Payment markPaymentSuccess(Payment payment, String paymentLinkId) {
@@ -771,10 +786,10 @@ public class PaymentService {
         subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new RuntimeException("Subject not found"));
 
-        Optional<Subscription> existingOpt = subscriptionRepository.findByUserIdAndSubjectId(userId, subjectId);
-        if (existingOpt.isPresent() && Boolean.TRUE.equals(existingOpt.get().getIsActive())) {
+        if (subscriptionRepository.existsByUserIdAndSubjectIdAndIsActiveTrue(userId, subjectId)) {
             return;
         }
+        Optional<Subscription> existingOpt = subscriptionRepository.findTopByUserIdAndSubjectIdOrderByIdDesc(userId, subjectId);
 
         Subscription subscription = existingOpt.orElseGet(Subscription::new);
         subscription.setUserId(userId);
