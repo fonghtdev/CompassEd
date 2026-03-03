@@ -38,7 +38,7 @@ public class Subscription {
     @Column(nullable = false)
     private LocalDateTime endDate;
     
-    @Column(nullable = false)
+    @Column(name = "active", nullable = false)
     private Boolean isActive;
     
     @Column(nullable = false)
@@ -63,5 +63,8 @@ public class Subscription {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+        if (isActive == null) {
+            isActive = true;
+        }
     }
 }
