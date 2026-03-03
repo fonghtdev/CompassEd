@@ -10,9 +10,9 @@
     let totalItems = 0;
     let currentFilters = {
         subjectId: null,
-        gradeLevel: null,
+        className: null,
         level: null,
-        skillType: null
+        skillTag: null
     };
 
     // ========== AUTH HELPERS ==========
@@ -114,9 +114,9 @@
             let url = `/api/admin/questions?page=${currentPage}&size=${pageSize}&sortBy=id&sortDir=DESC`;
             
             if (currentFilters.subjectId) url += `&subjectId=${currentFilters.subjectId}`;
-            if (currentFilters.gradeLevel) url += `&gradeLevel=${currentFilters.gradeLevel}`;
+            if (currentFilters.className) url += `&className=${encodeURIComponent(currentFilters.className)}`;
             if (currentFilters.level) url += `&level=${currentFilters.level}`;
-            if (currentFilters.skillType) url += `&skillType=${encodeURIComponent(currentFilters.skillType)}`;
+            if (currentFilters.skillTag) url += `&skillTag=${encodeURIComponent(currentFilters.skillTag)}`;
             
             const data = await api(url);
             
@@ -140,7 +140,7 @@
         if (!questions || questions.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="9" class="px-6 py-12 text-center text-slate-500">
+                    <td colspan="8" class="px-6 py-12 text-center text-slate-500">
                         Không tìm thấy câu hỏi nào
                     </td>
                 </tr>
@@ -161,21 +161,16 @@
             
             return `
                 <tr class="hover:bg-slate-50 transition">
-                    <td class="px-6 py-4 text-sm font-medium text-slate-900">#${q.id}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-slate-900">${q.questionId || '#' + q.id}</td>
                     <td class="px-6 py-4 text-sm text-slate-600">${q.subjectName}</td>
-                    <td class="px-6 py-4 text-sm text-slate-600">${q.gradeLevel || "-"}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600">${q.className || "-"}</td>
                     <td class="px-6 py-4">
                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${levelColor}">
                             ${q.level}
                         </span>
                     </td>
-                    <td class="px-6 py-4 text-sm text-slate-600">${q.skillType}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600">${q.skillTag || q.skillType || "-"}</td>
                     <td class="px-6 py-4 text-sm text-slate-700" title="${q.questionText}">${truncatedQuestion}</td>
-                    <td class="px-6 py-4 text-sm">
-                        <span class="inline-flex items-center">
-                            ${"⭐".repeat(q.difficulty)}
-                        </span>
-                    </td>
                     <td class="px-6 py-4">
                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${q.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}">
                             ${q.isActive ? 'Active' : 'Inactive'}
@@ -227,35 +222,29 @@
             loading(true);
             const question = await api(`/api/admin/questions/${id}`);
             
-            let optionsHtml = "";
-            try {
-                const options = JSON.parse(question.options);
-                optionsHtml = options.map(opt => `<li class="ml-4">${opt}</li>`).join("");
-            } catch {
-                optionsHtml = `<li class="ml-4">${question.options}</li>`;
-            }
+            const optionsHtml = `
+- A: ${question.optionA || "N/A"}
+- B: ${question.optionB || "N/A"}
+- C: ${question.optionC || "N/A"}
+- D: ${question.optionD || "N/A"}`;
             
             alert(`
-📚 Câu hỏi #${question.id}
+📚 Câu hỏi: ${question.questionId || '#' + question.id}
 
 Môn học: ${question.subjectName}
-Khối lớp: ${question.gradeLevel || "-"}
+Mã môn: ${question.subjectCode}
+Lớp: ${question.className || "-"}
 Level: ${question.level}
-Kỹ năng: ${question.skillType}
-Loại: ${question.questionType}
+Kỹ năng: ${question.skillTag || "-"}
 
 Câu hỏi:
 ${question.questionText}
 
 Các đáp án:
-${optionsHtml.replace(/<li class="ml-4">/g, "\n- ").replace(/<\/li>/g, "")}
+${optionsHtml}
 
 ✅ Đáp án đúng: ${question.correctAnswer}
 
-💡 Giải thích:
-${question.explanation || "Không có"}
-
-⭐ Độ khó: ${question.difficulty}/5
 🔘 Trạng thái: ${question.isActive ? "Active" : "Inactive"}
             `.trim());
             
@@ -273,16 +262,35 @@ ${question.explanation || "Không có"}
             
             document.getElementById("modal-title").textContent = "Chỉnh sửa câu hỏi #" + id;
             document.getElementById("question-id").value = question.id;
+            
+            // Set các field mới
+            const questionIdInput = document.getElementById("input-question-id");
+            if (questionIdInput) questionIdInput.value = question.questionId || "";
+            
+            const subjectCodeInput = document.getElementById("input-subject-code");
+            if (subjectCodeInput) subjectCodeInput.value = question.subjectCode || "";
+            
             document.getElementById("input-subject").value = question.subjectId;
             document.getElementById("input-level").value = question.level;
-            document.getElementById("input-grade").value = question.gradeLevel || "10";
-            document.getElementById("input-type").value = question.questionType;
-            document.getElementById("input-skill").value = question.skillType;
+            document.getElementById("input-grade").value = question.className || "lớp 10";
+            
+            const skillInput = document.getElementById("input-skill");
+            if (skillInput) skillInput.value = question.skillTag || "";
+            
             document.getElementById("input-question").value = question.questionText;
-            document.getElementById("input-options").value = question.options;
+            
+            // Set các option riêng biệt
+            const optionAInput = document.getElementById("input-option-a");
+            const optionBInput = document.getElementById("input-option-b");
+            const optionCInput = document.getElementById("input-option-c");
+            const optionDInput = document.getElementById("input-option-d");
+            
+            if (optionAInput) optionAInput.value = question.optionA || "";
+            if (optionBInput) optionBInput.value = question.optionB || "";
+            if (optionCInput) optionCInput.value = question.optionC || "";
+            if (optionDInput) optionDInput.value = question.optionD || "";
+            
             document.getElementById("input-answer").value = question.correctAnswer;
-            document.getElementById("input-difficulty").value = question.difficulty;
-            document.getElementById("input-explanation").value = question.explanation || "";
             
             document.getElementById("question-modal").classList.remove("hidden");
             
@@ -313,28 +321,21 @@ ${question.explanation || "Không có"}
 
     window.saveQuestion = async function() {
         try {
-            // Validate options JSON
-            const optionsText = document.getElementById("input-options").value;
-            try {
-                JSON.parse(optionsText);
-            } catch {
-                toast("Định dạng JSON của đáp án không hợp lệ!", "error");
-                return;
-            }
-            
             loading(true);
             
             const questionData = {
+                questionId: document.getElementById("input-question-id")?.value || null,
+                subjectCode: document.getElementById("input-subject-code")?.value || null,
                 subjectId: parseInt(document.getElementById("input-subject").value),
-                gradeLevel: parseInt(document.getElementById("input-grade").value),
+                className: document.getElementById("input-grade").value,
                 level: document.getElementById("input-level").value,
-                questionType: document.getElementById("input-type").value,
-                skillType: document.getElementById("input-skill").value,
+                skillTag: document.getElementById("input-skill")?.value || null,
                 questionText: document.getElementById("input-question").value,
-                options: optionsText,
-                correctAnswer: document.getElementById("input-answer").value,
-                difficulty: parseInt(document.getElementById("input-difficulty").value),
-                explanation: document.getElementById("input-explanation").value || null
+                optionA: document.getElementById("input-option-a")?.value || null,
+                optionB: document.getElementById("input-option-b")?.value || null,
+                optionC: document.getElementById("input-option-c")?.value || null,
+                optionD: document.getElementById("input-option-d")?.value || null,
+                correctAnswer: document.getElementById("input-answer").value
             };
             
             const questionId = document.getElementById("question-id").value;
@@ -364,9 +365,9 @@ ${question.explanation || "Không có"}
     
     window.applyFilters = function() {
         currentFilters.subjectId = document.getElementById("filter-subject").value || null;
-        currentFilters.gradeLevel = document.getElementById("filter-grade").value || null;
+        currentFilters.className = document.getElementById("filter-grade").value || null;
         currentFilters.level = document.getElementById("filter-level").value || null;
-        currentFilters.skillType = document.getElementById("filter-skill").value || null;
+        currentFilters.skillTag = document.getElementById("filter-skill").value || null;
         
         currentPage = 0;
         loadQuestions();
@@ -429,7 +430,7 @@ ${question.explanation || "Không có"}
             if (this.value) {
                 const level = document.getElementById("filter-level").value || "L1";
                 try {
-                    const skills = await api(`/api/admin/questions/skill-types?subjectId=${this.value}&level=${level}`);
+                    const skills = await api(`/api/admin/questions/skill-tags?subjectId=${this.value}&level=${level}`);
                     const skillSelect = document.getElementById("filter-skill");
                     skillSelect.innerHTML = '<option value="">Tất cả kỹ năng</option>';
                     skills.forEach(skill => {

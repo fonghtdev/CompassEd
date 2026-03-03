@@ -296,7 +296,7 @@ public class UserPortalController {
         }
 
         List<String> skills = qb.stream()
-                .map(com.compassed.compassed_api.domain.QuestionBank::getSkillType)
+                .map(com.compassed.compassed_api.domain.QuestionBank::getSkillTag)  // Changed from getSkillType
                 .filter(s -> s != null && !s.isBlank())
                 .distinct()
                 .toList();
@@ -514,12 +514,18 @@ public class UserPortalController {
         return rows.stream().map(q -> {
             AiGeneratedRoadmapResponse.QuestionItem item = new AiGeneratedRoadmapResponse.QuestionItem();
             item.setQuestionId(q.getId());
-            item.setSkillType(q.getSkillType());
+            item.setSkillType(q.getSkillTag());  // Changed from getSkillType
             item.setQuestionText(q.getQuestionText());
-            item.setOptions(q.getOptions());
+            // Build options from separate fields
+            List<String> options = new ArrayList<>();
+            if (q.getOptionA() != null) options.add(q.getOptionA());
+            if (q.getOptionB() != null) options.add(q.getOptionB());
+            if (q.getOptionC() != null) options.add(q.getOptionC());
+            if (q.getOptionD() != null) options.add(q.getOptionD());
+            item.setOptions(String.join("|", options));  // Join as string
             item.setCorrectAnswer(q.getCorrectAnswer());
-            item.setExplanation(q.getExplanation());
-            item.setDifficulty(q.getDifficulty());
+            item.setExplanation("");  // No explanation field anymore
+            item.setDifficulty(null);  // No difficulty field anymore
             return item;
         }).toList();
     }

@@ -20,7 +20,7 @@ import java.util.Map;
 public class QuestionBankServiceLocalImpl implements QuestionBankService {
 
     @Override
-    public Page<QuestionBankDTO> getAllQuestions(Long subjectId, Level level, String gradeBand, String skillType, Boolean isActive, Pageable pageable) {
+    public Page<QuestionBankDTO> getAllQuestions(Long subjectId, Level level, String className, String skillTag, Boolean isActive, Pageable pageable) {
         // TODO: Implement with LocalDataStore
         return new PageImpl<>(new ArrayList<>(), pageable, 0);
     }
