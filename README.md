@@ -1,5 +1,6 @@
 ## Run Project
 # START -->
+
 1. (Optional) Start MySQL container:
 docker compose up -d mysql
 
@@ -14,6 +15,7 @@ Edit `scripts/dev-env.ps1`
 
 5. Run both in 2 terminals:
 .\scripts\run-all.ps1
+
 ## END <--
 
 <!-- # CompassEd
