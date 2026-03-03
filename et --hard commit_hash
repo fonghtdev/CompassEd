@@ -1,0 +1,261 @@
+[33mcommit 8e3accea485936abac0716602064790d22930714[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mphong[m[33m, [m[1;31morigin/phong[m[33m)[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Tue Mar 3 02:23:37 2026 +0700
+
+    cm
+
+[33mcommit 9854e6b4a2691a9d1a15da5a161973479c77b79a[m
+Merge: 75880e5 063e53d
+Author: fonghtdev <fonght.dev@gmail.com>
+Date:   Tue Mar 3 01:48:03 2026 +0700
+
+    Merge branch 'main' into phong
+
+[33mcommit 75880e5b25405d8610c7b5eda60d03e15dd408ee[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Tue Mar 3 01:42:57 2026 +0700
+
+    cm
+
+[33mcommit 063e53d36a172ecbdf9d8f3b1b55a3d5d56ae5aa[m
+Merge: ff3324b 7b5fad7
+Author: tinhhoang12 <hoangtinh12122003@gmail.com>
+Date:   Tue Mar 3 01:13:12 2026 +0700
+
+    Merge branch 'main' of https://github.com/fonghtdev/CompassEd
+
+[33mcommit 7b5fad7044404b0dc92a44dada9f7c1f579b019f[m
+Merge: 368ddd1 68e42d9
+Author: fonghtdev <fonght.dev@gmail.com>
+Date:   Tue Mar 3 01:08:00 2026 +0700
+
+    Merge pull request #7 from fonghtdev/phong
+    
+    cm fix bug payment
+
+[33mcommit 68e42d9bb774cfc76b2b31d1649dd02e2194ab38[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Tue Mar 3 01:07:38 2026 +0700
+
+    cm fix bug payment
+
+[33mcommit 368ddd18f8f686507d3cfbf071030122428eb4c9[m
+Merge: 02ef722 c9d445e
+Author: fonghtdev <fonght.dev@gmail.com>
+Date:   Tue Mar 3 00:11:54 2026 +0700
+
+    Merge pull request #6 from fonghtdev/phong
+    
+    auth fix placement test
+
+[33mcommit c9d445e88f956e3527d866245ea1d23096a44f42[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Tue Mar 3 00:11:32 2026 +0700
+
+    auth fix placement test
+
+[33mcommit 02ef722d189f4e356889b1c1172e2b6d375be5b5[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Tue Mar 3 00:08:50 2026 +0700
+
+    fix bug
+
+[33mcommit ff3324b5de48d614396288b721963ce31d4f7577[m
+Author: tinhhoang12 <hoangtinh12122003@gmail.com>
+Date:   Mon Mar 2 20:26:44 2026 +0700
+
+    chore: update MySQL password to 'root' for local development
+    
+    - Changed default MYSQL_PASSWORD from empty to 'root'
+    - Backend successfully connected to MySQL 9.6
+    - All 28 JPA repositories initialized
+    - Backend running on port 8080
+
+[33mcommit 721ccd2b96970079237ce648c68d81bfcad61cc8[m
+Author: tinhhoang12 <hoangtinh12122003@gmail.com>
+Date:   Mon Mar 2 20:21:27 2026 +0700
+
+    fix: prevent email authentication errors from breaking registration
+    
+    - Wrap mailSender.send() in try-catch to prevent exceptions from propagating
+    - Log verification codes to console when email sending fails
+    - Allow registration to continue even if email cannot be sent
+    - Users can still complete registration by entering the code from logs
+
+[33mcommit 292fb1dac46b3314838ed69d7befa63ce8271d38[m
+Merge: 27b491e 623b7d1
+Author: tinhhoang12 <hoangtinh12122003@gmail.com>
+Date:   Mon Mar 2 20:14:42 2026 +0700
+
+    fix: resolve merge conflicts in PaymentService and LocalFlowBusinessRulesTests
+    
+    - PaymentService: Replace Casso config with PayOS (keep PayOS from remote branch)
+    - PaymentService: Keep Payment.builder() pattern from HEAD
+    - LocalFlowBusinessRulesTests: Uncomment test file and keep gradeLevel parameter (null)
+    - Build successful after conflict resolution
+
+[33mcommit 27b491e8c638e13617de90d2693330bbdab56b90[m
+Author: tinhhoang12 <hoangtinh12122003@gmail.com>
+Date:   Mon Mar 2 20:05:43 2026 +0700
+
+    up
+
+[33mcommit 623b7d1fcb535a23ba97c494773c91c5a2455ac1[m
+Merge: 8c652f5 3d3bb1f
+Author: fonghtdev <fonght.dev@gmail.com>
+Date:   Mon Mar 2 13:50:20 2026 +0700
+
+    Merge pull request #5 from fonghtdev/phong
+    
+    cm
+
+[33mcommit 3d3bb1f069d72bd5b86e8e93a9c6274f810b366f[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Mon Mar 2 13:48:50 2026 +0700
+
+    cm
+
+[33mcommit 8c652f5112e85370d82574e54dcfc6734a700d50[m
+Merge: 6195c46 b057294
+Author: fonghtdev <fonght.dev@gmail.com>
+Date:   Mon Mar 2 13:15:41 2026 +0700
+
+    Merge pull request #4 from fonghtdev/phong
+    
+    update checkout
+
+[33mcommit b057294743e002e4910533a3dc4670ab8323b127[m
+Merge: fb955c1 6195c46
+Author: fonghtdev <fonght.dev@gmail.com>
+Date:   Mon Mar 2 13:15:32 2026 +0700
+
+    Merge branch 'main' into phong
+
+[33mcommit fb955c1fbd9ae518cb25f692056b91cdb1636ee6[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Mon Mar 2 13:13:09 2026 +0700
+
+    update checkout
+    
+    payment success -> auto unlock (real-time)
+
+[33mcommit 6195c4674c25261ec1baeadb5dfba18523eb7575[m
+Merge: 7c31e8b 230c1c6
+Author: tinhhoang12 <hoangtinh12122003@gmail.com>
+Date:   Mon Mar 2 10:06:43 2026 +0700
+
+    Merge branch 'main' of https://github.com/fonghtdev/CompassEd
+    
+    # Conflicts:
+    #       BE/compassed-api/src/main/java/com/compassed/compassed_api/api/controller/AdminQuestionBankController.java
+    #       BE/compassed-api/src/main/java/com/compassed/compassed_api/api/controller/PaymentController.java
+    #       BE/compassed-api/src/main/java/com/compassed/compassed_api/api/controller/UserPortalController.java
+    #       BE/compassed-api/src/main/java/com/compassed/compassed_api/api/dto/CreateQuestionRequest.java
+    #       BE/compassed-api/src/main/java/com/compassed/compassed_api/domain/entity/Payment.java
+    #       BE/compassed-api/src/main/java/com/compassed/compassed_api/repository/QuestionBankRepository.java
+    #       BE/compassed-api/src/main/java/com/compassed/compassed_api/service/PaymentService.java
+    #       BE/compassed-api/src/main/java/com/compassed/compassed_api/service/QuestionBankService.java
+    #       BE/compassed-api/src/main/java/com/compassed/compassed_api/service/impl/QuestionBankServiceImpl.java
+
+[33mcommit 7c31e8b4ea8ee8aea29798f9b59faabac35d270c[m
+Merge: c0e43ac 2f0db09
+Author: tinhhoang12 <hoangtinh12122003@gmail.com>
+Date:   Mon Mar 2 09:59:09 2026 +0700
+
+    Merge branch 'main' of https://github.com/fonghtdev/CompassEd
+
+[33mcommit 230c1c66f8ab13953ccc33db9fc467148a6d262c[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Mon Mar 2 01:43:48 2026 +0700
+
+    fix bug
+
+[33mcommit 23620f142a12d4f42b24e9ee8a069a5bcef8a640[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Mon Mar 2 01:32:27 2026 +0700
+
+    update
+    
+    auth gg
+
+[33mcommit 4e9406dab44ba77c115116c75cb489f2eb2aed7a[m
+Merge: da02fea b0dc045
+Author: fonghtdev <fonght.dev@gmail.com>
+Date:   Mon Mar 2 01:13:39 2026 +0700
+
+    Merge pull request #3 from fonghtdev/phong
+    
+    update
+
+[33mcommit b0dc0453c5ca6628babb555c0256239a46d73e3c[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Mon Mar 2 01:13:13 2026 +0700
+
+    update
+    
+    checkout
+
+[33mcommit da02feaac127aeea86cf64fbe139520059774d0b[m
+Merge: 2f0db09 2f1bde3
+Author: fonghtdev <fonght.dev@gmail.com>
+Date:   Sun Mar 1 22:15:06 2026 +0700
+
+    Merge pull request #2 from fonghtdev/phong
+    
+    deploy
+
+[33mcommit 2f1bde3e574d1d9568fd5678fdf538de85b521eb[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Sun Mar 1 22:14:34 2026 +0700
+
+    deploy
+    
+    deploy to prod, logic AI
+
+[33mcommit c0e43ac11f4b068cf18b913c8b853183ebca56ba[m
+Author: tinhhoang12 <hoangtinh12122003@gmail.com>
+Date:   Sun Mar 1 00:14:32 2026 +0700
+
+    up
+
+[33mcommit 2f0db09375c6e3b098cc0fbfdd39bbf76f1ce70b[m
+Merge: fe7560e 2b87fc8
+Author: fonghtdev <fonght.dev@gmail.com>
+Date:   Fri Feb 27 18:02:35 2026 +0700
+
+    Merge pull request #1 from fonghtdev/phong
+    
+    Phong
+
+[33mcommit 2b87fc8934692381b8a8d0abab465be44bb384ea[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Fri Feb 27 18:01:13 2026 +0700
+
+    update
+    
+    update auth, OTP, roadmap-dashboard
+
+[33mcommit b868f11493f78f9ecceda6e9d5181fd35387fd67[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Fri Feb 27 15:42:29 2026 +0700
+
+    debug
+    
+    merge conflict
+
+[33mcommit fe7560ea693b4d0a8f451a3253eb77a75d03a0f1[m
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Fri Feb 27 15:30:50 2026 +0700
+
+    Revert "update placement service"
+    
+    This reverts commit f2beebd4e33bee414d6195aa47d72cc7dd79387f.
+
+[33mcommit 732779d93186020d936e8670d0c90f07f956c0ad[m
+Merge: e4e38d4 f2beebd
+Author: he170574 <fonght.dev@gmail.com>
+Date:   Fri Feb 27 15:15:17 2026 +0700
+
+    Merge branch 'main' of https://github.com/fonghtdev/CompassEd
+
+[33mcommit e4e38d44024d7c61ca1575007735dce5b918c019

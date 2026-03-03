@@ -51,6 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentService {
+    private static final int PAYOS_CREATE_MAX_RETRIES = 3;
 
     private final PaymentRepository paymentRepository;
     private final PaymentSubjectItemRepository paymentSubjectItemRepository;
@@ -219,28 +220,109 @@ public class PaymentService {
         return paymentStatusPayload(payment);
     }
 
+    public Map<String, Object> getPaymentStatusForUserByReference(Long userId, String paymentReference) {
+        String ref = paymentReference == null ? "" : paymentReference.trim();
+        if (ref.isBlank()) {
+            throw new RuntimeException("paymentReference is required");
+        }
+        Payment payment = paymentRepository.findByPaymentReferenceAndUserId(ref, userId)
+                .orElseThrow(() -> new RuntimeException("Payment not found"));
+        payment = refreshPayOsStatus(payment, true);
+        return paymentStatusPayload(payment);
+    }
+
+    public Map<String, Object> getLatestActivePaymentStatusForUser(Long userId) {
+        List<Payment> active = paymentRepository.findByUserIdAndStatusInOrderByIdDesc(
+                userId,
+                List.of("PENDING", "SUBMITTED"));
+        if (active != null && !active.isEmpty()) {
+            Payment payment = refreshPayOsStatus(active.get(0), true);
+            return paymentStatusPayload(payment);
+        }
+        // Recovery path for legacy/manual updates:
+        // if payment is already SUCCESS in DB but subscriptions are missing, return it so
+        // checkout page can unlock immediately.
+        List<Payment> successList = paymentRepository.findByUserIdAndStatusInOrderByIdDesc(
+                userId,
+                List.of("SUCCESS"));
+        if (successList != null) {
+            for (Payment payment : successList) {
+                if (hasMissingSubscriptionProvision(payment)) {
+                    return paymentStatusPayload(payment);
+                }
+            }
+        }
+        return Map.of("paymentId", null, "status", "NONE", "subjectIds", List.of());
+    }
+
+    public void ensureSubscriptionsProvisionedFromSuccessfulPayments(Long userId) {
+        if (userId == null) {
+            return;
+        }
+        List<Payment> successList = paymentRepository.findByUserIdAndStatusInOrderByIdDesc(
+                userId,
+                List.of("SUCCESS"));
+        if (successList == null || successList.isEmpty()) {
+            return;
+        }
+        for (Payment payment : successList) {
+            if (payment == null) {
+                continue;
+            }
+            if (hasMissingSubscriptionProvision(payment)) {
+                provisionSubscriptionsBestEffort(payment);
+            }
+        }
+    }
+
     @Transactional
     public Map<String, Object> handlePayOsWebhook(Map<String, Object> payload) {
         if (payload == null) {
+            log.info("PayOS webhook: empty payload, ignored");
             return Map.of("ok", true, "message", "ignored");
         }
+        log.info("PayOS webhook received: {}", payload);
         Object dataObj = payload.get("data");
         if (!(dataObj instanceof Map<?, ?> rawData)) {
+            log.warn("PayOS webhook has no 'data' object, ignoring");
             return Map.of("ok", true, "message", "ignored");
         }
         Map<String, Object> data = toStringKeyMap(rawData);
-        String orderCode = Objects.toString(data.get("orderCode"), "").trim();
-        if (orderCode.isEmpty()) {
+
+        // First try to match by PayOS transaction id / payment link id.
+        String maybeTxn = Objects.toString(data.get("id"), "").trim();
+        if (maybeTxn.isEmpty())
+            maybeTxn = Objects.toString(data.get("paymentLinkId"), "").trim();
+        if (maybeTxn.isEmpty())
+            maybeTxn = Objects.toString(data.get("transactionId"), "").trim();
+        Payment payment = null;
+        if (!maybeTxn.isEmpty()) {
+            payment = paymentRepository.findByTransactionId(maybeTxn).orElse(null);
+        }
+
+        // Fallback by our orderCode / paymentReference when webhook does not include id.
+        if (payment == null) {
+            String orderCode = Objects.toString(data.get("orderCode"), "").trim();
+            if (orderCode.isEmpty()) {
+                orderCode = Objects.toString(payload.get("orderCode"), "").trim();
+            }
+            if (!orderCode.isBlank()) {
+                payment = paymentRepository.findByPaymentReference(orderCode).orElse(null);
+            }
+        }
+
+        if (payment == null) {
+            log.warn("PayOS webhook: cannot find payment for id={}, payload={}",
+                    data.get("id"), data);
             return Map.of("ok", true, "message", "ignored");
         }
-        Payment payment = paymentRepository.findByPaymentReference(orderCode)
-                .orElseThrow(() -> new RuntimeException("Payment not found for orderCode=" + orderCode));
+
         Payment synced = refreshPayOsStatus(payment, true);
+        log.info("PayOS webhook processed paymentId={}, newStatus={}", synced.getId(), synced.getStatus());
         return Map.of(
                 "ok", true,
                 "paymentId", synced.getId(),
-                "status", synced.getStatus(),
-                "orderCode", orderCode);
+                "status", synced.getStatus());
     }
 
     public List<Map<String, Object>> getPaymentsForAdmin(String status) {
@@ -286,11 +368,20 @@ public class PaymentService {
         payment.setStatus("PENDING");
         Payment persistedPayment = paymentRepository.save(payment);
 
-        long orderCode = buildOrderCode(persistedPayment.getId());
-        String orderCodeStr = String.valueOf(orderCode);
+        // use internal payment ID as order code for PayOS – no separate order code
+        // necessary
         String description = buildPaymentDescription(persistedPayment.getId());
-        Map<String, Object> payOsData = createPayOsPaymentLink(orderCode, totalAmountVnd, description, subjects);
+        PayOsCreateResult payOsCreate = createPayOsPaymentLinkWithRetry(
+                persistedPayment.getId(),
+                totalAmountVnd,
+                description,
+                subjects);
+        long orderCode = payOsCreate.orderCode();
+        String orderCodeStr = String.valueOf(orderCode);
+        Map<String, Object> payOsData = payOsCreate.data();
 
+        // keep reference so we can look up status by orderCode if needed;
+        // at a minimum transactionId is set from PayOS response
         persistedPayment.setPaymentReference(orderCodeStr);
         persistedPayment.setTransferNote(description);
         persistedPayment.setTransactionId(Objects.toString(payOsData.get("paymentLinkId"), null));
@@ -408,29 +499,22 @@ public class PaymentService {
         paymentRepository.save(payment);
 
         try {
-            Map<String, Object> payOsStatus = fetchPayOsPaymentStatus(payment.getPaymentReference());
+            Map<String, Object> payOsStatus = fetchPayOsPaymentStatusWithFallback(payment);
             if (payOsStatus.isEmpty()) {
                 return payment;
             }
 
-            String statusValue = Objects.toString(payOsStatus.get("status"), "").toUpperCase();
+            String statusValue = extractPayOsStatus(payOsStatus);
             String cancellationReason = Objects.toString(payOsStatus.get("cancellationReason"), null);
             String paymentLinkId = Objects.toString(payOsStatus.get("id"), null);
 
-            if ("PAID".equals(statusValue)) {
-                List<Long> subjectIds = resolveSubjectIds(payment);
-                for (Long subjectId : subjectIds) {
-                    createSubscriptionAfterPayment(payment.getUserId(), subjectId);
-                }
-                payment.setStatus("SUCCESS");
-                payment.setConfirmedAt(LocalDateTime.now());
-                if (paymentLinkId != null && !paymentLinkId.isBlank()) {
-                    payment.setTransactionId(paymentLinkId);
-                }
-                return paymentRepository.save(payment);
+            if ("PAID".equals(statusValue) || "SUCCESS".equals(statusValue)) {
+                payment = markPaymentSuccess(payment, paymentLinkId);
+                provisionSubscriptionsBestEffort(payment);
+                return payment;
             }
 
-            if ("CANCELLED".equals(statusValue) || "EXPIRED".equals(statusValue)) {
+            if ("CANCELLED".equals(statusValue) || "EXPIRED".equals(statusValue) || "FAILED".equals(statusValue)) {
                 payment.setStatus("FAILED");
                 if (cancellationReason != null && !cancellationReason.isBlank()) {
                     payment.setTransferNote(sanitizeTransferNote("PAYOS_" + statusValue + ": " + cancellationReason));
@@ -440,9 +524,28 @@ public class PaymentService {
 
             return payment;
         } catch (Exception ex) {
-            log.warn("PayOS check failed for paymentId={}, orderCode={}: {}", payment.getId(), payment.getPaymentReference(), ex.getMessage());
+            log.warn("PayOS check failed for paymentId={}, orderCode={}: {}", payment.getId(),
+                    payment.getPaymentReference(), ex.getMessage());
             return payment;
         }
+    }
+
+    private Map<String, Object> fetchPayOsPaymentStatusWithFallback(Payment payment) {
+        Map<String, Object> byReference = fetchPayOsPaymentStatus(payment.getPaymentReference());
+        if (isTerminalPayOsStatus(extractPayOsStatus(byReference))) {
+            return byReference;
+        }
+        String paymentLinkId = safeTrim(payment.getTransactionId());
+        if (!paymentLinkId.isBlank()) {
+            Map<String, Object> byLinkId = fetchPayOsPaymentStatus(paymentLinkId);
+            if (isTerminalPayOsStatus(extractPayOsStatus(byLinkId))) {
+                return byLinkId;
+            }
+            if (byReference.isEmpty() && !byLinkId.isEmpty()) {
+                return byLinkId;
+            }
+        }
+        return byReference;
     }
 
     private Map<String, Object> fetchPayOsPaymentStatus(String orderCode) {
@@ -468,6 +571,27 @@ public class PaymentService {
             return Map.of();
         }
         return toStringKeyMap(dataMap);
+    }
+
+    private Payment markPaymentSuccess(Payment payment, String paymentLinkId) {
+        payment.setStatus("SUCCESS");
+        payment.setConfirmedAt(LocalDateTime.now());
+        if (paymentLinkId != null && !paymentLinkId.isBlank()) {
+            payment.setTransactionId(paymentLinkId);
+        }
+        return paymentRepository.save(payment);
+    }
+
+    private void provisionSubscriptionsBestEffort(Payment payment) {
+        List<Long> subjectIds = resolveSubjectIds(payment);
+        for (Long subjectId : subjectIds) {
+            try {
+                createSubscriptionAfterPayment(payment.getUserId(), subjectId);
+            } catch (Exception ex) {
+                log.error("Cannot create subscription after successful paymentId={}, userId={}, subjectId={}: {}",
+                        payment.getId(), payment.getUserId(), subjectId, ex.getMessage());
+            }
+        }
     }
 
     private Map<String, Object> createPayOsPaymentLink(
@@ -516,6 +640,30 @@ public class PaymentService {
         }
     }
 
+    private PayOsCreateResult createPayOsPaymentLinkWithRetry(
+            Long paymentId,
+            long amountVnd,
+            String description,
+            List<Subject> subjects) {
+        RuntimeException lastError = null;
+        for (int attempt = 0; attempt < PAYOS_CREATE_MAX_RETRIES; attempt++) {
+            long orderCode = buildOrderCode(paymentId, attempt);
+            try {
+                Map<String, Object> data = createPayOsPaymentLink(orderCode, amountVnd, description, subjects);
+                return new PayOsCreateResult(orderCode, data);
+            } catch (RuntimeException ex) {
+                lastError = ex;
+                if (isPayOsDuplicateOrderError(ex) && attempt < PAYOS_CREATE_MAX_RETRIES - 1) {
+                    log.warn("PayOS duplicate orderCode={}, retrying create payment (attempt {}/{})",
+                            orderCode, attempt + 1, PAYOS_CREATE_MAX_RETRIES);
+                    continue;
+                }
+                throw ex;
+            }
+        }
+        throw lastError == null ? new RuntimeException("PayOS create payment failed") : lastError;
+    }
+
     private List<Map<String, Object>> buildPayOsItems(long amountVnd, List<Subject> subjects) {
         if (subjects.isEmpty()) {
             return List.of();
@@ -540,6 +688,19 @@ public class PaymentService {
             return "https://api-merchant.payos.vn";
         }
         return baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+    }
+
+    private boolean isPayOsDuplicateOrderError(RuntimeException ex) {
+        String msg = ex == null || ex.getMessage() == null ? "" : ex.getMessage().toLowerCase();
+        return msg.contains("đơn thanh toán đã tồn tại")
+                || (msg.contains("order") && (msg.contains("exists") || msg.contains("duplicate") || msg.contains("already")));
+    }
+
+    private long buildOrderCode(Long paymentId, int attempt) {
+        long pid = paymentId == null ? 0L : Math.abs(paymentId);
+        long timePart = Math.abs(System.currentTimeMillis()) % 1_000_000_000L;
+        long suffix = (pid % 10_000L) + Math.max(0, attempt);
+        return timePart * 10_000L + suffix;
     }
 
     private String generateVNPayUrl(Payment payment) {
@@ -702,6 +863,9 @@ public class PaymentService {
     private Map<String, Object> paymentStatusPayload(Payment payment) {
         Map<String, Object> payload = new LinkedHashMap<>();
         Payment checkedPayment = maybeAutoConfirmWithPayOs(payment);
+        if ("SUCCESS".equalsIgnoreCase(checkedPayment.getStatus()) || "PAID".equalsIgnoreCase(checkedPayment.getStatus())) {
+            provisionSubscriptionsBestEffort(checkedPayment);
+        }
         payload.put("paymentId", checkedPayment.getId());
         payload.put("status", checkedPayment.getStatus());
         payload.put("amount", checkedPayment.getAmount());
@@ -716,6 +880,26 @@ public class PaymentService {
         return payload;
     }
 
+    private boolean hasMissingSubscriptionProvision(Payment payment) {
+        if (payment == null || payment.getUserId() == null) {
+            return false;
+        }
+        List<Long> subjectIds = resolveSubjectIds(payment);
+        if (subjectIds.isEmpty()) {
+            return false;
+        }
+        for (Long subjectId : subjectIds) {
+            if (subjectId == null) {
+                continue;
+            }
+            boolean active = subscriptionRepository.existsByUserIdAndSubjectIdAndIsActiveTrue(payment.getUserId(), subjectId);
+            if (!active) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private String sanitizeTransferNote(String raw) {
         if (raw == null) {
             return null;
@@ -725,11 +909,6 @@ public class PaymentService {
             return null;
         }
         return trimmed.length() <= 255 ? trimmed : trimmed.substring(0, 255);
-    }
-
-    private long buildOrderCode(Long paymentId) {
-        long base = System.currentTimeMillis() % 1_000_000_000L;
-        return base * 1000L + (paymentId % 1000L);
     }
 
     private String buildPaymentDescription(Long paymentId) {
@@ -809,6 +988,49 @@ public class PaymentService {
         return value == null || value.isBlank();
     }
 
+    private boolean isTerminalPayOsStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return false;
+        }
+        String upper = status.toUpperCase();
+        return "PAID".equals(upper)
+                || "SUCCESS".equals(upper)
+                || "FAILED".equals(upper)
+                || "EXPIRED".equals(upper)
+                || "CANCELLED".equals(upper);
+    }
+
+    private String extractPayOsStatus(Map<String, Object> payload) {
+        if (payload == null || payload.isEmpty()) {
+            return "";
+        }
+        String status = Objects.toString(payload.get("status"), "").trim();
+        if (status.isBlank()) {
+            status = Objects.toString(payload.get("paymentStatus"), "").trim();
+        }
+        if (status.isBlank()) {
+            status = Objects.toString(payload.get("state"), "").trim();
+        }
+        if (!status.isBlank()) {
+            return status.toUpperCase();
+        }
+
+        try {
+            double amount = Double.parseDouble(String.valueOf(payload.get("amount")));
+            double amountPaid = Double.parseDouble(String.valueOf(payload.get("amountPaid")));
+            if (amount > 0 && amountPaid >= amount) {
+                return "PAID";
+            }
+        } catch (Exception ignored) {
+        }
+
+        Object transactionsObj = payload.get("transactions");
+        if (transactionsObj instanceof List<?> txs && !txs.isEmpty()) {
+            return "PAID";
+        }
+        return "";
+    }
+
     private String buildSafePayOsItemName(Subject subject) {
         String raw = subject == null ? "" : String.valueOf(subject.getName());
         String cleaned = raw
@@ -824,5 +1046,8 @@ public class PaymentService {
             cleaned = "Subject " + id;
         }
         return trimForPayOs(cleaned, 25);
+    }
+
+    private record PayOsCreateResult(long orderCode, Map<String, Object> data) {
     }
 }

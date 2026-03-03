@@ -1,4 +1,4 @@
-import { api, checkSession, clearAuth, getAuth, getSubjectId, goAuthWithRedirect, nav, toast, formatVnd } from "./core.js";
+﻿import { api, checkSession, clearAuth, getAuth, getSubjectId, goAuthWithRedirect, nav, toast, formatVnd } from "./core.js";
 import { t } from "./i18n.js";
 import { openInlineProfilePanel } from "./inlineProfilePanel.js";
 
@@ -401,10 +401,10 @@ function initLanding() {
     const gradeLevel = Number(localStorage.getItem(gradeKey) || 10);
     try {
       const rows = await api("/api/history/placements", "GET", null, true);
-      const hasPlacement = Array.isArray(rows) && rows.length > 0;
+      const hasPlacement = Array.isArray(rows) && rows.some((x) => Number(x.subjectId) === Number(subjectId));
       if (hasPlacement) {
-        toast("Bạn đã làm placement. Chuyển đến roadmap.");
-        nav("/roadmap-dashboard", "roadmapDashboard.html");
+        toast("You already have placement result for this subject. Continue to checkout.", "ok");
+        nav("/checkout", "checkout.html");
         return;
       }
     } catch (e) {
@@ -492,3 +492,4 @@ function initLanding() {
 }
 
 export { initLanding };
+

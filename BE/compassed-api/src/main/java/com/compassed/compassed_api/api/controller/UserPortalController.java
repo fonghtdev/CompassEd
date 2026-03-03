@@ -44,6 +44,7 @@ import com.compassed.compassed_api.repository.UserRoadmapAssignmentRepository;
 import com.compassed.compassed_api.security.CurrentUserService;
 import com.compassed.compassed_api.service.AiService;
 import com.compassed.compassed_api.service.LoginActivityService;
+import com.compassed.compassed_api.service.PaymentService;
 import com.compassed.compassed_api.service.RoleAccessService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -66,6 +67,7 @@ public class UserPortalController {
     private final QuestionBankRepository questionBankRepository;
     private final RoleAccessService roleAccessService;
     private final LoginActivityService loginActivityService;
+    private final PaymentService paymentService;
     private final AiService aiService;
     private final ObjectMapper objectMapper;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -84,6 +86,7 @@ public class UserPortalController {
             QuestionBankRepository questionBankRepository,
             RoleAccessService roleAccessService,
             LoginActivityService loginActivityService,
+            PaymentService paymentService,
             AiService aiService,
             ObjectMapper objectMapper) {
         this.currentUserService = currentUserService;
@@ -99,6 +102,7 @@ public class UserPortalController {
         this.questionBankRepository = questionBankRepository;
         this.roleAccessService = roleAccessService;
         this.loginActivityService = loginActivityService;
+        this.paymentService = paymentService;
         this.aiService = aiService;
         this.objectMapper = objectMapper;
     }
@@ -237,6 +241,7 @@ public class UserPortalController {
     @GetMapping("/subscriptions")
     public Map<String, Object> mySubscriptions() {
         Long userId = currentUserService.requireCurrentUserId();
+        paymentService.ensureSubscriptionsProvisionedFromSuccessfulPayments(userId);
         var active = subscriptionRepository.findByUserIdAndIsActiveTrue(userId);
         var activeIds = active.stream().map(Subscription::getSubjectId).toList();
         var available = subjectRepository.findAll().stream()

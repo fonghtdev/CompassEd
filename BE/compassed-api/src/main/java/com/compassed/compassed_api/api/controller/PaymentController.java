@@ -70,6 +70,30 @@ public class PaymentController {
         }
     }
 
+    @GetMapping("/by-reference/{paymentReference}/status")
+    public ResponseEntity<?> getPaymentStatusByReference(@PathVariable String paymentReference) {
+        try {
+            Long userId = currentUserService.requireCurrentUserId();
+            Map<String, Object> result = paymentService.getPaymentStatusForUserByReference(userId, paymentReference);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error getting payment status by reference", e);
+            return ResponseEntity.badRequest().body(Map.of("error", safeError(e)));
+        }
+    }
+
+    @GetMapping("/latest-active/status")
+    public ResponseEntity<?> getLatestActivePaymentStatus() {
+        try {
+            Long userId = currentUserService.requireCurrentUserId();
+            Map<String, Object> result = paymentService.getLatestActivePaymentStatusForUser(userId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error getting latest active payment status", e);
+            return ResponseEntity.badRequest().body(Map.of("error", safeError(e)));
+        }
+    }
+
     @PostMapping("/checkout-qr")
     public ResponseEntity<?> createCheckoutQr(@RequestBody Map<String, Object> request) {
         try {
@@ -128,7 +152,7 @@ public class PaymentController {
     @PermitAll
     public ResponseEntity<?> payosCallback(@RequestBody(required = false) Map<String, Object> payload) {
         try {
-            log.info("Received PayOS callback");
+            log.info("Received PayOS callback: {}", payload);
             Map<String, Object> result = paymentService.handlePayOsWebhook(payload);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
