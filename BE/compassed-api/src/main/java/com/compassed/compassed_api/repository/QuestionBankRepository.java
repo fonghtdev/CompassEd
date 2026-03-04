@@ -19,13 +19,13 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, Long
      * Tìm câu hỏi theo subject và level
      */
     List<QuestionBank> findBySubjectIdAndLevelAndIsActiveTrue(Long subjectId, Level level);
-    List<QuestionBank> findBySubjectIdAndLevelAndClassNameAndIsActiveTrue(Long subjectId, Level level, String className);
+    List<QuestionBank> findBySubjectIdAndLevelAndGradeBandAndIsActiveTrue(Long subjectId, Level level, String gradeBand);
 
     /**
-     * Tìm câu hỏi theo subject, level và skill tag
+     * Tìm câu hỏi theo subject, level và skill type
      */
-    List<QuestionBank> findBySubjectIdAndLevelAndClassNameAndSkillTagAndIsActiveTrue(
-            Long subjectId, Level level, String className, String skillTag);
+    List<QuestionBank> findBySubjectIdAndLevelAndGradeLevelAndSkillTypeAndIsActiveTrue(
+            Long subjectId, Level level, Integer gradeLevel, String skillType);
 
     /**
      * Random N câu hỏi theo subject và level
@@ -33,30 +33,30 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, Long
     @Query(value = "SELECT * FROM question_bank " +
             "WHERE subject_id = :subjectId " +
             "AND level = :level " +
-            "AND class_name = :className " +
+            "AND grade_level = :gradeLevel " +
             "AND is_active = 1 " +
             "ORDER BY RAND()", nativeQuery = true)
     List<QuestionBank> findRandomQuestions(
             @Param("subjectId") Long subjectId,
             @Param("level") String level,
-            @Param("className") String className,
+            @Param("gradeLevel") int gradeLevel,
             Pageable pageable);
 
     /**
-     * Random N câu hỏi theo subject, level và skill tag
+     * Random N câu hỏi theo subject, level và skill type
      */
     @Query(value = "SELECT * FROM question_bank " +
             "WHERE subject_id = :subjectId " +
             "AND level = :level " +
-            "AND class_name = :className " +
-            "AND skill_tag = :skillTag " +
+            "AND grade_level = :gradeLevel " +
+            "AND skill_type = :skillType " +
             "AND is_active = 1 " +
             "ORDER BY RAND()", nativeQuery = true)
     List<QuestionBank> findRandomQuestionsBySkill(
             @Param("subjectId") Long subjectId,
             @Param("level") String level,
-            @Param("className") String className,
-            @Param("skillTag") String skillTag,
+            @Param("gradeLevel") int gradeLevel,
+            @Param("skillType") String skillType,
             Pageable pageable);
 
     /**
@@ -65,9 +65,9 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, Long
     long countBySubjectIdAndLevelAndIsActiveTrue(Long subjectId, Level level);
 
     /**
-     * Tìm tất cả skill tags của một subject và level
+     * Tìm tất cả skill types của một subject và level
      */
-    @Query("SELECT DISTINCT q.skillTag FROM QuestionBank q " +
+    @Query("SELECT DISTINCT q.skillType FROM QuestionBank q " +
             "WHERE q.subject.id = :subjectId AND q.level = :level AND q.isActive = true")
     List<String> findDistinctSkillTypes(@Param("subjectId") Long subjectId, @Param("level") Level level);
     

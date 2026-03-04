@@ -1,21 +1,21 @@
 package com.compassed.compassed_api.api.dto;
 
 import com.compassed.compassed_api.domain.QuestionBank.Level;
+import com.compassed.compassed_api.domain.QuestionBank.QuestionType;
 
 public class CreateQuestionRequest {
     
     private Long subjectId;
-    private String questionId; // e.g., "Literature_L1_12.1"
-    private String subjectCode; // L, M, E
-    private Level level; // L1, L2, L3
-    private String skillTag; // e.g., "Đọc hiểu nghị luận"
+    private Integer gradeLevel;
+    private Level level;
+    private String gradeBand;
+    private String skillType;
+    private QuestionType questionType;
     private String questionText;
-    private String optionA;
-    private String optionB;
-    private String optionC;
-    private String optionD;
-    private String correctAnswer; // A, B, C, D
-    private String className; // e.g., "lớp 11"
+    private String options; // JSON array as string
+    private String correctAnswer;
+    private String explanation;
+    private Integer difficulty;
 
     // Getters and Setters
     public Long getSubjectId() {
@@ -26,22 +26,6 @@ public class CreateQuestionRequest {
         this.subjectId = subjectId;
     }
 
-    public String getQuestionId() {
-        return questionId;
-    }
-
-    public void setQuestionId(String questionId) {
-        this.questionId = questionId;
-    }
-
-    public String getSubjectCode() {
-        return subjectCode;
-    }
-
-    public void setSubjectCode(String subjectCode) {
-        this.subjectCode = subjectCode;
-    }
-
     public Level getLevel() {
         return level;
     }
@@ -50,12 +34,36 @@ public class CreateQuestionRequest {
         this.level = level;
     }
 
-    public String getSkillTag() {
-        return skillTag;
+    public Integer getGradeLevel() {
+        return gradeLevel;
     }
 
-    public void setSkillTag(String skillTag) {
-        this.skillTag = skillTag;
+    public void setGradeLevel(Integer gradeLevel) {
+        this.gradeLevel = gradeLevel;
+    }
+
+    public String getGradeBand() {
+        return gradeBand;
+    }
+
+    public void setGradeBand(String gradeBand) {
+        this.gradeBand = gradeBand;
+    }
+
+    public String getSkillType() {
+        return skillType;
+    }
+
+    public void setSkillType(String skillType) {
+        this.skillType = skillType;
+    }
+
+    public QuestionType getQuestionType() {
+        return questionType;
+    }
+
+    public void setQuestionType(QuestionType questionType) {
+        this.questionType = questionType;
     }
 
     public String getQuestionText() {
@@ -66,36 +74,12 @@ public class CreateQuestionRequest {
         this.questionText = questionText;
     }
 
-    public String getOptionA() {
-        return optionA;
+    public String getOptions() {
+        return options;
     }
 
-    public void setOptionA(String optionA) {
-        this.optionA = optionA;
-    }
-
-    public String getOptionB() {
-        return optionB;
-    }
-
-    public void setOptionB(String optionB) {
-        this.optionB = optionB;
-    }
-
-    public String getOptionC() {
-        return optionC;
-    }
-
-    public void setOptionC(String optionC) {
-        this.optionC = optionC;
-    }
-
-    public String getOptionD() {
-        return optionD;
-    }
-
-    public void setOptionD(String optionD) {
-        this.optionD = optionD;
+    public void setOptions(String options) {
+        this.options = options;
     }
 
     public String getCorrectAnswer() {
@@ -106,11 +90,19 @@ public class CreateQuestionRequest {
         this.correctAnswer = correctAnswer;
     }
 
-    public String getClassName() {
-        return className;
+    public String getExplanation() {
+        return explanation;
     }
 
-    public void setClassName(String className) {
-        this.className = className;
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
+
+    public Integer getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(Integer difficulty) {
+        this.difficulty = difficulty;
     }
 }

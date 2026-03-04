@@ -79,9 +79,6 @@ async function initPlacement() {
     console.log("Attempt ID:", attemptId);
     console.log("Paper from localStorage:", paper.length, "items");
 
-    // Khởi tạo timerKey sau khi có attemptId
-    const timerKey = `compassed_timer_${subjectId}_${attemptId || 'preview'}`;
-
     // Force-clear nếu URL có ?reset=1 hoặc nếu localStorage chứa câu hỏi demo cũ
     const urlParams = new URLSearchParams(window.location.search);
     const forceReset = urlParams.get("reset") === "1";
@@ -213,7 +210,6 @@ async function initPlacement() {
     const questionGrid = document.getElementById("placement-question-grid");
     const prevBtn = document.getElementById("placement-prev-btn");
     const nextBtn = document.getElementById("placement-next-btn");
-    const submitBtn = document.getElementById("placement-submit-btn");
     const flagBtn = document.getElementById("placement-flag-btn");
     const saveExitBtn = document.getElementById("placement-save-exit-btn");
     const settingsBtn = document.getElementById("placement-settings-btn");
@@ -234,14 +230,10 @@ async function initPlacement() {
     }
 
     // --- Đồng hồ đếm ngược 45 phút ---
-    // Lấy thời gian còn lại từ localStorage hoặc mặc định 45 phút
-    const savedTime = localStorage.getItem(timerKey);
-    let timerSeconds = savedTime ? parseInt(savedTime) : 45 * 60;
-    
+    let timerSeconds = 45 * 60;
     const hrsEl = document.getElementById("placement-timer-hrs");
     const minEl = document.getElementById("placement-timer-min");
     const secEl = document.getElementById("placement-timer-sec");
-    
     function updateTimerDisplay() {
       const h = Math.floor(timerSeconds / 3600);
       const m = Math.floor((timerSeconds % 3600) / 60);
@@ -253,22 +245,13 @@ async function initPlacement() {
         minEl.classList.toggle("text-primary", timerSeconds >= 300);
       }
       if (secEl) secEl.textContent = String(s).padStart(2, "0");
-      
-      // Lưu thời gian còn lại vào localStorage
-      localStorage.setItem(timerKey, String(timerSeconds));
     }
-    
     updateTimerDisplay();
-    
     const timerInterval = setInterval(() => {
       if (timerSeconds <= 0) {
         clearInterval(timerInterval);
-        localStorage.removeItem(timerKey);
-        toast("Hết giờ! Đang tự động nộp bài...", "warn");
-        // Tự động submit sau 1 giây
-        setTimeout(() => {
-          handleSubmit();
-        }, 1000);
+        toast("Time is up! Submitting...", "warn");
+        nextBtn && nextBtn.click();
         return;
       }
       timerSeconds--;
@@ -322,15 +305,9 @@ async function initPlacement() {
       if (progressBar) progressBar.style.width = `${Math.round((answeredCount / Math.max(paper.length, 1)) * 100)}%`;
       if (progressTextMain) progressTextMain.textContent = `${answeredCount} / ${paper.length}`;
       if (progressBarMain) progressBarMain.style.width = `${Math.round((answeredCount / Math.max(paper.length, 1)) * 100)}%`;
-      if (counterEl) counterEl.textContent = `Câu ${index + 1} / ${paper.length}`;
+      if (counterEl) counterEl.textContent = `Question ${index + 1} of ${paper.length}`;
       prevBtn.disabled = index === 0;
-      
-      // Cập nhật text nút Next
-      const isLastQuestion = index === paper.length - 1;
-      nextBtn.innerHTML = isLastQuestion 
-        ? 'Nộp bài<span class="material-symbols-outlined">check_circle</span>'
-        : 'Câu tiếp theo<span class="material-symbols-outlined">arrow_forward</span>';
-      
+      nextBtn.textContent = index === paper.length - 1 ? "Submit Test" : "Next Question";
       renderQuestionGrid();
     }
 
@@ -341,19 +318,20 @@ async function initPlacement() {
       }
     });
 
-    // Hàm xử lý submit
-    async function handleSubmit() {
-      // Kiểm tra xem có câu hỏi chưa trả lời không
-      const unansweredCount = paper.length - Object.keys(answers).length;
-      if (unansweredCount > 0) {
-        const confirmSubmit = confirm(`Bạn còn ${unansweredCount} câu chưa trả lời. Bạn có chắc muốn nộp bài không?`);
-        if (!confirmSubmit) return;
+    nextBtn.addEventListener("click", async () => {
+      const q = paper[index];
+      if (!answers[String(q.id)]) {
+        toast("Please select an answer", "warn");
+        return;
       }
-
-      // Nếu đang ở preview mode
+      if (index < paper.length - 1) {
+        index += 1;
+        rerender();
+        return;
+      }
+      // If we're in preview mode (attemptId==0) we cannot submit to server.
       if (previewMode || Number(attemptId) === 0) {
         clearInterval(timerInterval);
-        localStorage.removeItem(timerKey);
         toast("Preview mode: submission is disabled. Your answers are saved locally.", "warn");
         localStorage.setItem(KEYS.result, JSON.stringify({ preview: true, answers }));
         localStorage.removeItem(attemptKey);
@@ -362,13 +340,10 @@ async function initPlacement() {
         nav("/placement-result", "placementTestResult.html");
         return;
       }
-
-      // Submit lên server
-      showLoading("Đang nộp bài...");
+      showLoading("Submitting...");
       try {
         const result = await api(`/api/placement-attempts/${attemptId}/submit`, "POST", { answersJson: JSON.stringify(answers) }, true);
         clearInterval(timerInterval);
-        localStorage.removeItem(timerKey);
         localStorage.setItem(KEYS.result, JSON.stringify(result));
         localStorage.removeItem(attemptKey);
         localStorage.removeItem(paperKey);
@@ -383,10 +358,10 @@ async function initPlacement() {
           return;
         }
         if (msg.toLowerCase().includes("attempt not found") || msg.includes("404")) {
+          // Stale local attempt (changed DB/profile). Reset local state and start a fresh attempt.
           localStorage.removeItem(attemptKey);
           localStorage.removeItem(paperKey);
           localStorage.removeItem(answersKey);
-          localStorage.removeItem(timerKey);
           toast("Attempt expired. Starting a new placement test...", "warn");
           setTimeout(() => {
             window.location.reload();
@@ -397,34 +372,7 @@ async function initPlacement() {
       } finally {
         hideLoading();
       }
-    }
-
-    nextBtn.addEventListener("click", async () => {
-      const q = paper[index];
-      
-      // Nếu đang ở câu cuối cùng, submit bài
-      if (index === paper.length - 1) {
-        await handleSubmit();
-        return;
-      }
-      
-      // Nếu chưa chọn đáp án
-      if (!answers[String(q.id)]) {
-        toast("Vui lòng chọn đáp án", "warn");
-        return;
-      }
-      
-      // Chuyển sang câu tiếp theo
-      index += 1;
-      rerender();
     });
-
-    // Event listener cho nút Submit
-    if (submitBtn) {
-      submitBtn.addEventListener("click", async () => {
-        await handleSubmit();
-      });
-    }
 
     // Preview loader (hidden element, kept for programmatic use)
     if (loadPreviewBtn && previewSubjectSel) {
