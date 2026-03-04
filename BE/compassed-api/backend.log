@@ -9,13 +9,13 @@
 [INFO] 
 [INFO] --- resources:3.3.1:resources (default-resources) @ compassed-api ---
 [INFO] Copying 3 resources from src/main/resources to target/classes
-[INFO] Copying 13 resources from src/main/resources to target/classes
+[INFO] Copying 12 resources from src/main/resources to target/classes
 [INFO] 
 [INFO] --- compiler:3.11.0:compile (default-compile) @ compassed-api ---
 [INFO] Nothing to compile - all classes are up to date
 [INFO] 
 [INFO] --- resources:3.3.1:testResources (default-testResources) @ compassed-api ---
-[INFO] skip non existing resourceDirectory /Users/hoangngoctinh/compassED/CompassEd/BE/compassed-api/src/test/resources
+[INFO] skip non existing resourceDirectory /Users/hoangngoctinh/compassED/ED/BE/compassed-api/src/test/resources
 [INFO] 
 [INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ compassed-api ---
 [INFO] Nothing to compile - all classes are up to date
@@ -35,23 +35,23 @@
 
  :: Spring Boot ::                (v4.0.1)
 
-2026-03-03T03:41:29.013+07:00  INFO 99114 --- [compassed-api] [  restartedMain] c.c.c.CompassedApiApplication            : Starting CompassedApiApplication using Java 17.0.17 with PID 99114 (/Users/hoangngoctinh/compassED/CompassEd/BE/compassed-api/target/classes started by hoangngoctinh in /Users/hoangngoctinh/compassED/CompassEd/BE/compassed-api)
-2026-03-03T03:41:29.015+07:00  INFO 99114 --- [compassed-api] [  restartedMain] c.c.c.CompassedApiApplication            : The following 1 profile is active: "mysql"
-2026-03-03T03:41:29.051+07:00  INFO 99114 --- [compassed-api] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
-2026-03-03T03:41:29.051+07:00  INFO 99114 --- [compassed-api] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
-2026-03-03T03:41:29.952+07:00  INFO 99114 --- [compassed-api] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-03-03T03:41:30.102+07:00  INFO 99114 --- [compassed-api] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 141 ms. Found 28 JPA repository interfaces.
-2026-03-03T03:41:30.437+07:00  INFO 99114 --- [compassed-api] [  restartedMain] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
-2026-03-03T03:41:30.445+07:00  INFO 99114 --- [compassed-api] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
-2026-03-03T03:41:30.445+07:00  INFO 99114 --- [compassed-api] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.15]
-2026-03-03T03:41:30.467+07:00  INFO 99114 --- [compassed-api] [  restartedMain] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1414 ms
-2026-03-03T03:41:30.570+07:00  INFO 99114 --- [compassed-api] [  restartedMain] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
-2026-03-03T03:41:30.604+07:00  INFO 99114 --- [compassed-api] [  restartedMain] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.0.Final
-2026-03-03T03:41:30.848+07:00  INFO 99114 --- [compassed-api] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-03-03T03:41:30.871+07:00  INFO 99114 --- [compassed-api] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2026-03-03T03:41:30.987+07:00  INFO 99114 --- [compassed-api] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@3fd0599f
-2026-03-03T03:41:30.988+07:00  INFO 99114 --- [compassed-api] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2026-03-03T03:41:31.048+07:00  INFO 99114 --- [compassed-api] [  restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+2026-03-02T20:26:16.513+07:00  INFO 74287 --- [compassed-api] [  restartedMain] c.c.c.CompassedApiApplication            : Starting CompassedApiApplication using Java 17.0.17 with PID 74287 (/Users/hoangngoctinh/compassED/ED/BE/compassed-api/target/classes started by hoangngoctinh in /Users/hoangngoctinh/compassED/ED/BE/compassed-api)
+2026-03-02T20:26:16.517+07:00  INFO 74287 --- [compassed-api] [  restartedMain] c.c.c.CompassedApiApplication            : The following 1 profile is active: "mysql"
+2026-03-02T20:26:16.572+07:00  INFO 74287 --- [compassed-api] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-03-02T20:26:16.572+07:00  INFO 74287 --- [compassed-api] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-03-02T20:26:17.316+07:00  INFO 74287 --- [compassed-api] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-03-02T20:26:17.505+07:00  INFO 74287 --- [compassed-api] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 180 ms. Found 28 JPA repository interfaces.
+2026-03-02T20:26:18.031+07:00  INFO 74287 --- [compassed-api] [  restartedMain] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-03-02T20:26:18.045+07:00  INFO 74287 --- [compassed-api] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-02T20:26:18.046+07:00  INFO 74287 --- [compassed-api] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.15]
+2026-03-02T20:26:18.076+07:00  INFO 74287 --- [compassed-api] [  restartedMain] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1504 ms
+2026-03-02T20:26:18.222+07:00  INFO 74287 --- [compassed-api] [  restartedMain] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-03-02T20:26:18.260+07:00  INFO 74287 --- [compassed-api] [  restartedMain] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.0.Final
+2026-03-02T20:26:18.653+07:00  INFO 74287 --- [compassed-api] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-03-02T20:26:18.676+07:00  INFO 74287 --- [compassed-api] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-02T20:26:18.809+07:00  INFO 74287 --- [compassed-api] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@6e8d0f67
+2026-03-02T20:26:18.810+07:00  INFO 74287 --- [compassed-api] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-02T20:26:18.883+07:00  INFO 74287 --- [compassed-api] [  restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
 	Database JDBC URL [jdbc:mysql://localhost:3306/compassed?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC]
 	Database driver: MySQL Connector/J
 	Database dialect: MySQLDialect
@@ -63,52 +63,20 @@
 	Pool: DataSourceConnectionProvider
 	Minimum pool size: undefined/unknown
 	Maximum pool size: undefined/unknown
-2026-03-03T03:41:31.922+07:00  INFO 99114 --- [compassed-api] [  restartedMain] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-03-03T03:41:32.025+07:00  INFO 99114 --- [compassed-api] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-03-03T03:41:32.190+07:00  INFO 99114 --- [compassed-api] [  restartedMain] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
-2026-03-03T03:41:32.664+07:00  INFO 99114 --- [compassed-api] [  restartedMain] c.c.c.service.PaymentService             : PayOS config: enabled=false, clientIdSet=false, apiKeyLen=0, checksumKeyLen=0, baseUrl=https://api-merchant.payos.vn
-2026-03-03T03:41:32.917+07:00  WARN 99114 --- [compassed-api] [  restartedMain] .s.a.UserDetailsServiceAutoConfiguration : 
+2026-03-02T20:26:20.057+07:00  INFO 74287 --- [compassed-api] [  restartedMain] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-03-02T20:26:20.189+07:00  INFO 74287 --- [compassed-api] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-03-02T20:26:20.446+07:00  INFO 74287 --- [compassed-api] [  restartedMain] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-03-02T20:26:21.141+07:00  INFO 74287 --- [compassed-api] [  restartedMain] c.c.c.service.PaymentService             : PayOS config: enabled=false, clientIdSet=false, apiKeyLen=0, checksumKeyLen=0, baseUrl=https://api-merchant.payos.vn
+2026-03-02T20:26:21.571+07:00  WARN 74287 --- [compassed-api] [  restartedMain] .s.a.UserDetailsServiceAutoConfiguration : 
 
-Using generated security password: 3497f7f3-8938-4973-b115-37d36942311c
+Using generated security password: 8d899965-262c-4ce0-8fea-11fc27f32b55
 
 This generated password is for development use only. Your security configuration must be updated before running your application in production.
 
-2026-03-03T03:41:32.922+07:00  INFO 99114 --- [compassed-api] [  restartedMain] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
-2026-03-03T03:41:33.240+07:00  INFO 99114 --- [compassed-api] [  restartedMain] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
-2026-03-03T03:41:33.244+07:00  INFO 99114 --- [compassed-api] [  restartedMain] c.c.c.CompassedApiApplication            : Started CompassedApiApplication in 4.534 seconds (process running for 4.887)
-2026-03-03T03:41:46.084+07:00  INFO 99114 --- [compassed-api] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
-2026-03-03T03:41:46.085+07:00  INFO 99114 --- [compassed-api] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
-2026-03-03T03:41:46.086+07:00  INFO 99114 --- [compassed-api] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
-2026-03-03T03:41:46.095+07:00  WARN 99114 --- [compassed-api] [nio-8080-exec-1] o.s.w.s.h.HandlerMappingIntrospector     : Cache miss for REQUEST dispatch to '/actuator/health' (previous null). Performing CorsConfiguration lookup. This is logged once only at WARN level, and every time at TRACE.
-2026-03-03T03:44:08.064+07:00  WARN 99114 --- [compassed-api] [nio-8080-exec-4] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.dao.InvalidDataAccessApiUsageException: No EntityManager with actual transaction available for current thread - cannot reliably process 'remove' call]
-2026-03-03T04:40:30.236+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=32m28s768ms).
-2026-03-03T06:08:51.291+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1h28m21s57ms).
-2026-03-03T06:15:19.801+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=5m58s509ms).
-2026-03-03T07:20:39.817+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1h2m49s983ms).
-2026-03-03T07:56:36.270+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=35m24s679ms).
-2026-03-03T08:28:53.634+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=31m45s729ms).
-2026-03-03T08:49:32.982+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=20m39s348ms).
-2026-03-03T09:06:42.025+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=17m9s43ms).
-2026-03-03T09:50:31.126+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=43m49s101ms).
-2026-03-03T10:06:36.129+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=16m5s3ms).
-2026-03-03T10:07:44.200+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m8s71ms).
-2026-03-03T10:17:32.536+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=9m48s335ms).
-2026-03-03T11:24:52.661+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1h6m50s112ms).
-2026-03-03T11:48:38.882+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=23m16s215ms).
-2026-03-03T11:51:49.459+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=2m9s927ms).
-2026-03-03T12:52:47.532+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1h28s64ms).
-2026-03-03T13:10:29.554+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=17m12s9ms).
-2026-03-03T13:54:03.961+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=43m4s396ms).
-2026-03-03T14:03:14.540+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=9m10s580ms).
-2026-03-03T14:03:28.742+07:00  WARN 99114 --- [compassed-api] [nio-8080-exec-7] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [java.lang.RuntimeException: PAYMENT_REQUIRED: Need subscription to start placement]
-2026-03-03T16:06:47.703+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=34m32s328ms).
-2026-03-03T16:46:58.900+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=40m11s198ms).
-2026-03-03T17:33:10.799+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=46m11s892ms).
-2026-03-03T17:39:06.405+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=5m55s612ms).
-2026-03-03T18:34:10.920+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=55m4s515ms).
-2026-03-03T19:47:41.975+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1h13m31s55ms).
-2026-03-03T19:50:48.158+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=3m6s184ms).
-2026-03-03T19:57:15.642+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=57s435ms).
-2026-03-03T20:10:17.613+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=13m1s971ms).
-2026-03-03T20:15:08.340+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=4m50s727ms).
-2026-03-03T20:38:08.103+07:00  WARN 99114 --- [compassed-api] [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=20m29s731ms).
+2026-03-02T20:26:21.582+07:00  INFO 74287 --- [compassed-api] [  restartedMain] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-03-02T20:26:22.094+07:00  INFO 74287 --- [compassed-api] [  restartedMain] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-03-02T20:26:22.101+07:00  INFO 74287 --- [compassed-api] [  restartedMain] c.c.c.CompassedApiApplication            : Started CompassedApiApplication in 6.015 seconds (process running for 6.43)
+2026-03-02T20:26:28.534+07:00  INFO 74287 --- [compassed-api] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-02T20:26:28.534+07:00  INFO 74287 --- [compassed-api] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-03-02T20:26:28.535+07:00  INFO 74287 --- [compassed-api] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-03-02T20:26:28.545+07:00  WARN 74287 --- [compassed-api] [nio-8080-exec-1] o.s.w.s.h.HandlerMappingIntrospector     : Cache miss for REQUEST dispatch to '/api/subjects' (previous null). Performing CorsConfiguration lookup. This is logged once only at WARN level, and every time at TRACE.

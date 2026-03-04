@@ -8,7 +8,7 @@ services:
       FE_HOST: 0.0.0.0
       FE_PORT: 3000
       API_BASE: https://compassed.io.vn
-      GOOGLE_CLIENT_ID: 418581116582-qet8ant9k0t319hkd3640dtsa54eg07v.apps.googleusercontent.com
+      GOOGLE_CLIENT_ID: "759011701592-v4npda3hrmcrsh8s8cnq2jh5jcuc755o.apps.googleusercontent.com"
     ports:
       - "3000:3000"
 
@@ -22,12 +22,6 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: mysql
-      GOOGLE_CLIENT_ID: 418581116582-qet8ant9k0t319hkd3640dtsa54eg07v.apps.googleusercontent.com
-      MAIL_HOST: smtp.gmail.com
-      MAIL_PORT: 587
-      MAIL_USERNAME: fonght.dev@gmail.com
-      MAIL_PASSWORD: yylmvpdohcxcvhzl
-      MAIL_FROM: fonght.dev@gmail.com
       MYSQL_URL: jdbc:mysql://mysql:3306/compassed?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       MYSQL_USER: root
       MYSQL_PASSWORD: 1234
