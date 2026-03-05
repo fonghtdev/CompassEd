@@ -42,7 +42,7 @@ checkout:
     bank-bin: ${CHECKOUT_QR_BANK_BIN:970422}
 
 payos:
-  enabled: ${PAYOS_ENABLED:false}
+  enabled: ${PAYOS_ENABLED:true}
   client-id: ${PAYOS_CLIENT_ID:}
   api-key: ${PAYOS_API_KEY:}
   checksum-key: ${PAYOS_CHECKSUM_KEY:}
