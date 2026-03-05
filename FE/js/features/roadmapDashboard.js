@@ -174,6 +174,7 @@ function renderSubjects(subjects, activeBySubjectId, keyword) {
     const level = active && active.level ? active.level : "Not started";
     const progress = Math.max(0, Math.min(100, Number(active && active.progressPercent ? active.progressPercent : 0)));
     const phase = active && active.phase ? active.phase : "LOCKED";
+    const waitingPlacement = enrolled && phase === "WAITING_PLACEMENT";
     const palette = subjectCardColor(idx);
 
     const card = document.createElement("article");
@@ -206,13 +207,17 @@ function renderSubjects(subjects, activeBySubjectId, keyword) {
           <span class="text-slate-400">ID: ${Number(subject.id)}</span>
         </div>
       </div>
-      <button type="button" class="rm-open-subject mt-8 flex w-full items-center justify-center rounded-xl h-10 ${palette.btn} font-bold hover:text-white transition-all">${enrolled ? "Continue Journey" : "Đăng ký"}</button>`;
+      <button type="button" class="rm-open-subject mt-8 flex w-full items-center justify-center rounded-xl h-10 ${palette.btn} font-bold hover:text-white transition-all">${!enrolled ? "Đăng ký" : waitingPlacement ? "Làm placement test" : "Continue Journey"}</button>`;
 
     const btn = card.querySelector(".rm-open-subject");
     btn.addEventListener("click", () => {
       localStorage.setItem(KEYS.subjectId, String(subject.id));
       if (!enrolled) {
         nav("/checkout", "checkout.html");
+        return;
+      }
+      if (waitingPlacement) {
+        nav(`/placement-test?subjectId=${subject.id}`, `placementTest.html?subjectId=${subject.id}`);
         return;
       }
       nav(`/learning-roadmap?subjectId=${subject.id}`, `coursesDetail.html?subjectId=${subject.id}`);
@@ -368,19 +373,32 @@ async function initRoadmapDashboard() {
   let latestActiveMap = new Map();
   let latestLearningStats = { rank: 0, totalLearners: 1, studyStreakDays: 0 };
 
+  const openSubjectByStatus = (subject) => {
+    const active = latestActiveMap.get(Number(subject.id));
+    localStorage.setItem(KEYS.subjectId, String(subject.id));
+    if (!active) {
+      nav("/checkout", "checkout.html");
+      return;
+    }
+    if (active.phase === "WAITING_PLACEMENT") {
+      nav(`/placement-test?subjectId=${subject.id}`, `placementTest.html?subjectId=${subject.id}`);
+      return;
+    }
+    nav(`/learning-roadmap?subjectId=${subject.id}`, `coursesDetail.html?subjectId=${subject.id}`);
+  };
+
   const openFirstAvailable = async () => {
     const enrolledSubjects = latestSubjects.filter((s) => latestActiveMap.has(Number(s.id)));
     if (enrolledSubjects.length === 1) {
-      const only = enrolledSubjects[0];
-      localStorage.setItem(KEYS.subjectId, String(only.id));
-      nav(`/learning-roadmap?subjectId=${only.id}`, `coursesDetail.html?subjectId=${only.id}`);
+      openSubjectByStatus(enrolledSubjects[0]);
       return;
     }
     if (enrolledSubjects.length >= 2) {
       const selectedId = await chooseEnrolledSubjectModal(enrolledSubjects);
       if (!selectedId) return;
-      localStorage.setItem(KEYS.subjectId, String(selectedId));
-      nav(`/learning-roadmap?subjectId=${selectedId}`, `coursesDetail.html?subjectId=${selectedId}`);
+      const selected = enrolledSubjects.find((s) => Number(s.id) === Number(selectedId));
+      if (!selected) return;
+      openSubjectByStatus(selected);
       return;
     }
     if (!latestSubjects.length) {

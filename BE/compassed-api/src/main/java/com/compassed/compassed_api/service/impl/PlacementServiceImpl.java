@@ -6,11 +6,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import org.springframework.data.domain.PageRequest;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.compassed.compassed_api.api.dto.PlacementStartResponse;
 import com.compassed.compassed_api.api.dto.PlacementSubmitRequest;
@@ -37,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 @Profile("mysql")
 public class PlacementServiceImpl implements PlacementService {
+    private static final Logger log = LoggerFactory.getLogger(PlacementServiceImpl.class);
 
     private final SubjectRepository subjectRepository;
     private final UserRepository userRepository;
@@ -77,7 +79,18 @@ public class PlacementServiceImpl implements PlacementService {
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
 
-        // 1) Check FREE 1 lần / môn
+        PlacementAttempt inProgress = attemptRepository
+                .findTopByUser_IdAndSubject_IdAndStatusOrderByStartedAtDesc(userId, subjectId, AttemptStatus.IN_PROGRESS)
+                .orElse(null);
+        if (inProgress != null) {
+            PlacementStartResponse resp = new PlacementStartResponse();
+            resp.setAttemptId(inProgress.getId());
+            resp.setSubjectId(subjectId);
+            resp.setPaperJson(inProgress.getPaperJson());
+            resp.setAnswersJson(inProgress.getAnswersJson());
+            return resp;
+        }
+
         UserSubjectFreeAttempt free = freeAttemptRepository
                 .findByUserIdAndSubjectId(userId, subjectId)
                 .orElseGet(() -> {
@@ -90,7 +103,6 @@ public class PlacementServiceImpl implements PlacementService {
 
         boolean canUseFree = !free.isUsed();
 
-        // 2) Nếu hết FREE: yêu cầu đã mua subscription mới được làm placement
         if (!canUseFree) {
             boolean hasSub = subscriptionRepository.existsByUserIdAndSubjectIdAndIsActiveTrue(userId, subjectId);
             if (!hasSub) {
@@ -103,8 +115,6 @@ public class PlacementServiceImpl implements PlacementService {
         }
 
         int grade = gradeLevel != null ? gradeLevel : 10;
-
-        // 3) Tạo đề (V1: lấy L1 theo khối lớp, fallback dummy)
         String paperJson = generatePlacementPaperJson(subject.getCode(), subjectId, grade);
 
         PlacementAttempt attempt = new PlacementAttempt();
@@ -112,6 +122,7 @@ public class PlacementServiceImpl implements PlacementService {
         attempt.setSubject(subject);
         attempt.setStatus(AttemptStatus.IN_PROGRESS);
         attempt.setPaperJson(paperJson);
+        attempt.setAnswersJson("{}");
         attempt.setStartedAt(LocalDateTime.now());
         attemptRepository.save(attempt);
 
@@ -119,7 +130,26 @@ public class PlacementServiceImpl implements PlacementService {
         resp.setAttemptId(attempt.getId());
         resp.setSubjectId(subjectId);
         resp.setPaperJson(paperJson);
+        resp.setAnswersJson(attempt.getAnswersJson());
         return resp;
+    }
+
+    @Override
+    public void saveProgress(Long userId, Long attemptId, PlacementSubmitRequest request) {
+        PlacementAttempt attempt = attemptRepository.findByIdAndUser_Id(attemptId, userId)
+                .orElseThrow(() -> new RuntimeException("Attempt not found"));
+
+        if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
+            throw new RuntimeException("Attempt is not in progress");
+        }
+
+        String answersJson = request == null ? null : request.getAnswersJson();
+        if (answersJson == null || answersJson.isBlank()) {
+            throw new RuntimeException("answersJson is required");
+        }
+
+        attempt.setAnswersJson(answersJson);
+        attemptRepository.save(attempt);
     }
 
     @Override
@@ -131,21 +161,34 @@ public class PlacementServiceImpl implements PlacementService {
             throw new RuntimeException("Attempt already graded");
         }
 
+        String answersJson = request == null ? null : request.getAnswersJson();
+        if (answersJson == null || answersJson.isBlank()) {
+            answersJson = attempt.getAnswersJson();
+        }
+        if (answersJson == null || answersJson.isBlank()) {
+            throw new RuntimeException("answersJson is required");
+        }
+
         attempt.setStatus(AttemptStatus.SUBMITTED);
         attempt.setSubmittedAt(LocalDateTime.now());
+        attempt.setAnswersJson(answersJson);
         attemptRepository.save(attempt);
 
-        // Grade (V1: so sánh answersJson với paperJson)
-        double scorePercent = gradePercent(attempt.getPaperJson(), request.getAnswersJson());
+        double scorePercent = gradePercent(attempt.getPaperJson(), answersJson);
         Level level = decideLevel(scorePercent);
 
-        // AI phân tích kỹ năng (từ paper+answers)
-        String skillAnalysis = aiService.analyzeSkills(
-                attempt.getSubject().getCode(),
-                attempt.getPaperJson(),
-                request.getAnswersJson());
+        String skillAnalysis;
+        try {
+            skillAnalysis = aiService.analyzeSkills(
+                    attempt.getSubject().getCode(),
+                    attempt.getPaperJson(),
+                    answersJson);
+        } catch (Exception ex) {
+            log.warn("AI analyzeSkills failed for attemptId={}, fallback to local summary. cause={}",
+                    attemptId, ex.getMessage());
+            skillAnalysis = fallbackSkillAnalysis(scorePercent, level);
+        }
 
-        // Save result (dù user không subscribe)
         PlacementResult result = new PlacementResult();
         result.setUser(attempt.getUser());
         result.setSubject(attempt.getSubject());
@@ -167,17 +210,22 @@ public class PlacementServiceImpl implements PlacementService {
     }
 
     private Level decideLevel(double scorePercent) {
-        if (scorePercent < 50.0)
+        if (scorePercent < 50.0) {
             return Level.L1;
-        if (scorePercent < 90.0)
+        }
+        if (scorePercent < 90.0) {
             return Level.L2;
+        }
         return Level.L3;
     }
 
-    /**
-     * paperJson: [{ "id":1,"correct":"A",... }]
-     * answersJson: { "1":"A", "2":"B" ... } (V1 format)
-     */
+    private String fallbackSkillAnalysis(double scorePercent, Level level) {
+        String overall = level == Level.L3 ? "good" : level == Level.L2 ? "average" : "weak";
+        return """
+                {"mode":"FALLBACK","overall_level":"%s","skills":[],"weak_topics":[],"recommendations":["Continue with your roadmap based on placement level."],"scorePercent":%.2f}
+                """.formatted(overall, scorePercent);
+    }
+
     private double gradePercent(String paperJson, String answersJson) {
         try {
             List<Map<String, Object>> items = objectMapper.readValue(
@@ -202,8 +250,9 @@ public class PlacementServiceImpl implements PlacementService {
                 }
             }
 
-            if (total == 0)
+            if (total == 0) {
                 return 0.0;
+            }
             return (correctCount * 100.0) / total;
         } catch (Exception e) {
             throw new RuntimeException("Invalid JSON format for grading: " + e.getMessage());
@@ -220,7 +269,8 @@ public class PlacementServiceImpl implements PlacementService {
                     q.put("id", qrow.getId());
                     q.put("q", qrow.getQuestionText());
                     try {
-                        List<String> options = objectMapper.readValue(qrow.getOptions(), new TypeReference<List<String>>() {});
+                        List<String> options = objectMapper.readValue(qrow.getOptions(), new TypeReference<List<String>>() {
+                        });
                         q.put("options", options);
                     } catch (Exception e) {
                         q.put("options", List.of("A. Option A", "B. Option B", "C. Option C", "D. Option D"));
@@ -238,8 +288,6 @@ public class PlacementServiceImpl implements PlacementService {
     }
 
     private String generateDummyPaperJson(String subjectCode, int gradeLevel) {
-        // V1: tạo 50 câu dummy, mỗi câu có correct answer
-        // FE sẽ render theo field q/options/id
         List<Map<String, Object>> paper = new ArrayList<>();
         String[] opts = new String[] { "A", "B", "C", "D" };
 
@@ -247,12 +295,12 @@ public class PlacementServiceImpl implements PlacementService {
         for (int i = 1; i <= 50; i++) {
             Map<String, Object> q = new LinkedHashMap<>();
             q.put("id", i);
-            q.put("q", "[" + subjectCode + " | Lớp " + gradeLevel + "] Câu " + i + ": chọn đáp án đúng (demo)");
+            q.put("q", "[" + subjectCode + " | Grade " + gradeLevel + "] Question " + i);
             q.put("options", List.of(
-                    "A. Đáp án A",
-                    "B. Đáp án B",
-                    "C. Đáp án C",
-                    "D. Đáp án D"));
+                    "A. Option A",
+                    "B. Option B",
+                    "C. Option C",
+                    "D. Option D"));
             q.put("correct", opts[rnd.nextInt(opts.length)]);
             q.put("skill", "topic_demo");
             paper.add(q);
@@ -264,14 +312,14 @@ public class PlacementServiceImpl implements PlacementService {
             throw new RuntimeException("Cannot generate paper json");
         }
     }
-    
+
     @Override
     public int checkFreeAttempts(Long userId, Long subjectId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
-        
+
         UserSubjectFreeAttempt free = freeAttemptRepository
                 .findByUserIdAndSubjectId(userId, subjectId)
                 .orElseGet(() -> {
@@ -281,17 +329,17 @@ public class PlacementServiceImpl implements PlacementService {
                     x.setUsed(false);
                     return x;
                 });
-        
+
         return free.isUsed() ? 0 : 1;
     }
-    
+
     @Override
     public void decrementFreeAttempts(Long userId, Long subjectId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
-        
+
         UserSubjectFreeAttempt free = freeAttemptRepository
                 .findByUserIdAndSubjectId(userId, subjectId)
                 .orElseGet(() -> {
@@ -301,7 +349,7 @@ public class PlacementServiceImpl implements PlacementService {
                     x.setUsed(false);
                     return x;
                 });
-        
+
         if (!free.isUsed()) {
             free.setUsed(true);
             free.setUsedAt(LocalDateTime.now());
