@@ -6,5 +6,6 @@ import lombok.Data;
 public class PlacementStartResponse {
     private Long attemptId;
     private Long subjectId;
-    private String paperJson; // FE render đề
+    private String paperJson;
+    private String answersJson;
 }

@@ -22,6 +22,15 @@ function initLanding() {
 
   const loginLink = document.getElementById("landing-login-link");
   const getStartedTop = document.getElementById("landing-get-started-top");
+  const navHome = document.getElementById("landing-nav-home");
+  const navLearning = document.getElementById("landing-nav-learning");
+  const navLearningWrap = document.getElementById("landing-learning-dropdown");
+  const navLearningMenu = document.getElementById("landing-nav-learning-menu");
+  const navLearningPractice = document.getElementById("landing-nav-learning-practice");
+  const navLearningRoadmap = document.getElementById("landing-nav-learning-roadmap");
+  const navLearningAi = document.getElementById("landing-nav-learning-ai");
+  const navHowItWorks = document.getElementById("landing-nav-how-it-works");
+  const navPricing = document.getElementById("landing-nav-pricing");
   const notifWrap = document.getElementById("landing-notif-wrap");
   const notifBtn = document.getElementById("landing-notif-btn");
   const notifBadge = document.getElementById("landing-notif-badge");
@@ -395,6 +404,70 @@ function initLanding() {
     }
   };
 
+  const scrollToHowItWorks = () => {
+    const section = document.getElementById("landing-how-it-works");
+    if (!section) return;
+    const headerOffset = 90;
+    const target = section.getBoundingClientRect().top + window.scrollY - headerOffset;
+    window.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
+  };
+
+  if (navHome) {
+    navHome.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+  if (navLearning && navLearningMenu) {
+    navLearning.addEventListener("click", (e) => {
+      e.preventDefault();
+      navLearningMenu.classList.toggle("hidden");
+    });
+  }
+  if (navLearningPractice) {
+    navLearningPractice.addEventListener("click", async () => {
+      navLearningMenu && navLearningMenu.classList.add("hidden");
+      const subjectId = getSubjectId();
+      const gradeKey = `compassed_grade_level_${subjectId}`;
+      const gradeLevel = Number(localStorage.getItem(gradeKey) || 10);
+      nav(`/placement-test?subjectId=${subjectId}&grade=${gradeLevel}`, `placementTest.html?subjectId=${subjectId}&grade=${gradeLevel}`);
+    });
+  }
+  if (navLearningRoadmap) {
+    navLearningRoadmap.addEventListener("click", async () => {
+      navLearningMenu && navLearningMenu.classList.add("hidden");
+      const ok = await checkSession();
+      if (!ok) {
+        goAuthWithRedirect("/roadmap-dashboard", "roadmapDashboard.html");
+        return;
+      }
+      nav("/roadmap-dashboard", "roadmapDashboard.html");
+    });
+  }
+  if (navLearningAi) {
+    navLearningAi.addEventListener("click", () => {
+      navLearningMenu && navLearningMenu.classList.add("hidden");
+      toast("Tính năng đang được update, các bạn vui lòng đón chờ nhé!", "ok");
+    });
+  }
+  if (navHowItWorks) {
+    navHowItWorks.addEventListener("click", (e) => {
+      e.preventDefault();
+      scrollToHowItWorks();
+    });
+  }
+  if (navPricing) {
+    navPricing.addEventListener("click", (e) => {
+      e.preventDefault();
+      nav("/checkout", "checkout.html");
+    });
+  }
+  document.addEventListener("click", (e) => {
+    if (!navLearningWrap || !navLearningMenu) return;
+    if (navLearningWrap.contains(e.target)) return;
+    navLearningMenu.classList.add("hidden");
+  });
+
   const navByPlacementStatus = async (subjectId) => {
     localStorage.setItem("compassed_subject_id", String(subjectId));
     const gradeKey = `compassed_grade_level_${subjectId}`;
@@ -428,8 +501,7 @@ function initLanding() {
         return;
       }
       if (subscribedSubjectIds.has(subjectId)) {
-        localStorage.setItem("compassed_subject_id", String(subjectId));
-        nav("/roadmap-dashboard", "roadmapDashboard.html");
+        toast("Bạn đã đăng ký môn này rồi.", "ok");
         return;
       }
       await navByPlacementStatus(subjectId);

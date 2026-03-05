@@ -32,6 +32,9 @@ public class PlacementAttempt {
     @Column(columnDefinition = "json", nullable = false)
     private String paperJson;
 
+    @Column(columnDefinition = "json")
+    private String answersJson;
+
     private LocalDateTime startedAt;
     private LocalDateTime submittedAt;
 }

@@ -134,6 +134,7 @@ public class UserPortalController {
             }
             if (request.getAcademicTrack() != null) {
                 profile.setAcademicTrack(normalizeAcademicTrack(request.getAcademicTrack()));
+                profile.setAcademicTrackConfirmed(true);
             }
             if (request.getNotifyEmail() != null) {
                 profile.setNotifyEmail(Boolean.TRUE.equals(request.getNotifyEmail()));
@@ -553,22 +554,25 @@ public class UserPortalController {
         created.setNotifyEmail(false);
         created.setNotifyInApp(true);
         created.setAcademicTrack("GRADE_11");
+        created.setAcademicTrackConfirmed(false);
         created.setUpdatedAt(LocalDateTime.now());
         return userProfileRepository.save(created);
     }
 
     private Map<String, Object> profilePayload(User user, UserProfile profile) {
-        return Map.of(
-                "id", user.getId(),
-                "email", user.getEmail(),
-                "fullName", user.getFullName() == null ? "" : user.getFullName(),
-                "role", roleAccessService.resolveRoleName(user),
-                "learningGoal", profile.getLearningGoal() == null ? "" : profile.getLearningGoal(),
-                "targetScore", profile.getTargetScore() == null ? 75 : profile.getTargetScore(),
-                "academicTrack", profile.getAcademicTrack() == null ? "GRADE_11" : profile.getAcademicTrack(),
-                "notifyEmail", profile.isNotifyEmail(),
-                "notifyInApp", profile.isNotifyInApp(),
-                "activeSubjects", subscriptionRepository.findByUserIdAndIsActiveTrue(user.getId()).size());
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("id", user.getId());
+        payload.put("email", user.getEmail());
+        payload.put("fullName", user.getFullName() == null ? "" : user.getFullName());
+        payload.put("role", roleAccessService.resolveRoleName(user));
+        payload.put("learningGoal", profile.getLearningGoal() == null ? "" : profile.getLearningGoal());
+        payload.put("targetScore", profile.getTargetScore() == null ? 75 : profile.getTargetScore());
+        payload.put("academicTrack", profile.getAcademicTrack() == null ? "GRADE_11" : profile.getAcademicTrack());
+        payload.put("academicTrackConfirmed", profile.isAcademicTrackConfirmed());
+        payload.put("notifyEmail", profile.isNotifyEmail());
+        payload.put("notifyInApp", profile.isNotifyInApp());
+        payload.put("activeSubjects", subscriptionRepository.findByUserIdAndIsActiveTrue(user.getId()).size());
+        return payload;
     }
 
     private String normalizeAcademicTrack(String track) {

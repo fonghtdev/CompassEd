@@ -94,8 +94,10 @@ public class AuthServiceMysqlImpl implements AuthService {
         if (sub == null || email.isBlank()) {
             throw new RuntimeException("Google token payload missing sub/email");
         }
-        User user = upsertOAuthUser("google", sub, email, name);
-        return authResponseForUser(user);
+        UpsertOAuthResult upsert = upsertOAuthUser("google", sub, email, name);
+        AuthResponse response = authResponseForUser(upsert.user());
+        response.setPlacementOnboardingRequired(upsert.newUser());
+        return response;
     }
 
     @Override
@@ -106,7 +108,7 @@ public class AuthServiceMysqlImpl implements AuthService {
         return toUserDto(user);
     }
 
-    private User upsertOAuthUser(String provider, String providerUserId, String email, String fullName) {
+    private UpsertOAuthResult upsertOAuthUser(String provider, String providerUserId, String email, String fullName) {
         return userRepository.findByOauthProviderAndOauthProviderUserId(provider, providerUserId)
                 .or(() -> userRepository.findByEmail(email))
                 .map(existing -> {
@@ -120,7 +122,7 @@ public class AuthServiceMysqlImpl implements AuthService {
                     if (saved.getRole() == null) {
                         roleAccessService.assignRole(saved, UserRole.USER);
                     }
-                    return saved;
+                    return new UpsertOAuthResult(saved, false);
                 })
                 .orElseGet(() -> {
                     User user = new User();
@@ -131,7 +133,7 @@ public class AuthServiceMysqlImpl implements AuthService {
                     user.setEmailVerified(true);
                     User saved = userRepository.save(user);
                     roleAccessService.assignRole(saved, UserRole.USER);
-                    return saved;
+                    return new UpsertOAuthResult(saved, true);
                 });
     }
 
@@ -143,6 +145,7 @@ public class AuthServiceMysqlImpl implements AuthService {
         AuthResponse response = new AuthResponse();
         response.setToken(token);
         response.setUser(toUserDto(user));
+        response.setPlacementOnboardingRequired(false);
         return response;
     }
 
@@ -174,5 +177,8 @@ public class AuthServiceMysqlImpl implements AuthService {
 
     private String asString(Object value) {
         return value == null ? null : String.valueOf(value);
+    }
+
+    private record UpsertOAuthResult(User user, boolean newUser) {
     }
 }

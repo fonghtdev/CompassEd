@@ -198,6 +198,11 @@ async function initRoadmap() {
   try {
     showLoading("Loading roadmap...");
     await reloadRoadmap();
+    if (roadmap && roadmap.phase === "WAITING_PLACEMENT") {
+      toast("You need to complete placement test for this subject first.", "warn");
+      nav(`/placement-test?subjectId=${subjectId}`, `placementTest.html?subjectId=${subjectId}`);
+      return;
+    }
   } catch (err) {
     toast(`Roadmap load failed: ${err.message}`, "error");
   } finally {

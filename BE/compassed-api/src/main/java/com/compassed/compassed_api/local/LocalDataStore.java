@@ -41,6 +41,7 @@ public class LocalDataStore {
         private Long userId;
         private Long subjectId;
         private String paperJson;
+        private String answersJson;
         private AttemptStatus status;
         private LocalDateTime startedAt;
 
@@ -74,6 +75,14 @@ public class LocalDataStore {
 
         public void setPaperJson(String paperJson) {
             this.paperJson = paperJson;
+        }
+
+        public String getAnswersJson() {
+            return answersJson;
+        }
+
+        public void setAnswersJson(String answersJson) {
+            this.answersJson = answersJson;
         }
 
         public AttemptStatus getStatus() {
@@ -318,6 +327,24 @@ public class LocalDataStore {
 
     public PlacementAttemptMem getAttempt(Long attemptId) {
         return attempts.get(attemptId);
+    }
+
+    public PlacementAttemptMem findLatestInProgressAttempt(Long userId, Long subjectId) {
+        return attempts.values().stream()
+                .filter(a -> a != null
+                        && userId.equals(a.getUserId())
+                        && subjectId.equals(a.getSubjectId())
+                        && a.getStatus() == AttemptStatus.IN_PROGRESS)
+                .sorted((a, b) -> {
+                    LocalDateTime ta = a.getStartedAt();
+                    LocalDateTime tb = b.getStartedAt();
+                    if (ta == null && tb == null) return 0;
+                    if (ta == null) return 1;
+                    if (tb == null) return -1;
+                    return tb.compareTo(ta);
+                })
+                .findFirst()
+                .orElse(null);
     }
 
     public boolean markFreeAttemptUsed(Long userId, Long subjectId) {

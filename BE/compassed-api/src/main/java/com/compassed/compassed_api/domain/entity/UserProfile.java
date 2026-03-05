@@ -36,6 +36,9 @@ public class UserProfile {
     private String academicTrack = "GRADE_11";
 
     @Column(nullable = false)
+    private boolean academicTrackConfirmed = false;
+
+    @Column(nullable = false)
     private boolean notifyEmail = false;
 
     @Column(nullable = false)
