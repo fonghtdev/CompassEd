@@ -48,6 +48,16 @@ public class PlacementServiceLocalImpl implements PlacementService {
             throw new RuntimeException("Subject not found: " + subjectId);
         }
 
+        PlacementAttemptMem inProgress = localDataStore.findLatestInProgressAttempt(userId, subjectId);
+        if (inProgress != null) {
+            PlacementStartResponse resumed = new PlacementStartResponse();
+            resumed.setAttemptId(inProgress.getId());
+            resumed.setSubjectId(subjectId);
+            resumed.setPaperJson(inProgress.getPaperJson());
+            resumed.setAnswersJson(inProgress.getAnswersJson());
+            return resumed;
+        }
+
         int grade = gradeLevel != null ? gradeLevel : 10;
         // Kiểm tra xem có câu hỏi nào trong QuestionBank không
         List<QuestionBank> questions = questionBankRepository.findBySubjectIdAndLevelAndIsActiveTrue(
@@ -62,6 +72,7 @@ public class PlacementServiceLocalImpl implements PlacementService {
         attempt.setUserId(userId);
         attempt.setSubjectId(subjectId);
         attempt.setPaperJson(paperJson);
+        attempt.setAnswersJson("{}");
         attempt.setStatus(AttemptStatus.IN_PROGRESS);
         attempt.setStartedAt(LocalDateTime.now());
         localDataStore.saveAttempt(attempt);
@@ -70,7 +81,24 @@ public class PlacementServiceLocalImpl implements PlacementService {
         resp.setAttemptId(attempt.getId());
         resp.setSubjectId(subjectId);
         resp.setPaperJson(paperJson);
+        resp.setAnswersJson(attempt.getAnswersJson());
         return resp;
+    }
+
+    @Override
+    public void saveProgress(Long userId, Long attemptId, PlacementSubmitRequest request) {
+        PlacementAttemptMem attempt = localDataStore.getAttempt(attemptId);
+        if (attempt == null || !attempt.getUserId().equals(userId)) {
+            throw new RuntimeException("Attempt not found");
+        }
+        if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
+            throw new RuntimeException("Attempt is not in progress");
+        }
+        if (request == null || request.getAnswersJson() == null) {
+            throw new RuntimeException("answersJson is required");
+        }
+        attempt.setAnswersJson(request.getAnswersJson());
+        localDataStore.saveAttempt(attempt);
     }
 
     @Override
@@ -83,7 +111,15 @@ public class PlacementServiceLocalImpl implements PlacementService {
             throw new RuntimeException("Attempt already graded");
         }
 
-        double scorePercent = gradePercent(attempt.getPaperJson(), request.getAnswersJson());
+        String answersJson = request == null ? null : request.getAnswersJson();
+        if (answersJson == null || answersJson.isBlank()) {
+            answersJson = attempt.getAnswersJson();
+        }
+        if (answersJson == null || answersJson.isBlank()) {
+            throw new RuntimeException("answersJson is required");
+        }
+        attempt.setAnswersJson(answersJson);
+        double scorePercent = gradePercent(attempt.getPaperJson(), answersJson);
         Level level = decideLevel(scorePercent);
         String skillAnalysis = """
                 {"mode":"LOCAL","skills":[],"weak_topics":[],"recommendations":["Code-first local mode: no DB"]}
