@@ -5,7 +5,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
@@ -41,7 +43,7 @@ public class PlacementServiceLocalImpl implements PlacementService {
     }
 
     @Override
-    public PlacementStartResponse startPlacement(Long userId, Long subjectId, Integer gradeLevel) {
+    public PlacementStartResponse startPlacement(Long userId, Long subjectId, Integer gradeLevel, String gradeBand) {
         ensureUserExists(userId);
         SubjectInfo subject = localDataStore.getSubject(subjectId);
         if (subject == null) {
@@ -177,9 +179,14 @@ public class PlacementServiceLocalImpl implements PlacementService {
             int correctCount = 0;
             for (Map<String, Object> q : items) {
                 String id = String.valueOf(q.get("id"));
-                String correct = String.valueOf(q.get("correct"));
                 String chosen = answers.get(id);
-                if (chosen != null && chosen.equalsIgnoreCase(correct)) {
+                if (chosen == null || chosen.isBlank()) {
+                    continue;
+                }
+                List<String> options = extractOptions(q.get("options"));
+                String normalizedChosen = normalizeAnswerToken(chosen, options);
+                Set<String> correctSet = parseCorrectAnswers(String.valueOf(q.get("correct")), options);
+                if (!normalizedChosen.isBlank() && correctSet.contains(normalizedChosen)) {
                     correctCount++;
                 }
             }
@@ -215,11 +222,12 @@ public class PlacementServiceLocalImpl implements PlacementService {
             try {
                 List<String> options = objectMapper.readValue(q.getOptions(), new TypeReference<List<String>>() {});
                 item.put("options", options);
+                Set<String> normalizedCorrect = parseCorrectAnswers(q.getCorrectAnswer(), options);
+                item.put("correct", normalizedCorrect.isEmpty() ? "A" : String.join(",", normalizedCorrect));
             } catch (Exception e) {
                 item.put("options", List.of("A. Option A", "B. Option B", "C. Option C", "D. Option D"));
+                item.put("correct", "A");
             }
-            
-            item.put("correct", q.getCorrectAnswer());
             item.put("skill", q.getSkillType());
             paper.add(item);
         }
@@ -290,6 +298,63 @@ public class PlacementServiceLocalImpl implements PlacementService {
         } catch (Exception e) {
             throw new RuntimeException("Cannot generate paper json");
         }
+    }
+
+    private List<String> extractOptions(Object rawOptions) {
+        if (rawOptions instanceof List<?> rawList) {
+            List<String> out = new ArrayList<>();
+            for (Object it : rawList) {
+                out.add(String.valueOf(it == null ? "" : it));
+            }
+            return out;
+        }
+        return List.of();
+    }
+
+    private Set<String> parseCorrectAnswers(String correctRaw, List<String> options) {
+        Set<String> out = new java.util.LinkedHashSet<>();
+        if (correctRaw == null || correctRaw.isBlank()) {
+            return out;
+        }
+        String[] parts = correctRaw.split("[,;/|]");
+        for (String part : parts) {
+            String token = normalizeAnswerToken(part, options);
+            if (!token.isBlank()) out.add(token);
+        }
+        if (out.isEmpty()) {
+            String token = normalizeAnswerToken(correctRaw, options);
+            if (!token.isBlank()) out.add(token);
+        }
+        return out;
+    }
+
+    private String normalizeAnswerToken(String raw, List<String> options) {
+        if (raw == null) return "";
+        String token = raw.trim().toUpperCase(Locale.ROOT);
+        if (token.isBlank()) return "";
+
+        token = token.replace("OPTION_", "");
+
+        if (token.matches("^[A-D]$")) return token;
+        if (token.matches("^[1-4]$")) return String.valueOf((char) ('A' + Integer.parseInt(token) - 1));
+        if (token.matches("^[0-3]$")) return String.valueOf((char) ('A' + Integer.parseInt(token)));
+        if (token.matches("^[A-D][\\.|\\)|:|-]?.*$")) return String.valueOf(token.charAt(0));
+
+        String normalizedText = normalizeOptionText(token);
+        for (int i = 0; i < options.size() && i < 4; i++) {
+            String option = String.valueOf(options.get(i));
+            if (normalizeOptionText(option).equals(normalizedText)) {
+                return String.valueOf((char) ('A' + i));
+            }
+        }
+        return "";
+    }
+
+    private String normalizeOptionText(String raw) {
+        if (raw == null) return "";
+        String text = raw.trim().toUpperCase(Locale.ROOT);
+        text = text.replaceFirst("^[A-D][\\.|\\)|:|-]?\\s*", "");
+        return text.replaceAll("\\s+", " ").trim();
     }
     
     @Override

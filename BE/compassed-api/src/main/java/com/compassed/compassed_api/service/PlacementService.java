@@ -5,7 +5,7 @@ import com.compassed.compassed_api.api.dto.PlacementSubmitRequest;
 import com.compassed.compassed_api.api.dto.PlacementSubmitResponse;
 
 public interface PlacementService {
-    PlacementStartResponse startPlacement(Long userId, Long subjectId, Integer gradeLevel);
+    PlacementStartResponse startPlacement(Long userId, Long subjectId, Integer gradeLevel, String gradeBand);
     void saveProgress(Long userId, Long attemptId, PlacementSubmitRequest request);
     PlacementSubmitResponse submitPlacement(Long userId, Long attemptId, PlacementSubmitRequest request);
     int checkFreeAttempts(Long userId, Long subjectId);

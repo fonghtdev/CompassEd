@@ -50,17 +50,9 @@
 <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">group</span>
 <span class="text-sm font-medium">User Management</span>
 </a>
-<a id="admin-nav-content-bank" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
-<span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">library_books</span>
-<span class="text-sm font-medium">Content Bank</span>
-</a>
-<a id="admin-nav-content-bank" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
-<span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">library_books</span>
-<span class="text-sm font-medium">Content Bank</span>
-</a>
-<a id="admin-nav-roadmaps" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
-<span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">map</span>
-<span class="text-sm font-medium">Roadmap Config</span>
+<a id="admin-nav-question-bank" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="/admin/question-bank">
+<span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">quiz</span>
+<span class="text-sm font-medium">Question Bank</span>
 </a>
 <a id="admin-nav-analytics" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="#">
 <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">analytics</span>
@@ -180,73 +172,24 @@
 </div>
 </div>
 </div>
-<!-- Management Actions -->
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-<button id="admin-open-subject-roadmap-btn" class="bg-white border border-slate-200 hover:border-primary/40 rounded-xl p-4 text-left shadow-sm transition-colors">
-<p class="text-xs font-semibold text-slate-400 uppercase">Catalog</p>
-<p class="mt-1 text-sm font-bold text-slate-900">Subjects &amp; Roadmaps</p>
-<p class="mt-1 text-xs text-slate-500">CRUD subjects and roadmap metadata</p>
-</button>
-<button id="admin-open-content-btn" class="bg-white border border-slate-200 hover:border-primary/40 rounded-xl p-4 text-left shadow-sm transition-colors">
-<p class="text-xs font-semibold text-slate-400 uppercase">Content</p>
-<p class="mt-1 text-sm font-bold text-slate-900">Lessons &amp; Mini-tests</p>
-<p class="mt-1 text-xs text-slate-500">CRUD lesson bank and mini tests</p>
-</button>
-<button id="admin-open-config-btn" class="bg-white border border-slate-200 hover:border-primary/40 rounded-xl p-4 text-left shadow-sm transition-colors">
-<p class="text-xs font-semibold text-slate-400 uppercase">System</p>
-<p class="mt-1 text-sm font-bold text-slate-900">Configs</p>
-<p class="mt-1 text-xs text-slate-500">Manage runtime key/value configs</p>
-</button>
-<button id="admin-open-notification-center-btn" class="bg-white border border-slate-200 hover:border-primary/40 rounded-xl p-4 text-left shadow-sm transition-colors">
-<p class="text-xs font-semibold text-slate-400 uppercase">Messaging</p>
-<p class="mt-1 text-sm font-bold text-slate-900">Notification Center</p>
-<p class="mt-1 text-xs text-slate-500">Broadcast and direct notifications</p>
-</button>
-</div>
 <!-- Main Charts Section -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 <!-- Large Chart -->
 <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
 <div class="flex items-center justify-between mb-6">
 <div>
-<h3 class="text-lg font-bold text-slate-900">Student Progress Trends</h3>
-<p class="text-sm text-slate-500">Average improvement over last 6 months</p>
-</div>
-<div class="flex gap-2">
-<select class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-primary focus:border-primary py-1.5 pl-3 pr-8">
-<option>Last 6 Months</option>
-<option>Last Year</option>
-</select>
+<h3 class="text-lg font-bold text-slate-900">Lượt truy cập và đăng ký mới</h3>
+<p class="text-sm text-slate-500">Dữ liệu thật trong 7 ngày gần nhất</p>
 </div>
 </div>
-<div class="relative h-64 w-full flex items-end justify-between gap-2 px-2">
-<!-- Chart Bars -->
-<div class="w-full h-full flex items-end justify-between gap-4">
-<div class="group relative w-full bg-slate-50 rounded-t-lg hover:bg-primary/5 transition-colors h-[40%]">
-<div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg transition-all group-hover:bg-primary/30 h-full border-t-2 border-primary"></div>
-<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">Jan</span>
-</div>
-<div class="group relative w-full bg-slate-50 rounded-t-lg hover:bg-primary/5 transition-colors h-[55%]">
-<div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg transition-all group-hover:bg-primary/30 h-full border-t-2 border-primary"></div>
-<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">Feb</span>
-</div>
-<div class="group relative w-full bg-slate-50 rounded-t-lg hover:bg-primary/5 transition-colors h-[48%]">
-<div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg transition-all group-hover:bg-primary/30 h-full border-t-2 border-primary"></div>
-<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">Mar</span>
-</div>
-<div class="group relative w-full bg-slate-50 rounded-t-lg hover:bg-primary/5 transition-colors h-[65%]">
-<div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg transition-all group-hover:bg-primary/30 h-full border-t-2 border-primary"></div>
-<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">Apr</span>
-</div>
-<div class="group relative w-full bg-slate-50 rounded-t-lg hover:bg-primary/5 transition-colors h-[72%]">
-<div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg transition-all group-hover:bg-primary/30 h-full border-t-2 border-primary"></div>
-<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">May</span>
-</div>
-<div class="group relative w-full bg-slate-50 rounded-t-lg hover:bg-primary/5 transition-colors h-[85%]">
-<div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg transition-all group-hover:bg-primary/30 h-full border-t-2 border-primary"></div>
-<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">Jun</span>
+<div id="admin-traffic-chart" class="relative h-64 w-full flex items-end justify-between gap-2 px-2">
+<div class="w-full h-full flex items-end justify-between gap-3">
+<div class="w-full h-full bg-slate-50 rounded-lg animate-pulse"></div>
 </div>
 </div>
+<div class="mt-8 flex items-center gap-4 text-xs text-slate-600">
+<span class="inline-flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm bg-blue-500"></span>Lượt truy cập</span>
+<span class="inline-flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm bg-emerald-500"></span>Đăng ký mới</span>
 </div>
 </div>
 <!-- Donut Chart / Distribution -->
@@ -303,36 +246,11 @@
 <th class="px-6 py-3">Student</th>
 <th class="px-6 py-3">Grade</th>
 <th class="px-6 py-3">Date</th>
-<th class="px-6 py-3">Status</th>
 </tr>
 </thead>
-<tbody class="divide-y divide-slate-100">
-<tr class="hover:bg-slate-50/50">
-<td class="px-6 py-3 font-medium text-slate-900 flex items-center gap-3">
-<div class="w-8 h-8 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Student profile image" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB37JSZVly7-UrgWBb6AcqQXgopEaI9iIqMqEV8ujWCwuCueexl1pAojNSaNFQQbJ_Zyz0OjdN3Yc4p9fTxoxWRHmCEDYdShuV4YK2JJS513f_jWpI5TWmnkKV1wKC0rGJLnU0Bq5PL1tRN2loexQtMgQoWe-4_-wSBRYls6PCv619oYY_rAxaSLBCwhTgAD_y1copYjWXqHaZut3J_4tAl8E2LejctZHcBTaG06TmmL5spXA-9eRp_NdghiHVPSfx66-UL48SWK8uE');"></div>
-                                                Sarah Jenkins
-                                            </td>
-<td class="px-6 py-3 text-slate-600">10th Grade</td>
-<td class="px-6 py-3 text-slate-500">Oct 24, 2023</td>
-<td class="px-6 py-3"><span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Active</span></td>
-</tr>
-<tr class="hover:bg-slate-50/50">
-<td class="px-6 py-3 font-medium text-slate-900 flex items-center gap-3">
-<div class="w-8 h-8 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Student profile image" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBmbdHYaLaa1RPfO6rXN4-BT-DNDNn7-fFd8Vud0Sl_7-qO63qzZT1JcEM3TsfzlSf4EStieTIKwbbBzoOpEcu5l_MPnymwIrBt7uhRsT2qTEQEBPWUHQoqSbWw5aa9uJjgPlXcjhSIdUnS9hwbXgTuv8fbxgiPhAMPdEQNGjHoE89Xr6PWbLwA97XArryePvOcJXbgKWkWBdyCJ-u0F6wbt4jdvy77QAEn_wyEZKb7Uf-lFqpI8XOdbAHsGmy8HU90K4ek2jFe8pNR');"></div>
-                                                Michael Chen
-                                            </td>
-<td class="px-6 py-3 text-slate-600">11th Grade</td>
-<td class="px-6 py-3 text-slate-500">Oct 23, 2023</td>
-<td class="px-6 py-3"><span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Pending</span></td>
-</tr>
-<tr class="hover:bg-slate-50/50">
-<td class="px-6 py-3 font-medium text-slate-900 flex items-center gap-3">
-<div class="w-8 h-8 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Student profile image" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBxaEEi-2cKckOvBkIocY_WiDkC21mUD0-l1aSFdrNZOBtc25WUtdvsZiztJvgvUV_4_Ea_2_HH7u4n6zwXjX0MwpB0pk7Wb70WWctsvjV8bcMNojVMJUWUzF3Ez3Qp6lFH1jT2MQ3JU_6SyC8jPEB-zxRuAcq0cVqRuXtbQnHtW7-U6_MUhlbP7w9CAxgu_gy91C2EGRx-Cx8-1xNSPWNzT__V6JASLxyVbegDh_HzYXytdba12x89toP0MPmWNrgXb0csARb5Duss');"></div>
-                                                Emma Wilson
-                                            </td>
-<td class="px-6 py-3 text-slate-600">9th Grade</td>
-<td class="px-6 py-3 text-slate-500">Oct 23, 2023</td>
-<td class="px-6 py-3"><span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Active</span></td>
+<tbody id="admin-recent-signups-body" class="divide-y divide-slate-100">
+<tr>
+<td class="px-6 py-3 text-slate-500" colspan="3">Đang tải dữ liệu...</td>
 </tr>
 </tbody>
 </table>

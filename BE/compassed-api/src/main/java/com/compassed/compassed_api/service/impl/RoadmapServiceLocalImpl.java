@@ -13,6 +13,7 @@ import com.compassed.compassed_api.api.dto.LessonResponse;
 import com.compassed.compassed_api.api.dto.MiniTestResponse;
 import com.compassed.compassed_api.api.dto.MiniTestSubmitRequest;
 import com.compassed.compassed_api.api.dto.RoadmapResponse;
+import com.compassed.compassed_api.api.dto.UpLevelSubmitRequest;
 import com.compassed.compassed_api.domain.enums.Level;
 import com.compassed.compassed_api.local.LessonBank;
 import com.compassed.compassed_api.local.LocalDataStore;
@@ -47,6 +48,12 @@ public class RoadmapServiceLocalImpl implements RoadmapService {
             response.setLessons(List.of());
             response.setMiniTests(List.of());
             response.setProgressPercent(0);
+            response.setCompletedModules(0);
+            response.setTotalModules(5);
+            response.setCheckpointDue(false);
+            response.setCheckpointMessage(null);
+            response.setUpLevelEligible(false);
+            response.setUpLevelMessage(null);
             return response;
         }
 
@@ -56,6 +63,12 @@ public class RoadmapServiceLocalImpl implements RoadmapService {
             response.setLessons(List.of());
             response.setMiniTests(List.of());
             response.setProgressPercent(0);
+            response.setCompletedModules(0);
+            response.setTotalModules(5);
+            response.setCheckpointDue(false);
+            response.setCheckpointMessage(null);
+            response.setUpLevelEligible(false);
+            response.setUpLevelMessage(null);
             return response;
         }
 
@@ -130,6 +143,36 @@ public class RoadmapServiceLocalImpl implements RoadmapService {
 
             String levelKey = context.progress().getCurrentLevel().name();
             context.progress().setFinalScore(levelKey, score);
+            refreshProgressState(context.progress(), context.subject().code());
+            return toResponse(context.subject(), context.progress());
+        }
+    }
+
+    @Override
+    public RoadmapResponse requestReplan(Long userId, Long subjectId) {
+        RoadmapContext context = requireActiveRoadmap(userId, subjectId);
+        synchronized (context.progress()) {
+            String levelKey = context.progress().getCurrentLevel().name();
+            context.progress().setReplanCount(context.progress().getReplanCount() + 1);
+            context.progress().resetLevelProgress(levelKey);
+            context.progress().setPhase("LESSONS");
+            refreshProgressState(context.progress(), context.subject().code());
+            return toResponse(context.subject(), context.progress());
+        }
+    }
+
+    @Override
+    public RoadmapResponse submitUpLevelTest(Long userId, Long subjectId, UpLevelSubmitRequest request) {
+        RoadmapContext context = requireActiveRoadmap(userId, subjectId);
+        Integer score = normalizeScore(request == null ? null : request.getScore());
+        synchronized (context.progress()) {
+            if (context.progress().getCurrentLevel() == Level.L3) {
+                throw new RuntimeException("Already at highest level");
+            }
+            if (score >= 70) {
+                context.progress().setCurrentLevel(nextLevel(context.progress().getCurrentLevel()));
+                context.progress().setPhase("LESSONS");
+            }
             refreshProgressState(context.progress(), context.subject().code());
             return toResponse(context.subject(), context.progress());
         }
@@ -267,6 +310,19 @@ public class RoadmapServiceLocalImpl implements RoadmapService {
         response.setLessons(lessons);
         response.setMiniTests(miniTests);
         response.setProgressPercent(totalLessons == 0 ? 0 : (int) ((completedCount * 100.0) / totalLessons));
+        int completedModules = miniScores.size();
+        response.setCompletedModules(completedModules);
+        response.setTotalModules(totalLessons);
+        boolean checkpointDue = completedModules > 0
+                && completedModules < totalLessons
+                && completedModules % 2 == 0;
+        response.setCheckpointDue(checkpointDue);
+        response.setCheckpointMessage(checkpointDue ? "CHECKPOINT_EVERY_2_MODULES" : null);
+        boolean upLevelEligible = progress.getCurrentLevel() != Level.L3
+                && completedModules >= 2
+                && avgMiniScore >= 85.0;
+        response.setUpLevelEligible(upLevelEligible);
+        response.setUpLevelMessage(upLevelEligible ? "UP_LEVEL_RECOMMENDED" : null);
         response.setMiniTestAverageScore(miniScores.isEmpty() ? null : avgMiniScore);
         response.setFinalTestScore(progress.getFinalScore(levelKey));
         response.setReplanCount(progress.getReplanCount());

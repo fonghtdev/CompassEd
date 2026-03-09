@@ -1,6 +1,7 @@
 package com.compassed.compassed_api.api.controller;
 
 import com.compassed.compassed_api.api.dto.CreateQuestionRequest;
+import com.compassed.compassed_api.api.dto.ImportQuestionsJsonRequest;
 import com.compassed.compassed_api.api.dto.QuestionBankDTO;
 import com.compassed.compassed_api.domain.QuestionBank.Level;
 import com.compassed.compassed_api.service.QuestionBankService;
@@ -48,7 +49,7 @@ public class AdminQuestionBankController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
         
         Page<QuestionBankDTO> result = questionBankService.getAllQuestions(
-            subjectId, level, gradeBand, skillType, isActive, pageable);
+            subjectId, gradeLevel, level, gradeBand, skillType, isActive, pageable);
         
         Map<String, Object> response = new HashMap<>();
         response.put("questions", result.getContent());
@@ -77,6 +78,16 @@ public class AdminQuestionBankController {
     public ResponseEntity<QuestionBankDTO> createQuestion(@RequestBody CreateQuestionRequest request) {
         QuestionBankDTO created = questionBankService.createQuestion(request);
         return ResponseEntity.ok(created);
+    }
+
+    /**
+     * POST /api/admin/questions/import-json
+     * Import nhiều câu hỏi từ chuỗi JSON legacy.
+     */
+    @PostMapping("/import-json")
+    public ResponseEntity<Map<String, Object>> importQuestionsFromJson(@RequestBody ImportQuestionsJsonRequest request) {
+        Map<String, Object> result = questionBankService.importQuestionsFromLegacyJson(request.getRawJson());
+        return ResponseEntity.ok(result);
     }
 
     /**

@@ -49,7 +49,7 @@ function initSharedLayout() {
     footer.className = "border-t border-slate-200 bg-white py-10 mt-12";
     footer.innerHTML = `
       <div class="mx-auto w-full max-w-[1280px] px-6 lg:px-20 text-center text-sm text-slate-500">
-        Â© 2026 CompassED Learning. All rights reserved.
+        © 2026 CompassED Learning. All rights reserved.
       </div>`;
     document.body.appendChild(footer);
   }

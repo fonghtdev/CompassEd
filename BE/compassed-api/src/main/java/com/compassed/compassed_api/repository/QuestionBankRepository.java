@@ -20,6 +20,7 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, Long
      */
     List<QuestionBank> findBySubjectIdAndLevelAndIsActiveTrue(Long subjectId, Level level);
     List<QuestionBank> findBySubjectIdAndLevelAndGradeBandAndIsActiveTrue(Long subjectId, Level level, String gradeBand);
+    List<QuestionBank> findBySubjectIdAndLevelAndGradeLevelAndIsActiveTrue(Long subjectId, Level level, Integer gradeLevel);
 
     /**
      * Tìm câu hỏi theo subject, level và skill type

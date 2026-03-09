@@ -114,7 +114,7 @@ function resolvePlacementSubjectId() {
 
 function resolvePlacementGrade(subjectId) {
   const key = `compassed_grade_level_${subjectId}`;
-  return Number(localStorage.getItem(key) || 10);
+  return Number(localStorage.getItem(key) || 11);
 }
 
 function askVerificationCode(email) {

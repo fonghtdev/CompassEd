@@ -1,5 +1,7 @@
 package com.compassed.compassed_api.domain.entity;
 
+import java.time.LocalDateTime;
+
 import com.compassed.compassed_api.domain.enums.UserRole;
 
 import jakarta.persistence.*;
@@ -34,4 +36,14 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserRole role = UserRole.USER;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }

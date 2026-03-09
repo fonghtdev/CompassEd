@@ -21,15 +21,78 @@ function isPaymentRequiredError(message) {
   return msg.includes("payment_required") || msg.includes("need subscription") || msg.includes("payment required");
 }
 
+function isQuestionBankInsufficientError(message) {
+  const msg = String(message || "").toLowerCase();
+  return msg.includes("question_bank_insufficient") || msg.includes("need 20 questions") || msg.includes("need 10 questions");
+}
+
+async function tryRouteToLatestPlacementResult(subjectId) {
+  try {
+    const rows = await api("/api/history/placements", "GET", null, true);
+    if (!Array.isArray(rows) || !rows.length) return false;
+    const latest = rows.find((x) => Number(x.subjectId) === Number(subjectId)) || rows[0];
+    if (!latest) return false;
+    const payload = {
+      scorePercent: Number(latest.scorePercent || 0),
+      level: latest.level || "L1"
+    };
+    localStorage.setItem(KEYS.result, JSON.stringify(payload));
+    nav("/placement-result", "placementTestResult.html");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function getGradeLevel(subjectId) {
   const key = `compassed_grade_level_${subjectId}`;
+  return Number(localStorage.getItem(key) || 11);
+}
+
+function normalizeGradeBand(value) {
+  const v = String(value || "").trim().toUpperCase();
+  if (v === "GRADE_12" || v === "UNI_PREP") return v;
+  return "GRADE_11";
+}
+
+function trackToGradeBand(track) {
+  const t = String(track || "").trim().toUpperCase();
+  if (t === "GRADE_12" || t === "UNI_PREP") return t;
+  return "GRADE_11";
+}
+
+function gradeBandToGradeLevel(gradeBand) {
+  return gradeBand === "GRADE_12" || gradeBand === "UNI_PREP" ? 12 : 11;
+}
+
+function getPracticeFilters(subjectId, gradeLevel) {
   const q = new URLSearchParams(window.location.search);
-  const fromUrl = Number(q.get("grade") || q.get("gradeLevel"));
-  if (fromUrl) {
-    localStorage.setItem(key, String(fromUrl));
-    return fromUrl;
-  }
-  return Number(localStorage.getItem(key) || 10);
+  const levelKey = `compassed_practice_level_${subjectId}`;
+  const gradeBandKey = `compassed_grade_band_${subjectId}`;
+  const fromUrlLevel = String(q.get("level") || "").trim().toUpperCase();
+
+  const level = fromUrlLevel === "L1" || fromUrlLevel === "L2" || fromUrlLevel === "L3"
+    ? fromUrlLevel
+    : String(localStorage.getItem(levelKey) || "L1").toUpperCase();
+  const gradeBand = normalizeGradeBand(localStorage.getItem(gradeBandKey) || (gradeLevel >= 12 ? "GRADE_12" : "GRADE_11"));
+
+  localStorage.setItem(levelKey, level);
+  localStorage.setItem(gradeBandKey, gradeBand);
+  return { level, gradeBand };
+}
+
+function buildQuestionBankPath(subjectId, level, gradeBand, size = 50) {
+  const params = new URLSearchParams();
+  params.set("subjectId", String(subjectId));
+  params.set("size", String(size));
+  if (level) params.set("level", level);
+  if (gradeBand) params.set("gradeBand", gradeBand);
+  return `/api/questions?${params.toString()}`;
+}
+
+function isPreviewEnabled() {
+  const q = new URLSearchParams(window.location.search);
+  return q.get("preview") === "1";
 }
 
 function renderPlacementOptions(options, selected, onSelect) {
@@ -63,7 +126,21 @@ async function initPlacement() {
   }
 
   const subjectId = getSubjectId();
-  const gradeLevel = getGradeLevel(subjectId);
+  let gradeLevel = getGradeLevel(subjectId);
+  let practiceFilters = getPracticeFilters(subjectId, gradeLevel);
+  try {
+    const profile = await api("/api/me/profile", "GET", null, true);
+    const subjectGradeBandKey = `compassed_grade_band_${subjectId}`;
+    const subjectGradeLevelKey = `compassed_grade_level_${subjectId}`;
+    const profileBand = trackToGradeBand(profile && profile.academicTrack);
+    const profileGrade = gradeBandToGradeLevel(profileBand);
+    gradeLevel = profileGrade;
+    practiceFilters = { ...practiceFilters, gradeBand: profileBand };
+    localStorage.setItem(subjectGradeBandKey, profileBand);
+    localStorage.setItem(subjectGradeLevelKey, String(profileGrade));
+  } catch (e) {
+    // keep local fallback
+  }
   console.log("Subject ID:", subjectId);
 
   const attemptKey = `${KEYS.attemptId}_${subjectId}`;
@@ -97,7 +174,12 @@ async function initPlacement() {
     if (!attemptId || !paper.length) {
       try {
         console.log("Starting placement attempt...");
-        const started = await api(`/api/subjects/${subjectId}/placement-tests?gradeLevel=${gradeLevel}`, "POST", null, true);
+        const started = await api(
+          `/api/subjects/${subjectId}/placement-tests?gradeLevel=${gradeLevel}&gradeBand=${encodeURIComponent(practiceFilters.gradeBand || "")}`,
+          "POST",
+          null,
+          true
+        );
         console.log("Placement started successfully:", started);
         attemptId = started.attemptId;
         paper = JSON.parse(started.paperJson || "[]");
@@ -111,9 +193,17 @@ async function initPlacement() {
           nav("/checkout", "checkout.html");
           return;
         }
+        if (!isPreviewEnabled()) {
+          throw e;
+        }
         console.warn("Placement start failed. Falling back to question bank:", e);
         try {
-          const resp = await api(`/api/questions?subjectId=${subjectId}&gradeLevel=${gradeLevel}&size=50`, "GET", null, false);
+          const resp = await api(
+            buildQuestionBankPath(subjectId, practiceFilters.level, practiceFilters.gradeBand, 50),
+            "GET",
+            null,
+            false
+          );
           console.log("Question bank response:", resp);
           // API trả về { questions: [...], totalItems: N, ... }
           const qrows = (resp && Array.isArray(resp.questions)) ? resp.questions
@@ -168,9 +258,14 @@ async function initPlacement() {
       if (!Array.isArray(p) || !p.length) return true;
       return p.some((it) => (it.q && String(it.q).toLowerCase().includes("demo")) || (it.q && String(it.q).toLowerCase().includes("question") && String(it.q).toLowerCase().includes("demo")));
     };
-    if (looksLikeDemo(paper)) {
+    if (looksLikeDemo(paper) && isPreviewEnabled()) {
       try {
-        const resp = await api(`/api/questions?subjectId=${subjectId}&gradeLevel=${gradeLevel}&size=50`, "GET", null, false);
+        const resp = await api(
+          buildQuestionBankPath(subjectId, practiceFilters.level, practiceFilters.gradeBand, 50),
+          "GET",
+          null,
+          false
+        );
         // API trả về { questions: [...], totalItems: N, ... }
         const qrows = (resp && Array.isArray(resp.questions)) ? resp.questions
                      : Array.isArray(resp) ? resp : [];
@@ -215,18 +310,9 @@ async function initPlacement() {
     const settingsBtn = document.getElementById("placement-settings-btn");
     const loadPreviewBtn = document.getElementById("placement-load-preview-btn");
     const previewSubjectSel = document.getElementById("placement-preview-subject");
-    const gradeSelect = document.getElementById("placement-grade-select");
-    if (gradeSelect) {
-      gradeSelect.value = String(gradeLevel);
-      gradeSelect.addEventListener("change", () => {
-        const newGrade = Number(gradeSelect.value) || 10;
-        localStorage.setItem(gradeKey, String(newGrade));
-        const params = new URLSearchParams(window.location.search);
-        params.set("grade", String(newGrade));
-        params.set("subjectId", String(subjectId));
-        params.set("reset", "1");
-        window.location.search = params.toString();
-      });
+    const gradeLabel = document.getElementById("placement-grade-label");
+    if (gradeLabel) {
+      gradeLabel.textContent = gradeLevel >= 12 ? "Lớp 12" : "Lớp 11";
     }
 
     // --- Đồng hồ đếm ngược 45 phút ---
@@ -351,6 +437,14 @@ async function initPlacement() {
         nav("/placement-result", "placementTestResult.html");
       } catch (e) {
         const msg = String(e && e.message ? e.message : "");
+        const routed = await tryRouteToLatestPlacementResult(subjectId);
+        if (routed) {
+          clearInterval(timerInterval);
+          localStorage.removeItem(attemptKey);
+          localStorage.removeItem(paperKey);
+          localStorage.removeItem(answersKey);
+          return;
+        }
         if (isUnauthorizedError(msg)) {
           clearAuth();
           toast("Session expired. Please login again.", "warn");
@@ -380,7 +474,12 @@ async function initPlacement() {
         const sid = Number(previewSubjectSel.value) || subjectId;
         try {
           showLoading("Loading preview questions...");
-          const resp = await api(`/api/questions?subjectId=${sid}&gradeLevel=${gradeLevel}&size=50`, "GET", null, false);
+          const resp = await api(
+            buildQuestionBankPath(sid, practiceFilters.level, practiceFilters.gradeBand, 50),
+            "GET",
+            null,
+            false
+          );
           console.log("Load preview response:", resp);
           // API trả về { questions: [...], totalItems: N, ... }
           const qrows = (resp && Array.isArray(resp.questions)) ? resp.questions
@@ -451,6 +550,16 @@ async function initPlacement() {
       clearAuth();
       toast("Session expired. Please login again.", "warn");
       goAuthWithRedirect(`/placement-test?subjectId=${subjectId}`, `placementTest.html?subjectId=${subjectId}`);
+      return;
+    }
+    if (isQuestionBankInsufficientError(msg)) {
+      const attemptKey = `${KEYS.attemptId}_${subjectId}`;
+      const paperKey = `${KEYS.paper}_${subjectId}`;
+      const answersKey = `${KEYS.answers}_${subjectId}`;
+      localStorage.removeItem(attemptKey);
+      localStorage.removeItem(paperKey);
+      localStorage.removeItem(answersKey);
+      toast("Chưa đủ ngân hàng câu hỏi đúng môn/lớp để tạo đề placement 20-20-10. Vui lòng bổ sung Question Bank.", "error");
       return;
     }
     toast(`Cannot load placement: ${err.message}`, "error");
