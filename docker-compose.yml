@@ -7,8 +7,8 @@ services:
     environment:
       FE_HOST: 0.0.0.0
       FE_PORT: 3000
-      API_BASE: ${FE_API_BASE:https://compassed.io.vn}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:}
+      API_BASE: https://compassed.io.vn
+      GOOGLE_CLIENT_ID: 418581116582-qet8ant9k0t319hkd3640dtsa54eg07v.apps.googleusercontent.com
     ports:
       - "3000:3000"
 
@@ -22,32 +22,31 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: mysql
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:}
-      OPENAI_MODEL: ${OPENAI_MODEL:gpt-5}
-      MAIL_HOST: ${MAIL_HOST:smtp.gmail.com}
-      MAIL_PORT: ${MAIL_PORT:587}
-      MAIL_USERNAME: ${MAIL_USERNAME:}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:}
-      MAIL_FROM: ${MAIL_FROM:}
-      MYSQL_URL: ${MYSQL_URL:jdbc:mysql://mysql:3306/compassed?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
-      MYSQL_USER: ${MYSQL_USER:root}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:1234}
-      JWT_SECRET: ${JWT_SECRET:change-me-compassed-jwt-secret-32chars-min}
-      SERVER_PORT: ${SERVER_PORT:8080}
-      CHECKOUT_QR_IMAGE_URL: ${CHECKOUT_QR_IMAGE_URL:https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=CompassED_Payment_Placeholder}
-      CHECKOUT_QR_ACCOUNT_NAME: ${CHECKOUT_QR_ACCOUNT_NAME:COMPASSED}
-      CHECKOUT_QR_ACCOUNT_NO: ${CHECKOUT_QR_ACCOUNT_NO:0000000000}
-      CHECKOUT_QR_BANK: ${CHECKOUT_QR_BANK:VietQR}
-      CHECKOUT_QR_BANK_BIN: ${CHECKOUT_QR_BANK_BIN:970422}
-      PAYOS_ENABLED: ${PAYOS_ENABLED:true}
-      PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID:}
-      PAYOS_API_KEY: ${PAYOS_API_KEY:}
-      PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY:}
-      PAYOS_BASE_URL: ${PAYOS_BASE_URL:https://api-merchant.payos.vn}
-      PAYOS_RETURN_URL: ${PAYOS_RETURN_URL:https://compassed.io.vn/checkout}
-      PAYOS_CANCEL_URL: ${PAYOS_CANCEL_URL:https://compassed.io.vn/checkout}
-      PAYOS_CHECK_COOLDOWN_SECONDS: ${PAYOS_CHECK_COOLDOWN_SECONDS:15}
+      GOOGLE_CLIENT_ID: 418581116582-qet8ant9k0t319hkd3640dtsa54eg07v.apps.googleusercontent.com
+      OPENAI_API_KEY: "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"
+      MAIL_HOST: smtp.gmail.com
+      MAIL_PORT: 587
+      MAIL_USERNAME: fonght.dev@gmail.com
+      MAIL_PASSWORD: yylmvpdohcxcvhzl
+      MAIL_FROM: fonght.dev@gmail.com
+      MYSQL_URL: jdbc:mysql://mysql:3306/compassed?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 1234
+      JWT_SECRET: this-is-a-very-strong-jwt-secret-min-32
+      SERVER_PORT: 8080
+      CHECKOUT_QR_IMAGE_URL: https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=CompassED_Payment_Placeholder
+      CHECKOUT_QR_ACCOUNT_NAME: COMPASSED
+      CHECKOUT_QR_ACCOUNT_NO: 8990186866886
+      CHECKOUT_QR_BANK: VietQR
+      CHECKOUT_QR_BANK_BIN: 970422
+      PAYOS_ENABLED: "true"
+      PAYOS_CLIENT_ID: "64cb95c4-4a51-4ea7-b706-80ad9431d07c"
+      PAYOS_API_KEY: "1db41152-008c-4b99-9c13-31cb5945e338"
+      PAYOS_CHECKSUM_KEY: "cd111aebc37699c0b0223595fde809ec7752d8354f1e11b406ffba893b28fdcd"
+      PAYOS_BASE_URL: https://api-merchant.payos.vn
+      PAYOS_RETURN_URL: https://compassed.io.vn/checkout
+      PAYOS_CANCEL_URL: https://compassed.io.vn/checkout
+      PAYOS_CHECK_COOLDOWN_SECONDS: 15
     ports:
       - "8080:8080"
 
