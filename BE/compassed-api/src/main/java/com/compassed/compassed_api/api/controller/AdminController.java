@@ -1,6 +1,9 @@
 package com.compassed.compassed_api.api.controller;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +47,9 @@ import com.compassed.compassed_api.repository.SubjectRepository;
 import com.compassed.compassed_api.repository.SubscriptionRepository;
 import com.compassed.compassed_api.repository.SystemConfigRepository;
 import com.compassed.compassed_api.repository.UserRepository;
+import com.compassed.compassed_api.repository.UserProfileRepository;
 import com.compassed.compassed_api.repository.UserRoadmapAssignmentRepository;
+import com.compassed.compassed_api.repository.WebVisitActivityRepository;
 import com.compassed.compassed_api.security.CurrentUserService;
 import com.compassed.compassed_api.service.PaymentService;
 import com.compassed.compassed_api.service.RoleAccessService;
@@ -65,6 +70,8 @@ public class AdminController {
     private final AiGenerationLogRepository aiGenerationLogRepository;
     private final LessonRepository lessonRepository;
     private final MiniTestRepository miniTestRepository;
+    private final UserProfileRepository userProfileRepository;
+    private final WebVisitActivityRepository webVisitActivityRepository;
     private final PaymentService paymentService;
     private final RoleAccessService roleAccessService;
     private final CurrentUserService currentUserService;
@@ -81,6 +88,8 @@ public class AdminController {
             AiGenerationLogRepository aiGenerationLogRepository,
             LessonRepository lessonRepository,
             MiniTestRepository miniTestRepository,
+            UserProfileRepository userProfileRepository,
+            WebVisitActivityRepository webVisitActivityRepository,
             PaymentService paymentService,
             RoleAccessService roleAccessService,
             CurrentUserService currentUserService) {
@@ -95,6 +104,8 @@ public class AdminController {
         this.aiGenerationLogRepository = aiGenerationLogRepository;
         this.lessonRepository = lessonRepository;
         this.miniTestRepository = miniTestRepository;
+        this.userProfileRepository = userProfileRepository;
+        this.webVisitActivityRepository = webVisitActivityRepository;
         this.paymentService = paymentService;
         this.roleAccessService = roleAccessService;
         this.currentUserService = currentUserService;
@@ -109,6 +120,28 @@ public class AdminController {
         long passedPlacements = placementResultRepository.countPassed();
         Double avgScore = placementResultRepository.averageScorePercent();
         long roadmapAssignments = userRoadmapAssignmentRepository.count();
+        LocalDate toDate = LocalDate.now();
+        LocalDate fromDate = toDate.minusDays(6);
+
+        Map<LocalDate, Long> dailyVisitMap = new LinkedHashMap<>();
+        for (var row : webVisitActivityRepository.countDailyVisits(fromDate, toDate)) {
+            dailyVisitMap.put(row.getDay(), row.getTotal() == null ? 0L : row.getTotal());
+        }
+        Map<LocalDate, Long> dailySignupMap = new LinkedHashMap<>();
+        for (var row : userRepository.countDailyNewUsers(fromDate, toDate)) {
+            dailySignupMap.put(row.getDay(), row.getTotal() == null ? 0L : row.getTotal());
+        }
+        List<Map<String, Object>> trafficSeries = new ArrayList<>();
+        DateTimeFormatter labelFmt = DateTimeFormatter.ofPattern("dd/MM");
+        for (LocalDate day = fromDate; !day.isAfter(toDate); day = day.plusDays(1)) {
+            long visitCount = dailyVisitMap.getOrDefault(day, 0L);
+            long signupCount = dailySignupMap.getOrDefault(day, 0L);
+            trafficSeries.add(Map.of(
+                    "date", day.toString(),
+                    "label", day.format(labelFmt),
+                    "visits", visitCount,
+                    "newUsers", signupCount));
+        }
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("totalUsers", totalUsers);
@@ -120,17 +153,34 @@ public class AdminController {
                 totalPlacementResults == 0 ? 0.0 : (passedPlacements * 100.0) / totalPlacementResults);
         response.put("averageScorePercent", avgScore == null ? 0.0 : avgScore);
         response.put("roadmapAssignments", roadmapAssignments);
+        response.put("trafficSeries", trafficSeries);
         return response;
     }
 
     @GetMapping("/users")
     public List<Map<String, Object>> users() {
-        return userRepository.findAll().stream().map(u -> {
+        return userRepository.findAll().stream()
+                .sorted((a, b) -> {
+                    if (a.getCreatedAt() == null && b.getCreatedAt() == null) {
+                        return Long.compare(b.getId(), a.getId());
+                    }
+                    if (a.getCreatedAt() == null) {
+                        return 1;
+                    }
+                    if (b.getCreatedAt() == null) {
+                        return -1;
+                    }
+                    return b.getCreatedAt().compareTo(a.getCreatedAt());
+                })
+                .map(u -> {
+            var profileOpt = userProfileRepository.findByUser_Id(u.getId());
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id", u.getId());
             row.put("email", u.getEmail());
             row.put("fullName", u.getFullName());
             row.put("role", roleAccessService.resolveRoleName(u));
+            row.put("academicTrack", profileOpt.map(p -> p.getAcademicTrack()).orElse("GRADE_11"));
+            row.put("createdAt", u.getCreatedAt());
             return row;
         }).toList();
     }

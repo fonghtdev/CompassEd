@@ -49,7 +49,8 @@ public class SecurityConfig {
                                 "/api/payments/callback/payos",
                                 "/api/subjects",
                                 "/api/questions",
-                                "/api/pricing/plans").permitAll()
+                                "/api/pricing/plans",
+                                "/api/analytics/visit").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

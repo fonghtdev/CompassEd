@@ -22,6 +22,12 @@ public class RoadmapResponse {
     private Integer replanCount;
     private Double miniTestAverageScore;
     private Integer progressPercent;
+    private Integer completedModules;
+    private Integer totalModules;
+    private Boolean checkpointDue;
+    private String checkpointMessage;
+    private Boolean upLevelEligible;
+    private String upLevelMessage;
     private String phase;
     private String nextStep;
 }

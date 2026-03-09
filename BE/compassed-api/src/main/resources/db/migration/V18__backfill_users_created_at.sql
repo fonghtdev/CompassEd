@@ -1,0 +1,5 @@
+UPDATE users
+SET created_at = COALESCE(created_at, NOW());
+
+ALTER TABLE users
+    MODIFY COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;

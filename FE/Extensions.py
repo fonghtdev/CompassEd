@@ -32,11 +32,25 @@ def placement_result():
 
 @app.route("/learning-roadmap")
 def learning_roadmap():
-    return render_template("coursesDetail.html")
+    return render_template("roadmap.html")
+
+@app.route("/roadmap")
+def roadmap_page():
+    return render_template("roadmap.html")
 
 @app.route("/roadmap-dashboard")
 def roadmap_dashboard():
     return render_template("roadmapDashboard.html")
+
+@app.route("/roadmap-tutor")
+@app.route("/roadmapTutor.html")
+def roadmap_tutor():
+    return render_template("roadmapTutor.html")
+
+@app.route("/learning-ai")
+@app.route("/learningAi.html")
+def learning_ai():
+    return render_template("learningAi.html")
 
 
 @app.route("/history")

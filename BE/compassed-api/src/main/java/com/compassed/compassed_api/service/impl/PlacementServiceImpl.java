@@ -2,13 +2,16 @@ package com.compassed.compassed_api.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.Set;
+import java.util.Locale;
+import java.util.LinkedHashSet;
 
 import org.springframework.context.annotation.Profile;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +23,7 @@ import com.compassed.compassed_api.domain.entity.PlacementAttempt;
 import com.compassed.compassed_api.domain.entity.PlacementResult;
 import com.compassed.compassed_api.domain.entity.Subject;
 import com.compassed.compassed_api.domain.entity.User;
+import com.compassed.compassed_api.domain.entity.UserProfile;
 import com.compassed.compassed_api.domain.entity.UserSubjectFreeAttempt;
 import com.compassed.compassed_api.domain.enums.AttemptStatus;
 import com.compassed.compassed_api.domain.enums.Level;
@@ -29,6 +33,7 @@ import com.compassed.compassed_api.repository.QuestionBankRepository;
 import com.compassed.compassed_api.repository.SubjectRepository;
 import com.compassed.compassed_api.repository.SubscriptionRepository;
 import com.compassed.compassed_api.repository.UserRepository;
+import com.compassed.compassed_api.repository.UserProfileRepository;
 import com.compassed.compassed_api.repository.UserSubjectFreeAttemptRepository;
 import com.compassed.compassed_api.service.AiService;
 import com.compassed.compassed_api.service.PlacementService;
@@ -42,6 +47,7 @@ public class PlacementServiceImpl implements PlacementService {
 
     private final SubjectRepository subjectRepository;
     private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
     private final UserSubjectFreeAttemptRepository freeAttemptRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final PlacementAttemptRepository attemptRepository;
@@ -53,6 +59,7 @@ public class PlacementServiceImpl implements PlacementService {
     public PlacementServiceImpl(
             SubjectRepository subjectRepository,
             UserRepository userRepository,
+            UserProfileRepository userProfileRepository,
             UserSubjectFreeAttemptRepository freeAttemptRepository,
             SubscriptionRepository subscriptionRepository,
             PlacementAttemptRepository attemptRepository,
@@ -62,6 +69,7 @@ public class PlacementServiceImpl implements PlacementService {
             AiService aiService) {
         this.subjectRepository = subjectRepository;
         this.userRepository = userRepository;
+        this.userProfileRepository = userProfileRepository;
         this.freeAttemptRepository = freeAttemptRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.attemptRepository = attemptRepository;
@@ -72,7 +80,7 @@ public class PlacementServiceImpl implements PlacementService {
     }
 
     @Override
-    public PlacementStartResponse startPlacement(Long userId, Long subjectId, Integer gradeLevel) {
+    public PlacementStartResponse startPlacement(Long userId, Long subjectId, Integer gradeLevel, String gradeBand) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
@@ -83,12 +91,16 @@ public class PlacementServiceImpl implements PlacementService {
                 .findTopByUser_IdAndSubject_IdAndStatusOrderByStartedAtDesc(userId, subjectId, AttemptStatus.IN_PROGRESS)
                 .orElse(null);
         if (inProgress != null) {
+            if (isLegacyDemoPaper(inProgress.getPaperJson())) {
+                attemptRepository.delete(inProgress);
+            } else {
             PlacementStartResponse resp = new PlacementStartResponse();
             resp.setAttemptId(inProgress.getId());
             resp.setSubjectId(subjectId);
             resp.setPaperJson(inProgress.getPaperJson());
             resp.setAnswersJson(inProgress.getAnswersJson());
             return resp;
+            }
         }
 
         UserSubjectFreeAttempt free = freeAttemptRepository
@@ -102,20 +114,15 @@ public class PlacementServiceImpl implements PlacementService {
                 });
 
         boolean canUseFree = !free.isUsed();
-
-        if (!canUseFree) {
-            boolean hasSub = subscriptionRepository.existsByUserIdAndSubjectIdAndIsActiveTrue(userId, subjectId);
-            if (!hasSub) {
-                throw new RuntimeException("PAYMENT_REQUIRED: Need subscription to start placement");
-            }
-        } else {
+        if (canUseFree) {
             free.setUsed(true);
             free.setUsedAt(LocalDateTime.now());
             freeAttemptRepository.save(free);
         }
 
-        int grade = gradeLevel != null ? gradeLevel : 10;
-        String paperJson = generatePlacementPaperJson(subject.getCode(), subjectId, grade);
+        String normalizedGradeBand = resolveUserGradeBand(userId, gradeBand, gradeLevel);
+        int grade = resolveGradeLevel(gradeLevel, normalizedGradeBand);
+        String paperJson = generatePlacementPaperJson(subject.getCode(), subjectId, grade, normalizedGradeBand);
 
         PlacementAttempt attempt = new PlacementAttempt();
         attempt.setUser(user);
@@ -158,7 +165,15 @@ public class PlacementServiceImpl implements PlacementService {
                 .orElseThrow(() -> new RuntimeException("Attempt not found"));
 
         if (attempt.getStatus() == AttemptStatus.GRADED) {
-            throw new RuntimeException("Attempt already graded");
+            PlacementResult latest = resultRepository
+                    .findTopByUser_IdAndSubject_IdOrderByCreatedAtDesc(userId, attempt.getSubject().getId())
+                    .orElseThrow(() -> new RuntimeException("Attempt already graded but result not found"));
+            PlacementSubmitResponse already = new PlacementSubmitResponse();
+            already.setScorePercent(latest.getScorePercent());
+            already.setLevel(latest.getLevel() == null ? null : latest.getLevel().name());
+            already.setSkillAnalysisJson(latest.getSkillAnalysisJson());
+            already.setNextStep("GO_TO_RESULT");
+            return already;
         }
 
         String answersJson = request == null ? null : request.getAnswersJson();
@@ -243,9 +258,14 @@ public class PlacementServiceImpl implements PlacementService {
 
             for (Map<String, Object> q : items) {
                 String id = String.valueOf(q.get("id"));
-                String correct = String.valueOf(q.get("correct"));
                 String chosen = answers.get(id);
-                if (chosen != null && chosen.equalsIgnoreCase(correct)) {
+                if (chosen == null || chosen.isBlank()) {
+                    continue;
+                }
+                List<String> options = extractOptions(q.get("options"));
+                String normalizedChosen = normalizeAnswerToken(chosen, options);
+                Set<String> correctSet = parseCorrectAnswers(String.valueOf(q.get("correct")), options);
+                if (!normalizedChosen.isBlank() && correctSet.contains(normalizedChosen)) {
                     correctCount++;
                 }
             }
@@ -259,57 +279,244 @@ public class PlacementServiceImpl implements PlacementService {
         }
     }
 
-    private String generatePlacementPaperJson(String subjectCode, Long subjectId, int gradeLevel) {
+    private String generatePlacementPaperJson(String subjectCode, Long subjectId, int gradeLevel, String gradeBand) {
         try {
-            List<Map<String, Object>> paper = new ArrayList<>();
-            var rows = questionBankRepository.findRandomQuestions(subjectId, "L1", gradeLevel, PageRequest.of(0, 50));
-            if (rows != null && !rows.isEmpty()) {
-                for (var qrow : rows) {
-                    Map<String, Object> q = new LinkedHashMap<>();
-                    q.put("id", qrow.getId());
-                    q.put("q", qrow.getQuestionText());
-                    try {
-                        List<String> options = objectMapper.readValue(qrow.getOptions(), new TypeReference<List<String>>() {
-                        });
-                        q.put("options", options);
-                    } catch (Exception e) {
-                        q.put("options", List.of("A. Option A", "B. Option B", "C. Option C", "D. Option D"));
-                    }
-                    q.put("correct", qrow.getCorrectAnswer());
-                    q.put("skill", qrow.getSkillType());
-                    paper.add(q);
-                }
-                return objectMapper.writeValueAsString(paper);
+            List<Map<String, Object>> paper = new ArrayList<>(50);
+            Set<Long> usedQuestionIds = new LinkedHashSet<>();
+
+            addPlacementQuestionsStrict(
+                    paper, usedQuestionIds, subjectId,
+                    com.compassed.compassed_api.domain.QuestionBank.Level.L1,
+                    gradeLevel, gradeBand, 20);
+            addPlacementQuestionsStrict(
+                    paper, usedQuestionIds, subjectId,
+                    com.compassed.compassed_api.domain.QuestionBank.Level.L2,
+                    gradeLevel, gradeBand, 20);
+            addPlacementQuestionsStrict(
+                    paper, usedQuestionIds, subjectId,
+                    com.compassed.compassed_api.domain.QuestionBank.Level.L3,
+                    gradeLevel, gradeBand, 10);
+
+            if (paper.size() != 50) {
+                throw new RuntimeException("QUESTION_BANK_INSUFFICIENT: Expected 50 questions but got " + paper.size());
             }
+            Collections.shuffle(paper);
+            return objectMapper.writeValueAsString(paper);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            // fallback below
+            throw new RuntimeException("Failed to generate placement paper: " + e.getMessage(), e);
         }
-        return generateDummyPaperJson(subjectCode, gradeLevel);
     }
 
-    private String generateDummyPaperJson(String subjectCode, int gradeLevel) {
-        List<Map<String, Object>> paper = new ArrayList<>();
-        String[] opts = new String[] { "A", "B", "C", "D" };
+    private void addPlacementQuestionsStrict(
+            List<Map<String, Object>> paper,
+            Set<Long> usedQuestionIds,
+            Long subjectId,
+            com.compassed.compassed_api.domain.QuestionBank.Level level,
+            int gradeLevel,
+            String gradeBand,
+            int targetCount) {
+        if (targetCount <= 0) return;
 
-        Random rnd = new Random();
-        for (int i = 1; i <= 50; i++) {
-            Map<String, Object> q = new LinkedHashMap<>();
-            q.put("id", i);
-            q.put("q", "[" + subjectCode + " | Grade " + gradeLevel + "] Question " + i);
-            q.put("options", List.of(
-                    "A. Option A",
-                    "B. Option B",
-                    "C. Option C",
-                    "D. Option D"));
-            q.put("correct", opts[rnd.nextInt(opts.length)]);
-            q.put("skill", "topic_demo");
-            paper.add(q);
+        List<com.compassed.compassed_api.domain.QuestionBank> pool = loadQuestionPool(subjectId, level, gradeLevel, gradeBand);
+        List<com.compassed.compassed_api.domain.QuestionBank> available = new ArrayList<>();
+        for (com.compassed.compassed_api.domain.QuestionBank row : pool) {
+            if (row.getId() == null || usedQuestionIds.contains(row.getId())) continue;
+            available.add(row);
+        }
+        if (available.size() < targetCount) {
+            throw new RuntimeException(
+                    "QUESTION_BANK_INSUFFICIENT: Need " + targetCount + " questions for " + level.name()
+                            + ", but only " + available.size()
+                            + " (subjectId=" + subjectId + ", gradeBand=" + gradeBand + ")");
         }
 
+        Collections.shuffle(available);
+        int added = 0;
+        for (com.compassed.compassed_api.domain.QuestionBank row : available) {
+            paper.add(toPlacementQuestion(row));
+            usedQuestionIds.add(row.getId());
+            added++;
+            if (added >= targetCount) break;
+        }
+    }
+
+    private List<com.compassed.compassed_api.domain.QuestionBank> loadQuestionPool(
+            Long subjectId,
+            com.compassed.compassed_api.domain.QuestionBank.Level level,
+            int gradeLevel,
+            String gradeBand) {
+        String band = gradeBand == null ? "" : gradeBand.trim().toUpperCase(Locale.ROOT);
+        List<com.compassed.compassed_api.domain.QuestionBank> allRows = questionBankRepository
+                .findBySubjectIdAndLevelAndIsActiveTrue(subjectId, level);
+        List<com.compassed.compassed_api.domain.QuestionBank> byBand = new ArrayList<>();
+        for (com.compassed.compassed_api.domain.QuestionBank q : allRows) {
+            String qBand = q.getGradeBand() == null ? "" : q.getGradeBand().trim().toUpperCase(Locale.ROOT);
+            if (band.equals(qBand)) {
+                byBand.add(q);
+            }
+        }
+
+        if ("UNI_PREP".equals(band)) {
+            // UNI_PREP can draw from both grade 11 and 12 pools.
+            Map<Long, com.compassed.compassed_api.domain.QuestionBank> merged = new LinkedHashMap<>();
+            for (com.compassed.compassed_api.domain.QuestionBank q : byBand) {
+                if (q.getId() != null) merged.put(q.getId(), q);
+            }
+            for (com.compassed.compassed_api.domain.QuestionBank q : allRows) {
+                Integer qGrade = q.getGradeLevel();
+                if (qGrade != null && (qGrade == 11 || qGrade == 12) && q.getId() != null) {
+                    merged.put(q.getId(), q);
+                }
+            }
+            return new ArrayList<>(merged.values());
+        }
+
+        // Grade band 11/12: prioritize exact band first; fallback to exact grade level.
+        if (!byBand.isEmpty()) {
+            return byBand;
+        }
+        int targetGrade = "GRADE_12".equals(band) ? 12 : 11;
+        Map<Long, com.compassed.compassed_api.domain.QuestionBank> strict = new LinkedHashMap<>();
+        for (com.compassed.compassed_api.domain.QuestionBank q : allRows) {
+            Integer qGrade = q.getGradeLevel();
+            if (qGrade == null || qGrade != targetGrade) continue;
+            if (q.getId() != null) strict.put(q.getId(), q);
+        }
+        return new ArrayList<>(strict.values());
+    }
+
+    private Map<String, Object> toPlacementQuestion(com.compassed.compassed_api.domain.QuestionBank qrow) {
+        Map<String, Object> q = new LinkedHashMap<>();
+        q.put("id", qrow.getId());
+        q.put("q", qrow.getQuestionText());
+        List<String> options;
         try {
-            return objectMapper.writeValueAsString(paper);
+            options = objectMapper.readValue(qrow.getOptions(), new TypeReference<List<String>>() {});
         } catch (Exception e) {
-            throw new RuntimeException("Cannot generate paper json");
+            options = List.of("A. Option A", "B. Option B", "C. Option C", "D. Option D");
+        }
+        q.put("options", options);
+
+        Set<String> normalizedCorrect = parseCorrectAnswers(qrow.getCorrectAnswer(), options);
+        String canonicalCorrect = normalizedCorrect.isEmpty()
+                ? "A"
+                : String.join(",", normalizedCorrect);
+        q.put("correct", canonicalCorrect);
+        q.put("skill", qrow.getSkillType());
+        return q;
+    }
+
+    private List<String> extractOptions(Object rawOptions) {
+        if (rawOptions instanceof List<?> rawList) {
+            List<String> out = new ArrayList<>();
+            for (Object it : rawList) {
+                out.add(String.valueOf(it == null ? "" : it));
+            }
+            return out;
+        }
+        return List.of();
+    }
+
+    private Set<String> parseCorrectAnswers(String correctRaw, List<String> options) {
+        Set<String> out = new java.util.LinkedHashSet<>();
+        if (correctRaw == null || correctRaw.isBlank()) {
+            return out;
+        }
+        String[] parts = correctRaw.split("[,;/|]");
+        for (String part : parts) {
+            String token = normalizeAnswerToken(part, options);
+            if (!token.isBlank()) {
+                out.add(token);
+            }
+        }
+        if (out.isEmpty()) {
+            String token = normalizeAnswerToken(correctRaw, options);
+            if (!token.isBlank()) out.add(token);
+        }
+        return out;
+    }
+
+    private String normalizeAnswerToken(String raw, List<String> options) {
+        if (raw == null) return "";
+        String token = raw.trim().toUpperCase(Locale.ROOT);
+        if (token.isBlank()) return "";
+
+        token = token.replace("OPTION_", "");
+
+        if (token.matches("^[A-D]$")) return token;
+        if (token.matches("^[1-4]$")) return String.valueOf((char) ('A' + Integer.parseInt(token) - 1));
+        if (token.matches("^[0-3]$")) return String.valueOf((char) ('A' + Integer.parseInt(token)));
+        if (token.matches("^[A-D][\\.|\\)|:|-]?.*$")) return String.valueOf(token.charAt(0));
+
+        String normalizedText = normalizeOptionText(token);
+        for (int i = 0; i < options.size() && i < 4; i++) {
+            String option = String.valueOf(options.get(i));
+            String optionNormalized = normalizeOptionText(option);
+            if (!optionNormalized.isBlank() && optionNormalized.equals(normalizedText)) {
+                return String.valueOf((char) ('A' + i));
+            }
+        }
+        return "";
+    }
+
+    private String normalizeOptionText(String raw) {
+        if (raw == null) return "";
+        String text = raw.trim().toUpperCase(Locale.ROOT);
+        text = text.replaceFirst("^[A-D][\\.|\\)|:|-]?\\s*", "");
+        return text.replaceAll("\\s+", " ").trim();
+    }
+
+    private int resolveGradeLevel(Integer gradeLevel, String gradeBand) {
+        if (gradeLevel != null && gradeLevel > 0) {
+            return gradeLevel;
+        }
+        if ("GRADE_12".equals(gradeBand) || "UNI_PREP".equals(gradeBand)) {
+            return 12;
+        }
+        return 11;
+    }
+
+    private String normalizeGradeBand(String gradeBand, Integer gradeLevel) {
+        String raw = gradeBand == null ? "" : gradeBand.trim().toUpperCase();
+        if ("GRADE_11".equals(raw) || "GRADE_12".equals(raw) || "UNI_PREP".equals(raw)) {
+            return raw;
+        }
+        if (gradeLevel != null) {
+            return gradeLevel >= 12 ? "GRADE_12" : "GRADE_11";
+        }
+        return "GRADE_11";
+    }
+
+    private String resolveUserGradeBand(Long userId, String gradeBand, Integer gradeLevel) {
+        UserProfile profile = userProfileRepository.findByUser_Id(userId).orElse(null);
+        if (profile != null) {
+            String track = profile.getAcademicTrack() == null ? "" : profile.getAcademicTrack().trim().toUpperCase(Locale.ROOT);
+            if ("GRADE_11".equals(track) || "GRADE_12".equals(track) || "UNI_PREP".equals(track)) {
+                return track;
+            }
+        }
+        return normalizeGradeBand(gradeBand, gradeLevel);
+    }
+
+    private boolean isLegacyDemoPaper(String paperJson) {
+        if (paperJson == null || paperJson.isBlank()) return true;
+        try {
+            List<Map<String, Object>> items = objectMapper.readValue(
+                    paperJson,
+                    new TypeReference<List<Map<String, Object>>>() {
+                    });
+            if (items.size() != 50) return true;
+            for (Map<String, Object> q : items) {
+                String text = String.valueOf(q.getOrDefault("q", ""));
+                if (text.toLowerCase(Locale.ROOT).contains("demo")) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Exception ex) {
+            return true;
         }
     }
 

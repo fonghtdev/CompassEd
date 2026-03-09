@@ -38,6 +38,7 @@ function initLanding() {
   const notifList = document.getElementById("landing-notif-list");
   let profileMenu = null;
   let popupOverlay = null;
+  let practiceFilterOverlay = null;
   let notifOpen = false;
   let notifLoading = false;
 
@@ -168,6 +169,74 @@ function initLanding() {
   const closePopup = () => {
     if (popupOverlay) popupOverlay.style.display = "none";
   };
+
+  const ensurePracticeFilterModal = () => {
+    if (practiceFilterOverlay) return practiceFilterOverlay;
+    practiceFilterOverlay = document.createElement("div");
+    practiceFilterOverlay.id = "landing-practice-filter-overlay";
+    practiceFilterOverlay.style.position = "fixed";
+    practiceFilterOverlay.style.inset = "0";
+    practiceFilterOverlay.style.background = "rgba(15,23,42,0.45)";
+    practiceFilterOverlay.style.display = "none";
+    practiceFilterOverlay.style.alignItems = "center";
+    practiceFilterOverlay.style.justifyContent = "center";
+    practiceFilterOverlay.style.zIndex = "4000";
+    practiceFilterOverlay.innerHTML = `
+      <div style="width:min(420px,92vw);background:#fff;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 18px 40px rgba(2,6,23,0.25);overflow:hidden;">
+        <div style="padding:16px 18px;border-bottom:1px solid #f1f5f9;">
+          <h3 style="margin:0;font-size:18px;font-weight:800;color:#0f172a;">Chọn bộ đề luyện tập</h3>
+          <p style="margin:6px 0 0 0;font-size:13px;color:#475569;">Chọn Level và phân loại lớp trước khi làm đề.</p>
+        </div>
+        <div style="padding:14px 18px;display:grid;gap:12px;">
+          <label style="display:grid;gap:6px;">
+            <span style="font-size:13px;font-weight:700;color:#334155;">Level</span>
+            <select id="landing-practice-level" style="padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;">
+              <option value="L1">Level 1</option>
+              <option value="L2">Level 2</option>
+              <option value="L3">Level 3</option>
+            </select>
+          </label>
+          <label style="display:grid;gap:6px;">
+            <span style="font-size:13px;font-weight:700;color:#334155;">Phân loại lớp</span>
+            <select id="landing-practice-grade-band" style="padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;">
+              <option value="GRADE_11">Lớp 11</option>
+              <option value="GRADE_12">Lớp 12</option>
+              <option value="UNI_PREP">Ôn thi đại học</option>
+            </select>
+          </label>
+        </div>
+        <div style="padding:12px 18px;border-top:1px solid #f1f5f9;display:flex;gap:10px;justify-content:flex-end;">
+          <button id="landing-practice-cancel" type="button" style="padding:9px 12px;border:1px solid #e2e8f0;background:#fff;border-radius:8px;font-weight:700;color:#334155;cursor:pointer;">Hủy</button>
+          <button id="landing-practice-start" type="button" style="padding:9px 12px;border:none;background:#2563eb;color:#fff;border-radius:8px;font-weight:700;cursor:pointer;">Bắt đầu</button>
+        </div>
+      </div>`;
+    practiceFilterOverlay.addEventListener("click", (e) => {
+      if (e.target === practiceFilterOverlay) practiceFilterOverlay.style.display = "none";
+    });
+    document.body.appendChild(practiceFilterOverlay);
+    return practiceFilterOverlay;
+  };
+
+  const askPracticeFilters = (subjectId) =>
+    new Promise((resolve) => {
+      const overlay = ensurePracticeFilterModal();
+      const levelSel = overlay.querySelector("#landing-practice-level");
+      const gradeBandSel = overlay.querySelector("#landing-practice-grade-band");
+      const cancelBtn = overlay.querySelector("#landing-practice-cancel");
+      const startBtn = overlay.querySelector("#landing-practice-start");
+      const levelKey = `compassed_practice_level_${subjectId}`;
+      const gradeBandKey = `compassed_grade_band_${subjectId}`;
+      levelSel.value = localStorage.getItem(levelKey) || "L1";
+      gradeBandSel.value = localStorage.getItem(gradeBandKey) || "GRADE_11";
+      overlay.style.display = "flex";
+
+      const close = (payload) => {
+        overlay.style.display = "none";
+        resolve(payload);
+      };
+      cancelBtn.onclick = () => close(null);
+      startBtn.onclick = () => close({ level: levelSel.value, gradeBand: gradeBandSel.value });
+    });
 
   const setJoinProgramButtons = (activeSubjectIds = new Set(), loggedIn = false) => {
     document.querySelectorAll(".js-join-program").forEach((btn) => {
@@ -428,9 +497,19 @@ function initLanding() {
     navLearningPractice.addEventListener("click", async () => {
       navLearningMenu && navLearningMenu.classList.add("hidden");
       const subjectId = getSubjectId();
-      const gradeKey = `compassed_grade_level_${subjectId}`;
-      const gradeLevel = Number(localStorage.getItem(gradeKey) || 10);
-      nav(`/placement-test?subjectId=${subjectId}&grade=${gradeLevel}`, `placementTest.html?subjectId=${subjectId}&grade=${gradeLevel}`);
+      const filters = await askPracticeFilters(subjectId);
+      if (!filters) return;
+      const levelKey = `compassed_practice_level_${subjectId}`;
+      const gradeBandKey = `compassed_grade_band_${subjectId}`;
+      const gradeLevelKey = `compassed_grade_level_${subjectId}`;
+      const gradeLevel = filters.gradeBand === "GRADE_12" || filters.gradeBand === "UNI_PREP" ? 12 : 11;
+      localStorage.setItem(levelKey, filters.level);
+      localStorage.setItem(gradeBandKey, filters.gradeBand);
+      localStorage.setItem(gradeLevelKey, String(gradeLevel));
+      nav(
+        `/placement-test?subjectId=${subjectId}&grade=${gradeLevel}&level=${filters.level}&gradeBand=${filters.gradeBand}&reset=1`,
+        `placementTest.html?subjectId=${subjectId}&grade=${gradeLevel}&level=${filters.level}&gradeBand=${filters.gradeBand}&reset=1`
+      );
     });
   }
   if (navLearningRoadmap) {
@@ -438,16 +517,16 @@ function initLanding() {
       navLearningMenu && navLearningMenu.classList.add("hidden");
       const ok = await checkSession();
       if (!ok) {
-        goAuthWithRedirect("/roadmap-dashboard", "roadmapDashboard.html");
+        goAuthWithRedirect("/roadmap-tutor", "roadmapTutor.html");
         return;
       }
-      nav("/roadmap-dashboard", "roadmapDashboard.html");
+      nav("/roadmap-tutor", "roadmapTutor.html");
     });
   }
   if (navLearningAi) {
     navLearningAi.addEventListener("click", () => {
       navLearningMenu && navLearningMenu.classList.add("hidden");
-      toast("Tính năng đang được update, các bạn vui lòng đón chờ nhé!", "ok");
+      nav("/learning-ai", "learningAi.html");
     });
   }
   if (navHowItWorks) {
@@ -471,13 +550,13 @@ function initLanding() {
   const navByPlacementStatus = async (subjectId) => {
     localStorage.setItem("compassed_subject_id", String(subjectId));
     const gradeKey = `compassed_grade_level_${subjectId}`;
-    const gradeLevel = Number(localStorage.getItem(gradeKey) || 10);
+    const gradeLevel = Number(localStorage.getItem(gradeKey) || 11);
     try {
       const rows = await api("/api/history/placements", "GET", null, true);
       const hasPlacement = Array.isArray(rows) && rows.some((x) => Number(x.subjectId) === Number(subjectId));
       if (hasPlacement) {
-        toast("You already have placement result for this subject. Continue to checkout.", "ok");
-        nav("/checkout", "checkout.html");
+        toast("Bạn đã có kết quả placement. Chuyển đến roadmap để học.", "ok");
+        nav(`/learning-roadmap?subjectId=${subjectId}`, `roadmap.html?subjectId=${subjectId}`);
         return;
       }
     } catch (e) {
@@ -501,7 +580,8 @@ function initLanding() {
         return;
       }
       if (subscribedSubjectIds.has(subjectId)) {
-        toast("Bạn đã đăng ký môn này rồi.", "ok");
+        toast("Bạn đã đăng ký môn này rồi. Chuyển đến roadmap.", "ok");
+        nav(`/learning-roadmap?subjectId=${subjectId}`, `roadmap.html?subjectId=${subjectId}`);
         return;
       }
       await navByPlacementStatus(subjectId);

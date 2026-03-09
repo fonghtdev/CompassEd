@@ -53,12 +53,12 @@ class LocalFlowBusinessRulesTests {
     void placementShouldAllowOnlyOneFreeAttemptPerSubjectWithoutSubscription() {
         Long userId = localDataStore.createUser("student1@compassed.local", "Student One").getId();
 
-        PlacementStartResponse first = placementService.startPlacement(userId, 1L, null);
+        PlacementStartResponse first = placementService.startPlacement(userId, 1L, null, null);
         assertNotNull(first.getAttemptId());
 
         RuntimeException secondAttemptError = assertThrows(
                 RuntimeException.class,
-                () -> placementService.startPlacement(userId, 1L, null));
+                () -> placementService.startPlacement(userId, 1L, null, null));
         assertTrue(secondAttemptError.getMessage().contains("PAYMENT_REQUIRED"));
     }
 
@@ -79,7 +79,7 @@ class LocalFlowBusinessRulesTests {
         assertEquals(true, waitingPlacement.getSubscribed());
         assertEquals(false, waitingPlacement.getPlacementReady());
 
-        PlacementStartResponse started = placementService.startPlacement(userId, 1L, null);
+        PlacementStartResponse started = placementService.startPlacement(userId, 1L, null, null);
         List<Map<String, Object>> paper = objectMapper.readValue(
                 started.getPaperJson(),
                 new TypeReference<List<Map<String, Object>>>() {
@@ -118,7 +118,7 @@ class LocalFlowBusinessRulesTests {
     }
 
     private void completePlacement(Long userId, Long subjectId) throws Exception {
-        PlacementStartResponse started = placementService.startPlacement(userId, subjectId, null);
+        PlacementStartResponse started = placementService.startPlacement(userId, subjectId, null, null);
         List<Map<String, Object>> paper = objectMapper.readValue(
                 started.getPaperJson(),
                 new TypeReference<List<Map<String, Object>>>() {

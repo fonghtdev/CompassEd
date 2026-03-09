@@ -14,7 +14,7 @@ public interface QuestionBankService {
     /**
      * Lấy tất cả câu hỏi với phân trang và filter
      */
-    Page<QuestionBankDTO> getAllQuestions(Long subjectId, Level level, String gradeBand, String skillType, Boolean isActive, Pageable pageable);
+    Page<QuestionBankDTO> getAllQuestions(Long subjectId, Integer gradeLevel, Level level, String gradeBand, String skillType, Boolean isActive, Pageable pageable);
     
     /**
      * Lấy chi tiết 1 câu hỏi
@@ -50,4 +50,9 @@ public interface QuestionBankService {
      * Lấy danh sách skill types theo subject và level
      */
     List<String> getSkillTypesBySubjectAndLevel(Long subjectId, Level level);
+
+    /**
+     * Import nhiều câu hỏi từ chuỗi JSON theo format legacy.
+     */
+    Map<String, Object> importQuestionsFromLegacyJson(String rawJson);
 }

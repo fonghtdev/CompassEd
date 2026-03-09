@@ -52,6 +52,90 @@ function dt(value) {
   }
 }
 
+function formatSignupDate(value) {
+  if (!value) return "-";
+  try {
+    return new Date(value).toLocaleDateString("vi-VN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+  } catch (e) {
+    return String(value);
+  }
+}
+
+function labelAcademicTrack(track) {
+  const key = String(track || "").toUpperCase();
+  if (key === "GRADE_11") return "Lớp 11";
+  if (key === "GRADE_12") return "Lớp 12";
+  if (key === "UNI_PREP") return "Ôn thi đại học";
+  return "Lớp 11";
+}
+
+function renderRecentSignups(users) {
+  const tbody = document.getElementById("admin-recent-signups-body");
+  if (!tbody) return;
+  const recent = (Array.isArray(users) ? users : [])
+    .filter((u) => String(u.role || "").toUpperCase() === "USER")
+    .slice(0, 8);
+
+  if (!recent.length) {
+    tbody.innerHTML = '<tr><td class="px-6 py-3 text-slate-500" colspan="3">Chưa có dữ liệu đăng ký mới.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = recent
+    .map((u) => {
+      const name = esc(u.fullName || u.email || `User #${u.id}`);
+      const track = esc(labelAcademicTrack(u.academicTrack));
+      const date = esc(formatSignupDate(u.createdAt));
+      return `
+        <tr class="hover:bg-slate-50/50">
+          <td class="px-6 py-3 font-medium text-slate-900">${name}</td>
+          <td class="px-6 py-3 text-slate-600">${track}</td>
+          <td class="px-6 py-3 text-slate-500">${date}</td>
+        </tr>`;
+    })
+    .join("");
+}
+
+function renderTrafficChart(series) {
+  const wrap = document.getElementById("admin-traffic-chart");
+  if (!wrap) return;
+  const rows = Array.isArray(series) ? series : [];
+  if (!rows.length) {
+    wrap.innerHTML = '<div class="w-full h-full flex items-center justify-center text-sm text-slate-500">Chưa có dữ liệu truy cập.</div>';
+    return;
+  }
+
+  let maxValue = 1;
+  for (const item of rows) {
+    const visits = Number(item.visits || 0);
+    const newUsers = Number(item.newUsers || 0);
+    maxValue = Math.max(maxValue, visits, newUsers);
+  }
+
+  wrap.innerHTML = `
+    <div class="w-full h-full flex items-end justify-between gap-3">
+      ${rows.map((item) => {
+        const visits = Number(item.visits || 0);
+        const newUsers = Number(item.newUsers || 0);
+        const visitHeight = Math.max(4, Math.round((visits / maxValue) * 100));
+        const userHeight = Math.max(4, Math.round((newUsers / maxValue) * 100));
+        const label = esc(item.label || "-");
+        return `
+          <div class="flex-1 min-w-0 h-full flex flex-col justify-end items-center gap-2">
+            <div class="w-full h-[88%] flex items-end justify-center gap-1.5">
+              <div class="w-3 sm:w-4 bg-blue-500/85 rounded-t" style="height:${visitHeight}%" title="Lượt truy cập: ${visits}"></div>
+              <div class="w-3 sm:w-4 bg-emerald-500/85 rounded-t" style="height:${userHeight}%" title="Đăng ký mới: ${newUsers}"></div>
+            </div>
+            <span class="text-[11px] text-slate-500 font-medium">${label}</span>
+          </div>`;
+      }).join("")}
+    </div>`;
+}
+
 async function showUsersModal() {
   const users = await api("/api/admin/users", "GET", null, true);
   const rows = (users || [])
@@ -695,6 +779,7 @@ async function initAdmin() {
 
   try {
     const overview = await api("/api/admin/analytics/overview", "GET", null, true);
+    const users = await api("/api/admin/users", "GET", null, true);
     const set = (id, value) => {
       const el = document.getElementById(id);
       if (el) el.textContent = value;
@@ -703,6 +788,8 @@ async function initAdmin() {
     set("admin-active-subs", String(overview.activeSubscriptions ?? 0));
     set("admin-pass-rate", `${Number(overview.passRatePercent ?? 0).toFixed(1)}%`);
     set("admin-avg-score", `${Number(overview.averageScorePercent ?? 0).toFixed(1)}%`);
+    renderRecentSignups(users);
+    renderTrafficChart(overview.trafficSeries);
   } catch (e) {
     toast(`Cannot load admin analytics: ${e.message}`, "error");
   }
@@ -727,14 +814,10 @@ async function initAdmin() {
   bindAction("admin-notifications-btn", showNotificationCenterModal);
   bindAction("admin-mail-btn", showNotificationCenterModal);
 
-  bindAction("admin-open-subject-roadmap-btn", showSubjectsRoadmapsModal);
-  bindAction("admin-open-content-btn", showLessonsMiniTestsModal);
   bindAction("admin-open-config-btn", showConfigsModal);
   bindAction("admin-open-notification-center-btn", showNotificationCenterModal);
 
   bindAction("admin-nav-users", showUsersModal);
-  bindAction("admin-nav-content-bank", showLessonsMiniTestsModal);
-  bindAction("admin-nav-roadmaps", showSubjectsRoadmapsModal);
   bindAction("admin-nav-settings", showConfigsModal);
   bindAction("admin-nav-notifications", showNotificationCenterModal);
   bindAction("admin-nav-analytics", showAiLogsModal);

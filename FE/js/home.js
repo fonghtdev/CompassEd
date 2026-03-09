@@ -72,7 +72,7 @@ function initCourses() {
             slideHTML += `
                 <div class="col-lg-4">
                     <div class="course-card">
-                        <a href="coursesDetail.html?id=${course.id || course.title.replace(/\s+/g, '-').toLowerCase()}" class="text-decoration-none text-dark">
+                        <a href="roadmap.html?id=${course.id || course.title.replace(/\s+/g, '-').toLowerCase()}" class="text-decoration-none text-dark">
                             <div class="card-img-wrapper">
                                 <img src="${course.image}" alt="${course.title}">
                                 <div class="price-badge">$${course.price}</div>
@@ -102,7 +102,7 @@ function initCourses() {
                             </div>
                         </a>
                         <div class="card-footer bg-white border-0 p-3">
-                            <a href="coursesDetail.html?id=${course.id || course.title.replace(/\s+/g, '-').toLowerCase()}" class="btn btn-danger w-100">
+                            <a href="roadmap.html?id=${course.id || course.title.replace(/\s+/g, '-').toLowerCase()}" class="btn btn-danger w-100">
                                 <i class="fas fa-eye me-2"></i>Xem Chi Tiết
                             </a>
                         </div>

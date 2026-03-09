@@ -15,6 +15,7 @@ import com.compassed.compassed_api.api.dto.LessonResponse;
 import com.compassed.compassed_api.api.dto.MiniTestResponse;
 import com.compassed.compassed_api.api.dto.MiniTestSubmitRequest;
 import com.compassed.compassed_api.api.dto.RoadmapResponse;
+import com.compassed.compassed_api.api.dto.UpLevelSubmitRequest;
 import com.compassed.compassed_api.domain.entity.PlacementResult;
 import com.compassed.compassed_api.domain.entity.Roadmap;
 import com.compassed.compassed_api.domain.entity.Subject;
@@ -76,12 +77,21 @@ public class RoadmapServiceMysqlImpl implements RoadmapService {
         response.setPlacementReady(placement != null);
 
         if (!subscribed) {
-            response.setPhase("LOCKED");
-            response.setNextStep("SUBSCRIBE_TO_UNLOCK_ROADMAP");
-            response.setLessons(List.of());
-            response.setMiniTests(List.of());
-            response.setProgressPercent(0);
-            return response;
+            if (placement == null) {
+                response.setPhase("WAITING_PLACEMENT");
+                response.setNextStep("TAKE_PLACEMENT_TEST");
+                response.setLessons(List.of());
+                response.setMiniTests(List.of());
+                response.setProgressPercent(0);
+                response.setCompletedModules(0);
+                response.setTotalModules(5);
+                response.setCheckpointDue(false);
+                response.setCheckpointMessage(null);
+                response.setUpLevelEligible(false);
+                response.setUpLevelMessage(null);
+                return response;
+            }
+            return buildFreeModuleOneTrialResponse(userId, subject, placement.getLevel(), response);
         }
         if (placement == null) {
             response.setPhase("WAITING_PLACEMENT");
@@ -89,6 +99,12 @@ public class RoadmapServiceMysqlImpl implements RoadmapService {
             response.setLessons(List.of());
             response.setMiniTests(List.of());
             response.setProgressPercent(0);
+            response.setCompletedModules(0);
+            response.setTotalModules(5);
+            response.setCheckpointDue(false);
+            response.setCheckpointMessage(null);
+            response.setUpLevelEligible(false);
+            response.setUpLevelMessage(null);
             return response;
         }
 
@@ -192,6 +208,47 @@ public class RoadmapServiceMysqlImpl implements RoadmapService {
             userProgressRepository.save(finalProgress);
 
             refreshProgressState(userId, context.subject(), context.assignment());
+            assignmentRepository.save(context.assignment());
+            return toResponse(userId, context.subject(), context.assignment());
+        }
+    }
+
+    @Override
+    public RoadmapResponse requestReplan(Long userId, Long subjectId) {
+        RoadmapContext context = requireActiveRoadmap(userId, subjectId);
+        synchronized (context.assignment()) {
+            String levelKey = context.assignment().getRoadmap().getLevel().name();
+            context.assignment().setReplanCount(context.assignment().getReplanCount() + 1);
+            context.assignment().setPhase("LESSONS");
+            userProgressRepository.deleteByUserIdAndSubjectAndLevel(
+                    userId,
+                    context.subject().getCode(),
+                    levelKey);
+            assignmentRepository.save(context.assignment());
+            refreshProgressState(userId, context.subject(), context.assignment());
+            assignmentRepository.save(context.assignment());
+            return toResponse(userId, context.subject(), context.assignment());
+        }
+    }
+
+    @Override
+    public RoadmapResponse submitUpLevelTest(Long userId, Long subjectId, UpLevelSubmitRequest request) {
+        RoadmapContext context = requireActiveRoadmap(userId, subjectId);
+        int score = normalizeScore(request == null ? null : request.getScore());
+        synchronized (context.assignment()) {
+            refreshProgressState(userId, context.subject(), context.assignment());
+            Level current = context.assignment().getRoadmap().getLevel();
+            if (current == Level.L3) {
+                throw new RuntimeException("Already at highest level");
+            }
+            if (score < 70) {
+                return toResponse(userId, context.subject(), context.assignment());
+            }
+            Level next = nextLevel(current);
+            Roadmap nextRoadmap = roadmapRepository.findBySubject_IdAndLevel(context.subject().getId(), next)
+                    .orElseThrow(() -> new RuntimeException("Roadmap not found for next level"));
+            context.assignment().setRoadmap(nextRoadmap);
+            context.assignment().setPhase("LESSONS");
             assignmentRepository.save(context.assignment());
             return toResponse(userId, context.subject(), context.assignment());
         }
@@ -349,6 +406,7 @@ public class RoadmapServiceMysqlImpl implements RoadmapService {
                 FINAL_SCORE_LESSON_ID).map(UserProgress::getScore).orElse(null);
 
         long completedLessons = lessons.stream().filter(LessonResponse::getCompleted).count();
+        long completedModules = miniTests.stream().filter(MiniTestResponse::getCompleted).count();
         double avgMini = miniTests.stream()
                 .filter(m -> m.getScore() != null)
                 .mapToInt(MiniTestResponse::getScore)
@@ -365,6 +423,20 @@ public class RoadmapServiceMysqlImpl implements RoadmapService {
         response.setReplanCount(assignment.getReplanCount());
         response.setMiniTestAverageScore(miniTests.stream().anyMatch(m -> m.getScore() != null) ? avgMini : null);
         response.setProgressPercent(lessonData.isEmpty() ? 0 : (int) ((completedLessons * 100.0) / lessonData.size()));
+        response.setCompletedModules((int) completedModules);
+        response.setTotalModules(lessonData.size());
+        boolean checkpointDue = completedModules > 0
+                && completedModules < lessonData.size()
+                && completedModules % 2 == 0;
+        response.setCheckpointDue(checkpointDue);
+        response.setCheckpointMessage(checkpointDue
+                ? "CHECKPOINT_EVERY_2_MODULES"
+                : null);
+        boolean upLevelEligible = assignment.getRoadmap().getLevel() != Level.L3
+                && completedModules >= 2
+                && (miniTests.stream().filter(m -> m.getScore() != null).mapToInt(MiniTestResponse::getScore).average().orElse(0.0) >= 85.0);
+        response.setUpLevelEligible(upLevelEligible);
+        response.setUpLevelMessage(upLevelEligible ? "UP_LEVEL_RECOMMENDED" : null);
         response.setPhase(assignment.getPhase());
         response.setNextStep(nextStepByPhase(assignment.getPhase()));
         return response;
@@ -380,6 +452,63 @@ public class RoadmapServiceMysqlImpl implements RoadmapService {
                 .orElseThrow(() -> new RuntimeException("Need placement result before roadmap"));
         UserRoadmapAssignment assignment = getOrCreateAssignment(userId, subject, placement.getLevel());
         return new RoadmapContext(subject, assignment);
+    }
+
+    private RoadmapResponse buildFreeModuleOneTrialResponse(
+            Long userId,
+            Subject subject,
+            Level level,
+            RoadmapResponse response) {
+        String levelKey = level.name();
+        List<LessonBank.LessonData> lessonData = lessonsBy(subject.getCode(), levelKey);
+        List<UserProgress> all = userProgressRepository.findByUserIdAndSubjectAndLevel(userId, subject.getCode(), levelKey);
+        Map<Long, UserProgress> byLesson = all.stream()
+                .filter(p -> p.getLessonId() != null && p.getLessonId() > 0)
+                .collect(Collectors.toMap(UserProgress::getLessonId, p -> p, (a, b) -> a));
+
+        List<LessonResponse> lessons = new ArrayList<>();
+        for (LessonBank.LessonData lesson : lessonData) {
+            UserProgress p = byLesson.get(lesson.id());
+            lessons.add(new LessonResponse(
+                    lesson.id(),
+                    lesson.title(),
+                    lesson.content(),
+                    lesson.displayOrder(),
+                    lesson.estimatedMinutes(),
+                    p != null && Boolean.TRUE.equals(p.getCompleted())));
+        }
+
+        List<MiniTestResponse> miniTests = new ArrayList<>();
+        for (LessonBank.LessonData lesson : lessonData) {
+            UserProgress p = byLesson.get(lesson.id());
+            miniTests.add(new MiniTestResponse(
+                    lesson.id(),
+                    "Mini Test - " + lesson.title(),
+                    5,
+                    lesson.id().intValue(),
+                    p != null && p.getScore() != null,
+                    p == null ? null : p.getScore()));
+        }
+
+        long completedLessons = lessons.stream().filter(LessonResponse::getCompleted).count();
+        long completedModules = miniTests.stream().filter(MiniTestResponse::getCompleted).count();
+
+        response.setLevel(levelKey);
+        response.setPhase("LESSONS");
+        response.setNextStep("FREE_MODULE_1_TRIAL");
+        response.setLessons(lessons);
+        response.setMiniTests(miniTests);
+        response.setFinalTestScore(null);
+        response.setReplanCount(0);
+        response.setMiniTestAverageScore(null);
+        response.setProgressPercent(lessonData.isEmpty() ? 0 : (int) ((completedLessons * 100.0) / lessonData.size()));
+        response.setCompletedModules((int) completedModules);
+        response.setTotalModules(lessonData.size());
+        response.setCheckpointDue(false);
+        response.setCheckpointMessage(null);
+        response.setUpLevelEligible(false);
+        response.setUpLevelMessage(null);
+        return response;
     }
 
     private String nextStepByPhase(String phase) {

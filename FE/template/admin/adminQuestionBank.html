@@ -70,14 +70,6 @@
                 <span class="material-symbols-outlined text-xl">quiz</span>
                 <span class="text-sm font-medium">Question Bank</span>
             </a>
-            <a id="admin-nav-content-bank" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="/admin-dashboard">
-                <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">library_books</span>
-                <span class="text-sm font-medium">Content Bank</span>
-            </a>
-            <a id="admin-nav-roadmaps" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="/admin-dashboard">
-                <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">map</span>
-                <span class="text-sm font-medium">Roadmap Config</span>
-            </a>
             <a id="admin-nav-analytics" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 group transition-colors" href="/admin-dashboard">
                 <span class="material-symbols-outlined text-xl text-slate-400 group-hover:text-slate-600">analytics</span>
                 <span class="text-sm font-medium">Analytics</span>
@@ -126,6 +118,10 @@
                         <span class="material-symbols-outlined text-slate-400">schedule</span>
                         <span id="current-time" class="text-sm text-slate-600 font-medium">--:--:--</span>
                     </div>
+                    <button onclick="openImportModal()" class="flex items-center gap-2 px-6 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg font-medium shadow-sm transition">
+                        <span class="material-symbols-outlined">data_object</span>
+                        <span>Import JSON</span>
+                    </button>
                     <button onclick="openCreateModal()" class="flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium shadow-sm transition">
                         <span class="material-symbols-outlined">add</span>
                         <span>Thêm câu hỏi</span>
@@ -191,6 +187,7 @@
                             <option value="10">Lớp 10</option>
                             <option value="11">Lớp 11</option>
                             <option value="12">Lớp 12</option>
+                            <option value="UNI_PREP">On thi dai hoc (OTDH)</option>
                         </select>
                     </div>
                     <div>
@@ -293,7 +290,7 @@
                 </select>
             </div>
             
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-4">
                 <div>
                     <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
                         <span class="material-symbols-outlined text-primary text-lg">stairs</span>
@@ -316,6 +313,18 @@
                             <option value="11">Lớp 11</option>
                             <option value="12">Lớp 12</option>
                         </select>
+                </div>
+                <div>
+                    <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+                        <span class="material-symbols-outlined text-primary text-lg">category</span>
+                        <span>Phan loai</span>
+                    </label>
+                    <select id="input-grade-band" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                        <option value="">Tu dong theo lop</option>
+                        <option value="GRADE_11">Lop 11</option>
+                        <option value="GRADE_12">Lop 12</option>
+                        <option value="UNI_PREP">On thi dai hoc (OTDH)</option>
+                    </select>
                 </div>
             </div>
 
@@ -404,9 +413,49 @@
         </div>
     </div>
 </div>
-
+<!-- Import JSON Modal -->
+<div id="import-modal" class="modal hidden fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="bg-gradient-to-r from-slate-700 to-slate-900 p-6">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-white text-3xl">data_object</span>
+                <h3 class="text-xl font-bold text-white">Import cau hoi tu JSON</h3>
+            </div>
+            <p class="text-slate-200 text-sm mt-2">
+                Ho tro schema: ID, Subject_Code, Level, Skill_Tag, Question_Text, Option_A..D, Correct, Class, Classify.
+                Chuoi LaTeX duoc giu nguyen (vd: \\frac{a}{b}, \\sqrt{x}, \\tan x).
+            </p>
+        </div>
+        <div class="p-6 space-y-4">
+            <label class="block text-sm font-medium text-slate-700">JSON payload *</label>
+            <textarea id="import-json-input" rows="14"
+                      class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm"
+                      placeholder='[{"ID":"Math_M1_1","Subject_Code":"M","Level":1,"Skill_Tag":"Luong giac","Question_Text":"Tap xac dinh cua ham so y=tanx la:","Option_A":"R\\{kpi}","Option_B":"R\\{2pi+kpi}","Option_C":"R","Option_D":"R\\{2pi+k2pi}","Correct":"B","Class":11,"Classify":""}]'></textarea>
+            <p class="text-xs text-slate-500">
+                Mon Toan co the ghi LaTeX trong <code>Question_Text</code> va <code>Option_*</code>.
+            </p>
+        </div>
+        <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50">
+            <button onclick="closeImportModal()" type="button" class="flex items-center gap-2 px-6 py-2.5 border border-slate-300 rounded-lg hover:bg-white font-medium transition text-sm">
+                <span class="material-symbols-outlined text-lg">close</span>
+                <span>Huy</span>
+            </button>
+            <button onclick="importQuestionsJson()" type="button" class="flex items-center gap-2 px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-medium transition text-sm">
+                <span class="material-symbols-outlined text-lg">upload</span>
+                <span>Import</span>
+            </button>
+        </div>
+    </div>
+</div>
 <script src="../../config.js"></script>
 <script src="../../js/adminQuestionBank.js"></script>
 
 </body>
 </html>
+
+
+
+
+
+
+
