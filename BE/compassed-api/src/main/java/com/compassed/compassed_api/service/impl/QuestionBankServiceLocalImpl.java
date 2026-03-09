@@ -20,7 +20,7 @@ import java.util.Map;
 public class QuestionBankServiceLocalImpl implements QuestionBankService {
 
     @Override
-    public Page<QuestionBankDTO> getAllQuestions(Long subjectId, Level level, String gradeBand, String skillType, Boolean isActive, Pageable pageable) {
+    public Page<QuestionBankDTO> getAllQuestions(Long subjectId, Integer gradeLevel, Level level, String gradeBand, String skillType, Boolean isActive, Pageable pageable) {
         // TODO: Implement with LocalDataStore
         return new PageImpl<>(new ArrayList<>(), pageable, 0);
     }
@@ -65,5 +65,10 @@ public class QuestionBankServiceLocalImpl implements QuestionBankService {
     public List<String> getSkillTypesBySubjectAndLevel(Long subjectId, Level level) {
         // TODO: Implement with LocalDataStore
         return new ArrayList<>();
+    }
+
+    @Override
+    public Map<String, Object> importQuestionsFromLegacyJson(String rawJson) {
+        throw new UnsupportedOperationException("importQuestionsFromLegacyJson not yet implemented for local profile");
     }
 }

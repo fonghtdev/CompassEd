@@ -11,6 +11,7 @@
     let currentFilters = {
         subjectId: null,
         gradeLevel: null,
+        gradeBand: null,
         level: null,
         skillType: null
     };
@@ -115,6 +116,7 @@
             
             if (currentFilters.subjectId) url += `&subjectId=${currentFilters.subjectId}`;
             if (currentFilters.gradeLevel) url += `&gradeLevel=${currentFilters.gradeLevel}`;
+            if (currentFilters.gradeBand) url += `&gradeBand=${encodeURIComponent(currentFilters.gradeBand)}`;
             if (currentFilters.level) url += `&level=${currentFilters.level}`;
             if (currentFilters.skillType) url += `&skillType=${encodeURIComponent(currentFilters.skillType)}`;
             
@@ -159,11 +161,15 @@
                 ? q.questionText.substring(0, 50) + "..." 
                 : q.questionText;
             
+            const gradeLabel = q.gradeBand === "UNI_PREP"
+                ? "OTDH"
+                : (q.gradeLevel || "-");
+
             return `
                 <tr class="hover:bg-slate-50 transition">
                     <td class="px-6 py-4 text-sm font-medium text-slate-900">#${q.id}</td>
                     <td class="px-6 py-4 text-sm text-slate-600">${q.subjectName}</td>
-                    <td class="px-6 py-4 text-sm text-slate-600">${q.gradeLevel || "-"}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600">${gradeLabel}</td>
                     <td class="px-6 py-4">
                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${levelColor}">
                             ${q.level}
@@ -222,6 +228,56 @@
         document.getElementById("question-modal").classList.add("hidden");
     };
 
+    window.openImportModal = function() {
+        const modal = document.getElementById("import-modal");
+        if (modal) modal.classList.remove("hidden");
+    };
+
+    window.closeImportModal = function() {
+        const modal = document.getElementById("import-modal");
+        if (modal) modal.classList.add("hidden");
+    };
+
+    window.importQuestionsJson = async function() {
+        const input = document.getElementById("import-json-input");
+        const rawJson = (input?.value || "").trim();
+
+        if (!rawJson) {
+            toast("Vui long dan JSON truoc khi import", "warning");
+            return;
+        }
+
+        try {
+            JSON.parse(rawJson);
+        } catch (err) {
+            toast("JSON khong hop le, vui long kiem tra lai", "error");
+            return;
+        }
+
+        try {
+            loading(true);
+            const result = await api("/api/admin/questions/import-json", "POST", { rawJson });
+            const created = Number(result.created || 0);
+            const failed = Number(result.failed || 0);
+            const total = Number(result.total || 0);
+
+            if (failed > 0) {
+                toast(`Import xong: ${created}/${total} cau thanh cong, ${failed} cau loi`, "warning");
+                console.warn("Import errors:", result.errors || []);
+            } else {
+                toast(`Import thanh cong ${created} cau hoi`, "success");
+            }
+
+            closeImportModal();
+            loadQuestions();
+            loadStats();
+        } catch (err) {
+            toast("Khong the import JSON: " + err.message, "error");
+        } finally {
+            loading(false);
+        }
+    };
+
     window.viewQuestion = async function(id) {
         try {
             loading(true);
@@ -276,6 +332,7 @@ ${question.explanation || "Không có"}
             document.getElementById("input-subject").value = question.subjectId;
             document.getElementById("input-level").value = question.level;
             document.getElementById("input-grade").value = question.gradeLevel || "10";
+            document.getElementById("input-grade-band").value = question.gradeBand || "";
             document.getElementById("input-type").value = question.questionType;
             document.getElementById("input-skill").value = question.skillType;
             document.getElementById("input-question").value = question.questionText;
@@ -327,6 +384,7 @@ ${question.explanation || "Không có"}
             const questionData = {
                 subjectId: parseInt(document.getElementById("input-subject").value),
                 gradeLevel: parseInt(document.getElementById("input-grade").value),
+                gradeBand: document.getElementById("input-grade-band").value || null,
                 level: document.getElementById("input-level").value,
                 questionType: document.getElementById("input-type").value,
                 skillType: document.getElementById("input-skill").value,
@@ -363,8 +421,19 @@ ${question.explanation || "Không có"}
     // ========== FILTERS & PAGINATION ==========
     
     window.applyFilters = function() {
+        const filterGrade = document.getElementById("filter-grade").value || null;
         currentFilters.subjectId = document.getElementById("filter-subject").value || null;
-        currentFilters.gradeLevel = document.getElementById("filter-grade").value || null;
+        currentFilters.gradeLevel = null;
+        currentFilters.gradeBand = null;
+
+        if (filterGrade) {
+            if (/^\d+$/.test(filterGrade)) {
+                currentFilters.gradeLevel = filterGrade;
+            } else {
+                currentFilters.gradeBand = filterGrade;
+            }
+        }
+
         currentFilters.level = document.getElementById("filter-level").value || null;
         currentFilters.skillType = document.getElementById("filter-skill").value || null;
         
@@ -440,6 +509,25 @@ ${question.explanation || "Không có"}
                 }
             }
         });
+
+        // Close modals when clicking outside modal content
+        const questionModal = document.getElementById("question-modal");
+        if (questionModal) {
+            questionModal.addEventListener("click", (e) => {
+                if (e.target === questionModal) {
+                    closeModal();
+                }
+            });
+        }
+
+        const importModal = document.getElementById("import-modal");
+        if (importModal) {
+            importModal.addEventListener("click", (e) => {
+                if (e.target === importModal) {
+                    closeImportModal();
+                }
+            });
+        }
     }
 
     document.addEventListener("DOMContentLoaded", init);

@@ -17,6 +17,7 @@ import com.compassed.compassed_api.api.dto.PlacementSubmitRequest;
 import com.compassed.compassed_api.api.dto.PlacementSubmitResponse;
 import com.compassed.compassed_api.domain.enums.AttemptStatus;
 import com.compassed.compassed_api.repository.PlacementAttemptRepository;
+import com.compassed.compassed_api.repository.PlacementResultRepository;
 import com.compassed.compassed_api.security.CurrentUserService;
 import com.compassed.compassed_api.service.PlacementService;
 
@@ -27,24 +28,28 @@ public class PlacementController {
     private final PlacementService placementService;
     private final CurrentUserService currentUserService;
     private final PlacementAttemptRepository placementAttemptRepository;
+    private final PlacementResultRepository placementResultRepository;
 
     public PlacementController(
             PlacementService placementService,
             CurrentUserService currentUserService,
-            PlacementAttemptRepository placementAttemptRepository) {
+            PlacementAttemptRepository placementAttemptRepository,
+            PlacementResultRepository placementResultRepository) {
         this.placementService = placementService;
         this.currentUserService = currentUserService;
         this.placementAttemptRepository = placementAttemptRepository;
+        this.placementResultRepository = placementResultRepository;
     }
 
     // Start placement
     @PostMapping("/subjects/{subjectId}/placement-tests")
     public PlacementStartResponse start(
             @PathVariable Long subjectId,
-            @RequestParam(required = false) Integer gradeLevel
+            @RequestParam(required = false) Integer gradeLevel,
+            @RequestParam(required = false) String gradeBand
     ) {
         Long userId = currentUserService.requireCurrentUserId();
-        return placementService.startPlacement(userId, subjectId, gradeLevel);
+        return placementService.startPlacement(userId, subjectId, gradeLevel, gradeBand);
     }
 
     // Submit placement
@@ -81,5 +86,20 @@ public class PlacementController {
                     return payload;
                 })
                 .orElseGet(() -> Map.of("status", "NOT_STARTED"));
+    }
+
+    @GetMapping("/subjects/{subjectId}/placement-result-status")
+    public Map<String, Object> placementResultStatus(@PathVariable Long subjectId) {
+        Long userId = currentUserService.requireCurrentUserId();
+        return placementResultRepository.findTopByUser_IdAndSubject_IdOrderByCreatedAtDesc(userId, subjectId)
+                .map(result -> {
+                    Map<String, Object> payload = new LinkedHashMap<>();
+                    payload.put("hasPlacementResult", true);
+                    payload.put("level", result.getLevel() == null ? null : result.getLevel().name());
+                    payload.put("scorePercent", result.getScorePercent() == null ? 0 : result.getScorePercent());
+                    payload.put("skillAnalysisJson", result.getSkillAnalysisJson());
+                    return payload;
+                })
+                .orElseGet(() -> Map.of("hasPlacementResult", false));
     }
 }

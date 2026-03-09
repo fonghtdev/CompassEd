@@ -11,6 +11,7 @@ import com.compassed.compassed_api.api.dto.FinalTestSubmitRequest;
 import com.compassed.compassed_api.api.dto.LessonCompleteRequest;
 import com.compassed.compassed_api.api.dto.MiniTestSubmitRequest;
 import com.compassed.compassed_api.api.dto.RoadmapResponse;
+import com.compassed.compassed_api.api.dto.UpLevelSubmitRequest;
 import com.compassed.compassed_api.security.CurrentUserService;
 import com.compassed.compassed_api.service.RoadmapService;
 
@@ -60,6 +61,21 @@ public class RoadmapController {
     ) {
         Long userId = currentUserService.requireCurrentUserId();
         return roadmapService.submitFinalTest(userId, subjectId, request);
+    }
+
+    @PostMapping("/subjects/{subjectId}/roadmap/replan")
+    public RoadmapResponse requestReplan(@PathVariable Long subjectId) {
+        Long userId = currentUserService.requireCurrentUserId();
+        return roadmapService.requestReplan(userId, subjectId);
+    }
+
+    @PostMapping("/subjects/{subjectId}/roadmap/up-level-test")
+    public RoadmapResponse submitUpLevelTest(
+            @PathVariable Long subjectId,
+            @RequestBody UpLevelSubmitRequest request
+    ) {
+        Long userId = currentUserService.requireCurrentUserId();
+        return roadmapService.submitUpLevelTest(userId, subjectId, request);
     }
 
     @GetMapping("/lessons/{lessonId}")

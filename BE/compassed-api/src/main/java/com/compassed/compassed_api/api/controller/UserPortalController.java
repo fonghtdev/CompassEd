@@ -3,11 +3,15 @@ package com.compassed.compassed_api.api.controller;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.HashMap;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
@@ -18,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,6 +33,7 @@ import com.compassed.compassed_api.domain.entity.PlacementResult;
 import com.compassed.compassed_api.domain.entity.Subject;
 import com.compassed.compassed_api.domain.entity.Subscription;
 import com.compassed.compassed_api.domain.entity.User;
+import com.compassed.compassed_api.domain.entity.UserAiRoadmapState;
 import com.compassed.compassed_api.domain.entity.UserProfile;
 import com.compassed.compassed_api.domain.entity.UserRoadmapAssignment;
 import com.compassed.compassed_api.local.QuestionBank;
@@ -39,6 +45,7 @@ import com.compassed.compassed_api.repository.SubjectRepository;
 import com.compassed.compassed_api.repository.SubscriptionRepository;
 import com.compassed.compassed_api.repository.UserProfileRepository;
 import com.compassed.compassed_api.repository.UserProgressRepository;
+import com.compassed.compassed_api.repository.UserAiRoadmapStateRepository;
 import com.compassed.compassed_api.repository.UserRepository;
 import com.compassed.compassed_api.repository.UserRoadmapAssignmentRepository;
 import com.compassed.compassed_api.security.CurrentUserService;
@@ -65,6 +72,7 @@ public class UserPortalController {
     private final NotificationRepository notificationRepository;
     private final FinalTestAttemptRepository finalTestAttemptRepository;
     private final QuestionBankRepository questionBankRepository;
+    private final UserAiRoadmapStateRepository userAiRoadmapStateRepository;
     private final RoleAccessService roleAccessService;
     private final LoginActivityService loginActivityService;
     private final PaymentService paymentService;
@@ -84,6 +92,7 @@ public class UserPortalController {
             NotificationRepository notificationRepository,
             FinalTestAttemptRepository finalTestAttemptRepository,
             QuestionBankRepository questionBankRepository,
+            UserAiRoadmapStateRepository userAiRoadmapStateRepository,
             RoleAccessService roleAccessService,
             LoginActivityService loginActivityService,
             PaymentService paymentService,
@@ -100,6 +109,7 @@ public class UserPortalController {
         this.notificationRepository = notificationRepository;
         this.finalTestAttemptRepository = finalTestAttemptRepository;
         this.questionBankRepository = questionBankRepository;
+        this.userAiRoadmapStateRepository = userAiRoadmapStateRepository;
         this.roleAccessService = roleAccessService;
         this.loginActivityService = loginActivityService;
         this.paymentService = paymentService;
@@ -277,7 +287,9 @@ public class UserPortalController {
     }
 
     @GetMapping("/subjects/{subjectId}/ai-roadmap")
-    public AiGeneratedRoadmapResponse generateAiRoadmap(@PathVariable Long subjectId) {
+    public AiGeneratedRoadmapResponse generateAiRoadmap(
+            @PathVariable Long subjectId,
+            @RequestParam(name = "action", required = false, defaultValue = "auto") String action) {
         Long userId = currentUserService.requireCurrentUserId();
         User user = getUser(userId);
         Subject subject = subjectRepository.findById(subjectId)
@@ -306,20 +318,100 @@ public class UserPortalController {
                 .filter(s -> s != null && !s.isBlank())
                 .distinct()
                 .toList();
-        String skillsJson = toJsonQuietly(skills);
-        String guide = aiService.generatePersonalizedRoadmapGuide(
-                subject.getCode(),
+        RoadmapFramework framework = resolveFramework(placement.getLevel().name(), academicTrack, subject.getCode());
+        String skillsJson = toJsonQuietly(Map.of(
+                "availableSkills", skills,
+                "framework", Map.of(
+                        "code", framework.code(),
+                        "title", framework.title(),
+                        "description", framework.description(),
+                        "modules", framework.modules())));
+
+        String actionNormalized = action == null ? "auto" : action.trim().toLowerCase();
+        boolean subscribed = subscriptionRepository.existsByUserIdAndSubjectIdAndIsActiveTrue(userId, subjectId);
+        int refreshLimit = subscribed ? 5 : 1;
+
+        UserAiRoadmapState state = userAiRoadmapStateRepository
+                .findByUser_IdAndSubject_Id(userId, subjectId)
+                .orElse(null);
+        boolean initialized = state != null && state.getRoadmapGuideJson() != null && !state.getRoadmapGuideJson().isBlank();
+        int refreshCountUsed = state == null || state.getRefreshCount() == null ? 0 : state.getRefreshCount();
+
+        String guide = initialized ? state.getRoadmapGuideJson() : null;
+        if ("view".equals(actionNormalized)) {
+            // keep cached guide only; do not generate new roadmap on first view
+        } else if ("initialize".equals(actionNormalized)) {
+            if (!initialized) {
+                guide = generateRoadmapGuideSafely(
+                        subject.getCode(),
+                        placement.getLevel().name(),
+                        academicTrack,
+                        placement.getScorePercent() == null ? 0.0 : placement.getScorePercent(),
+                        skillsJson,
+                        framework,
+                        skills);
+                state = saveRoadmapState(user, subject, state, guide, refreshCountUsed, true);
+                initialized = true;
+            }
+        } else if ("refresh".equals(actionNormalized)) {
+            if (!initialized) {
+                throw new RuntimeException("ROADMAP_NOT_INITIALIZED: Please initialize roadmap first");
+            }
+            boolean currentGuideIsFallback = isFallbackGuide(guide);
+            if (!currentGuideIsFallback && refreshCountUsed >= refreshLimit) {
+                throw new RuntimeException("REFRESH_LIMIT_REACHED: You have used all free roadmap refreshes");
+            }
+            guide = generateRoadmapGuideSafely(
+                    subject.getCode(),
+                    placement.getLevel().name(),
+                    academicTrack,
+                    placement.getScorePercent() == null ? 0.0 : placement.getScorePercent(),
+                    skillsJson,
+                    framework,
+                    skills);
+            if (!currentGuideIsFallback) {
+                refreshCountUsed += 1;
+            }
+            state = saveRoadmapState(user, subject, state, guide, refreshCountUsed, false);
+            initialized = true;
+        } else {
+            // auto mode for backward compatibility
+            if (!initialized) {
+                guide = generateRoadmapGuideSafely(
+                        subject.getCode(),
+                        placement.getLevel().name(),
+                        academicTrack,
+                        placement.getScorePercent() == null ? 0.0 : placement.getScorePercent(),
+                        skillsJson,
+                        framework,
+                        skills);
+                state = saveRoadmapState(user, subject, state, guide, refreshCountUsed, true);
+                initialized = true;
+            }
+        }
+
+        if (state != null && state.getRefreshCount() != null) {
+            refreshCountUsed = state.getRefreshCount();
+        }
+        int refreshRemaining = Math.max(0, refreshLimit - refreshCountUsed);
+        boolean canRefresh = initialized && refreshRemaining > 0;
+
+        List<AiGeneratedRoadmapResponse.RoadmapModuleItem> personalizedModules = normalizeRoadmapModules(
+                extractRoadmapModulesFromGuide(guide),
                 placement.getLevel().name(),
-                academicTrack,
-                placement.getScorePercent() == null ? 0.0 : placement.getScorePercent(),
-                skillsJson);
+                framework.modules(),
+                skills);
+        List<String> moduleTitles = personalizedModules.stream()
+                .map(AiGeneratedRoadmapResponse.RoadmapModuleItem::getTitle)
+                .filter(t -> t != null && !t.isBlank())
+                .toList();
 
         List<com.compassed.compassed_api.domain.QuestionBank> shuffled = new ArrayList<>(qb);
-        java.util.Collections.shuffle(shuffled);
-        List<com.compassed.compassed_api.domain.QuestionBank> miniRows = shuffled.stream()
-                .limit(Math.min(10, shuffled.size())).toList();
-        List<com.compassed.compassed_api.domain.QuestionBank> finalRows = shuffled.stream()
-                .limit(Math.min(20, shuffled.size())).toList();
+        Collections.shuffle(shuffled);
+        List<SkillPlan> miniPlan = buildSkillPlan(skills, framework.preferredSkills(), 10);
+        List<SkillPlan> finalPlan = buildSkillPlan(skills, framework.preferredSkills(), 20);
+        List<com.compassed.compassed_api.domain.QuestionBank> miniRows = pickQuestionsByPlan(shuffled, miniPlan, 10);
+        List<com.compassed.compassed_api.domain.QuestionBank> finalRows = pickQuestionsByPlan(shuffled, finalPlan, 20);
 
         AiGeneratedRoadmapResponse response = new AiGeneratedRoadmapResponse();
         response.setSubjectId(subject.getId());
@@ -327,11 +419,23 @@ public class UserPortalController {
         response.setSubjectName(subject.getName());
         response.setLevel(placement.getLevel().name());
         response.setAcademicTrack(academicTrack);
+        response.setFrameworkCode(framework.code());
+        response.setFrameworkTitle(framework.title());
+        response.setFrameworkDescription(framework.description());
+        response.setFrameworkModules(moduleTitles.isEmpty() ? framework.modules() : moduleTitles);
+        response.setRoadmapModules(personalizedModules);
         response.setPlacementScorePercent(
                 placement.getScorePercent() == null ? 0.0 : round1(placement.getScorePercent()));
         response.setRoadmapGuideJson(guide);
+        response.setMiniTestPlan(toSkillPlanItems(miniPlan));
+        response.setFinalTestPlan(toSkillPlanItems(finalPlan));
         response.setMiniTestDraft(toQuestionItems(miniRows));
         response.setFinalTestDraft(toQuestionItems(finalRows));
+        response.setRoadmapInitialized(initialized);
+        response.setRefreshCountUsed(refreshCountUsed);
+        response.setRefreshCountLimit(refreshLimit);
+        response.setRefreshCountRemaining(refreshRemaining);
+        response.setCanRefresh(canRefresh);
         return response;
     }
 
@@ -354,6 +458,103 @@ public class UserPortalController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"compassed-test-results.csv\"")
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .body(csv.toString());
+    }
+
+    private UserAiRoadmapState saveRoadmapState(
+            User user,
+            Subject subject,
+            UserAiRoadmapState existing,
+            String guide,
+            int refreshCount,
+            boolean initializeAtIfNeeded) {
+        UserAiRoadmapState state = existing == null ? new UserAiRoadmapState() : existing;
+        state.setUser(user);
+        state.setSubject(subject);
+        state.setRoadmapGuideJson(guide);
+        state.setRefreshCount(Math.max(0, refreshCount));
+        LocalDateTime now = LocalDateTime.now();
+        if (initializeAtIfNeeded && state.getInitializedAt() == null) {
+            state.setInitializedAt(now);
+        }
+        state.setUpdatedAt(now);
+        return userAiRoadmapStateRepository.save(state);
+    }
+
+    private String generateRoadmapGuideSafely(
+            String subjectCode,
+            String level,
+            String academicTrack,
+            double placementScorePercent,
+            String availableSkillsJson,
+            RoadmapFramework framework,
+            List<String> skills) {
+        try {
+            return aiService.generatePersonalizedRoadmapGuide(
+                    subjectCode,
+                    level,
+                    academicTrack,
+                    placementScorePercent,
+                    availableSkillsJson);
+        } catch (Exception ex) {
+            return buildFallbackRoadmapGuideJson(level, framework, skills);
+        }
+    }
+
+    private String buildFallbackRoadmapGuideJson(String level, RoadmapFramework framework, List<String> skills) {
+        List<Map<String, Object>> roadmapSteps = new ArrayList<>();
+        List<String> moduleTitles = framework == null || framework.modules() == null || framework.modules().isEmpty()
+                ? List.of("Module 1", "Module 2", "Module 3", "Module 4", "Module 5")
+                : framework.modules();
+        List<String> stageTemplates = List.of(
+                "Khởi động nền tảng",
+                "Ôn trọng tâm",
+                "Luyện dạng cơ bản",
+                "Luyện dạng nâng dần",
+                "Ứng dụng theo chủ đề",
+                "Phân tích lỗi thường gặp",
+                "Bài tập tổng hợp",
+                "Rèn tốc độ xử lý",
+                "Củng cố điểm yếu",
+                "Mini test cuối module");
+        for (int i = 0; i < 5; i++) {
+            String title = moduleTitles.get(i % moduleTitles.size());
+            List<String> focus = pickFocusSkills(skills, i);
+            List<Map<String, Object>> lessonPlan = new ArrayList<>();
+            for (int j = 0; j < 10; j++) {
+                String stage = stageTemplates.get(j % stageTemplates.size());
+                String skill = focus.get(j % focus.size());
+                lessonPlan.add(Map.of(
+                        "lessonNo", j + 1,
+                        "title", "Bài " + String.format("%02d", j + 1) + " - " + stage,
+                        "summary", "Module " + (i + 1) + ": " + stage + " với trọng tâm " + skill + " theo mức " + level + ".",
+                        "duration", "45 phút"));
+            }
+            roadmapSteps.add(Map.of(
+                    "week", i + 1,
+                    "title", title,
+                    "focusSkills", focus,
+                    "studyGuide", "Roadmap được tạo theo dữ liệu nội bộ do dịch vụ AI tạm thời không khả dụng.",
+                    "targetScore", defaultTargetByLevel(level),
+                    "duration", "2 tuần",
+                    "lessonPlan", lessonPlan));
+        }
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("mode", "FALLBACK");
+        payload.put("objective", "Củng cố kiến thức và nâng cấp theo level hiện tại.");
+        payload.put("roadmapSteps", roadmapSteps);
+        payload.put("miniTestBlueprint", Map.of("questionCount", 10));
+        payload.put("finalTestBlueprint", Map.of("questionCount", 20));
+        return toJsonQuietly(payload);
+    }
+
+    private boolean isFallbackGuide(String guideJson) {
+        if (guideJson == null || guideJson.isBlank()) return false;
+        try {
+            JsonNode root = objectMapper.readTree(guideJson);
+            return "FALLBACK".equalsIgnoreCase(root.path("mode").asText(""));
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
     private Map<String, Object> buildProgressChart(List<PlacementResult> placements,
@@ -530,12 +731,298 @@ public class UserPortalController {
         }).toList();
     }
 
+    private List<AiGeneratedRoadmapResponse.SkillPlanItem> toSkillPlanItems(List<SkillPlan> plans) {
+        List<AiGeneratedRoadmapResponse.SkillPlanItem> out = new ArrayList<>();
+        for (SkillPlan p : plans) {
+            AiGeneratedRoadmapResponse.SkillPlanItem item = new AiGeneratedRoadmapResponse.SkillPlanItem();
+            item.setSkillType(p.skillType());
+            item.setCount(p.count());
+            out.add(item);
+        }
+        return out;
+    }
+
+    private List<SkillPlan> buildSkillPlan(List<String> availableSkills, List<String> preferredKeywords, int total) {
+        if (availableSkills == null || availableSkills.isEmpty() || total <= 0) {
+            return List.of();
+        }
+        List<String> sorted = new ArrayList<>(availableSkills);
+        sorted.sort((a, b) -> Integer.compare(scoreSkill(b, preferredKeywords), scoreSkill(a, preferredKeywords)));
+        int bucket = Math.min(4, sorted.size());
+        List<String> picked = sorted.subList(0, bucket);
+        int base = total / bucket;
+        int rem = total % bucket;
+        List<SkillPlan> out = new ArrayList<>();
+        for (int i = 0; i < picked.size(); i++) {
+            int c = base + (i < rem ? 1 : 0);
+            out.add(new SkillPlan(picked.get(i), c));
+        }
+        return out;
+    }
+
+    private List<com.compassed.compassed_api.domain.QuestionBank> pickQuestionsByPlan(
+            List<com.compassed.compassed_api.domain.QuestionBank> pool,
+            List<SkillPlan> plans,
+            int total) {
+        if (pool == null || pool.isEmpty() || total <= 0) {
+            return List.of();
+        }
+        Map<String, List<com.compassed.compassed_api.domain.QuestionBank>> bySkill = new HashMap<>();
+        for (com.compassed.compassed_api.domain.QuestionBank q : pool) {
+            String key = normalizeSkillKey(q.getSkillType());
+            bySkill.computeIfAbsent(key, k -> new ArrayList<>()).add(q);
+        }
+        bySkill.values().forEach(Collections::shuffle);
+        List<com.compassed.compassed_api.domain.QuestionBank> out = new ArrayList<>();
+        Set<Long> used = new LinkedHashSet<>();
+
+        for (SkillPlan p : plans) {
+            List<com.compassed.compassed_api.domain.QuestionBank> rows = bySkill.get(normalizeSkillKey(p.skillType()));
+            if (rows == null || rows.isEmpty()) continue;
+            for (com.compassed.compassed_api.domain.QuestionBank q : rows) {
+                if (out.size() >= total) break;
+                if (used.contains(q.getId())) continue;
+                if (countSkill(out, p.skillType()) >= p.count()) break;
+                out.add(q);
+                used.add(q.getId());
+            }
+        }
+        if (out.size() < total) {
+            List<com.compassed.compassed_api.domain.QuestionBank> remain = new ArrayList<>(pool);
+            Collections.shuffle(remain);
+            for (com.compassed.compassed_api.domain.QuestionBank q : remain) {
+                if (out.size() >= total) break;
+                if (used.contains(q.getId())) continue;
+                out.add(q);
+                used.add(q.getId());
+            }
+        }
+        return out;
+    }
+
+    private int countSkill(List<com.compassed.compassed_api.domain.QuestionBank> rows, String skillType) {
+        String key = normalizeSkillKey(skillType);
+        int c = 0;
+        for (com.compassed.compassed_api.domain.QuestionBank q : rows) {
+            if (normalizeSkillKey(q.getSkillType()).equals(key)) c++;
+        }
+        return c;
+    }
+
+    private int scoreSkill(String skill, List<String> preferredKeywords) {
+        String s = normalizeSkillKey(skill);
+        int score = 0;
+        for (String k : preferredKeywords) {
+            String key = normalizeSkillKey(k);
+            if (s.contains(key) || key.contains(s)) score += 2;
+        }
+        return score;
+    }
+
+    private String normalizeSkillKey(String value) {
+        if (value == null) return "";
+        return value.trim().toLowerCase();
+    }
+
+    private RoadmapFramework resolveFramework(String level, String track, String subjectCode) {
+        String normLevel = level == null ? "L1" : level.trim().toUpperCase();
+        String normTrack = normalizeAcademicTrack(track);
+        String trackTitle = switch (normTrack) {
+            case "GRADE_12" -> "Lớp 12";
+            case "UNI_PREP" -> "Ôn thi đại học";
+            default -> "Lớp 11";
+        };
+        if ("L1".equals(normLevel)) {
+            return new RoadmapFramework(
+                    "FW_L1_" + normTrack,
+                    "Khung L1 - Củng cố nền tảng (" + trackTitle + ")",
+                    "Tập trung lấp lỗ hổng kiến thức cơ bản, xây nền chắc trước khi tăng tốc.",
+                    List.of("Module 1: Nền tảng cốt lõi", "Module 2: Củng cố kỹ năng cơ bản",
+                            "Module 3: Luyện bài tập chuẩn", "Module 4: Ứng dụng mức cơ bản", "Module 5: Tổng ôn nền tảng"),
+                    List.of(subjectCode, "cơ bản", "nền tảng", "khái niệm"));
+        }
+        if ("L2".equals(normLevel)) {
+            return new RoadmapFramework(
+                    "FW_L2_" + normTrack,
+                    "Khung L2 - Tăng cường kiến thức (" + trackTitle + ")",
+                    "Đẩy mạnh kỹ năng vận dụng, tăng tốc xử lý dạng bài trọng tâm.",
+                    List.of("Module 1: Ôn lõi kiến thức", "Module 2: Mở rộng dạng bài",
+                            "Module 3: Luyện tư duy vận dụng", "Module 4: Củng cố điểm yếu", "Module 5: Tổng ôn tăng cường"),
+                    List.of(subjectCode, "vận dụng", "trọng tâm", "kỹ năng"));
+        }
+        return new RoadmapFramework(
+                "FW_L3_" + normTrack,
+                "Khung L3 - Ôn tập chuyên sâu (" + trackTitle + ")",
+                "Tập trung chuyên đề khó, chiến lược làm bài và tối ưu điểm số.",
+                List.of("Module 1: Chuyên đề nâng cao", "Module 2: Chiến lược giải nhanh",
+                        "Module 3: Luyện đề chuyên sâu", "Module 4: Tối ưu điểm yếu cuối", "Module 5: Tổng duyệt mục tiêu điểm cao"),
+                List.of(subjectCode, "nâng cao", "chuyên sâu", "chiến lược"));
+    }
+
     private String toJsonQuietly(Object value) {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (Exception ex) {
             return "[]";
         }
+    }
+
+    private List<AiGeneratedRoadmapResponse.RoadmapModuleItem> extractRoadmapModulesFromGuide(String guideJson) {
+        if (guideJson == null || guideJson.isBlank()) {
+            return List.of();
+        }
+        try {
+            JsonNode root = objectMapper.readTree(guideJson);
+            JsonNode steps = root.path("roadmapSteps");
+            if (!steps.isArray() || steps.isEmpty()) {
+                return List.of();
+            }
+            List<AiGeneratedRoadmapResponse.RoadmapModuleItem> out = new ArrayList<>();
+            for (int i = 0; i < steps.size(); i++) {
+                JsonNode s = steps.get(i);
+                AiGeneratedRoadmapResponse.RoadmapModuleItem item = new AiGeneratedRoadmapResponse.RoadmapModuleItem();
+                item.setModuleNo(i + 1);
+                item.setTitle(s.path("title").asText("Module " + (i + 1)));
+                item.setStudyGuide(s.path("studyGuide").asText(""));
+                item.setTargetScore(s.has("targetScore") && s.path("targetScore").canConvertToInt()
+                        ? s.path("targetScore").asInt()
+                        : null);
+                item.setDuration(s.path("duration").asText(""));
+                item.setLessonPlan(extractLessonPlan(s.path("lessonPlan")));
+                List<String> focusSkills = new ArrayList<>();
+                JsonNode focusNode = s.path("focusSkills");
+                if (focusNode.isArray()) {
+                    focusNode.forEach(x -> {
+                        String v = x.asText("");
+                        if (!v.isBlank()) focusSkills.add(v);
+                    });
+                }
+                item.setFocusSkills(focusSkills);
+                out.add(item);
+            }
+            return out;
+        } catch (Exception ex) {
+            return List.of();
+        }
+    }
+
+    private List<AiGeneratedRoadmapResponse.LessonPlanItem> extractLessonPlan(JsonNode lessonPlanNode) {
+        if (lessonPlanNode == null || !lessonPlanNode.isArray() || lessonPlanNode.isEmpty()) {
+            return List.of();
+        }
+        List<AiGeneratedRoadmapResponse.LessonPlanItem> lessons = new ArrayList<>();
+        for (int i = 0; i < lessonPlanNode.size(); i++) {
+            JsonNode n = lessonPlanNode.get(i);
+            AiGeneratedRoadmapResponse.LessonPlanItem item = new AiGeneratedRoadmapResponse.LessonPlanItem();
+            item.setLessonNo(i + 1);
+            item.setTitle(n.path("title").asText("Bài " + (i + 1)));
+            item.setSummary(n.path("summary").asText(""));
+            item.setDuration(n.path("duration").asText("45 phút"));
+            lessons.add(item);
+        }
+        return lessons;
+    }
+
+    private List<AiGeneratedRoadmapResponse.RoadmapModuleItem> normalizeRoadmapModules(
+            List<AiGeneratedRoadmapResponse.RoadmapModuleItem> raw,
+            String level,
+            List<String> frameworkModules,
+            List<String> skills) {
+        List<AiGeneratedRoadmapResponse.RoadmapModuleItem> out = new ArrayList<>();
+        if (raw != null) {
+            for (AiGeneratedRoadmapResponse.RoadmapModuleItem item : raw) {
+                if (item == null) continue;
+                AiGeneratedRoadmapResponse.RoadmapModuleItem copy = new AiGeneratedRoadmapResponse.RoadmapModuleItem();
+                copy.setTitle(item.getTitle());
+                copy.setStudyGuide(item.getStudyGuide());
+                copy.setDuration((item.getDuration() == null || item.getDuration().isBlank()) ? "2 tuần" : item.getDuration());
+                copy.setTargetScore(item.getTargetScore() == null ? defaultTargetByLevel(level) : item.getTargetScore());
+                copy.setFocusSkills((item.getFocusSkills() == null || item.getFocusSkills().isEmpty())
+                        ? pickFocusSkills(skills, out.size()) : item.getFocusSkills());
+                copy.setLessonPlan(ensureMinLessons(item.getLessonPlan(), copy.getTitle(), level, copy.getFocusSkills()));
+                out.add(copy);
+                if (out.size() >= 5) break;
+            }
+        }
+
+        List<String> fallback = (frameworkModules == null || frameworkModules.isEmpty())
+                ? List.of("Nền tảng cốt lõi", "Luyện dạng bài", "Kỹ năng vận dụng", "Củng cố điểm yếu", "Tổng ôn nâng cao")
+                : frameworkModules;
+        while (out.size() < 5) {
+            int idx = out.size();
+            AiGeneratedRoadmapResponse.RoadmapModuleItem m = new AiGeneratedRoadmapResponse.RoadmapModuleItem();
+            m.setTitle(fallback.get(idx % fallback.size()));
+            m.setStudyGuide("Giáo trình theo " + level + ", phù hợp năng lực đã phân loại.");
+            m.setDuration("2 tuần");
+            m.setTargetScore(defaultTargetByLevel(level));
+            m.setFocusSkills(pickFocusSkills(skills, idx));
+            m.setLessonPlan(ensureMinLessons(List.of(), m.getTitle(), level, m.getFocusSkills()));
+            out.add(m);
+        }
+
+        for (int i = 0; i < out.size(); i++) {
+            AiGeneratedRoadmapResponse.RoadmapModuleItem m = out.get(i);
+            m.setModuleNo(i + 1);
+            if (m.getLessonPlan() == null || m.getLessonPlan().isEmpty()) {
+                m.setLessonPlan(ensureMinLessons(List.of(), m.getTitle(), level, m.getFocusSkills()));
+            }
+        }
+        return out;
+    }
+
+    private List<AiGeneratedRoadmapResponse.LessonPlanItem> ensureMinLessons(
+            List<AiGeneratedRoadmapResponse.LessonPlanItem> raw,
+            String moduleTitle,
+            String level,
+            List<String> focusSkills) {
+        List<AiGeneratedRoadmapResponse.LessonPlanItem> out = new ArrayList<>();
+        if (raw != null) {
+            for (AiGeneratedRoadmapResponse.LessonPlanItem item : raw) {
+                if (item == null) continue;
+                AiGeneratedRoadmapResponse.LessonPlanItem x = new AiGeneratedRoadmapResponse.LessonPlanItem();
+                x.setTitle((item.getTitle() == null || item.getTitle().isBlank()) ? "Bài học" : item.getTitle());
+                x.setSummary((item.getSummary() == null || item.getSummary().isBlank())
+                        ? "Nội dung theo chuẩn " + level : item.getSummary());
+                x.setDuration((item.getDuration() == null || item.getDuration().isBlank()) ? "45 phút" : item.getDuration());
+                out.add(x);
+                if (out.size() >= 10) break;
+            }
+        }
+        while (out.size() < 10) {
+            int idx = out.size();
+            String skill = (focusSkills == null || focusSkills.isEmpty())
+                    ? "kỹ năng trọng tâm"
+                    : focusSkills.get(idx % focusSkills.size());
+            AiGeneratedRoadmapResponse.LessonPlanItem x = new AiGeneratedRoadmapResponse.LessonPlanItem();
+            x.setTitle("Bài " + String.format("%02d", idx + 1) + " - " + moduleTitle);
+            x.setSummary("Luyện " + skill + " theo mức " + level + ".");
+            x.setDuration("45 phút");
+            out.add(x);
+        }
+        for (int i = 0; i < out.size(); i++) {
+            out.get(i).setLessonNo(i + 1);
+        }
+        return out;
+    }
+
+    private int defaultTargetByLevel(String level) {
+        return switch (level == null ? "L1" : level) {
+            case "L3" -> 85;
+            case "L2" -> 70;
+            default -> 55;
+        };
+    }
+
+    private List<String> pickFocusSkills(List<String> skills, int offset) {
+        if (skills == null || skills.isEmpty()) {
+            return List.of("Kỹ năng trọng tâm");
+        }
+        List<String> out = new ArrayList<>();
+        out.add(skills.get(offset % skills.size()));
+        if (skills.size() > 1) {
+            out.add(skills.get((offset + 1) % skills.size()));
+        }
+        return out;
     }
 
     private User getUser(Long userId) {
@@ -583,5 +1070,16 @@ public class UserPortalController {
             case "GRADE_11", "GRADE_12", "UNI_PREP" -> normalized;
             default -> throw new RuntimeException("academicTrack must be GRADE_11, GRADE_12 or UNI_PREP");
         };
+    }
+
+    private record SkillPlan(String skillType, int count) {
+    }
+
+    private record RoadmapFramework(
+            String code,
+            String title,
+            String description,
+            List<String> modules,
+            List<String> preferredSkills) {
     }
 }

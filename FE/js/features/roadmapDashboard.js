@@ -146,7 +146,7 @@ function subjectCardColor(index) {
   return { border: "border-b-primary", ring: "stroke-primary", btn: "bg-primary/10 text-primary hover:bg-primary" };
 }
 
-function renderSubjects(subjects, activeBySubjectId, keyword) {
+function renderSubjects(subjects, activeBySubjectId, keyword, onOpenSubject) {
   const grid = document.getElementById("rm-subject-grid");
   if (!grid) return { total: 0, enrolled: 0 };
 
@@ -207,20 +207,24 @@ function renderSubjects(subjects, activeBySubjectId, keyword) {
           <span class="text-slate-400">ID: ${Number(subject.id)}</span>
         </div>
       </div>
-      <button type="button" class="rm-open-subject mt-8 flex w-full items-center justify-center rounded-xl h-10 ${palette.btn} font-bold hover:text-white transition-all">${!enrolled ? "Đăng ký" : waitingPlacement ? "Làm placement test" : "Continue Journey"}</button>`;
+      <button type="button" class="rm-open-subject mt-8 flex w-full items-center justify-center rounded-xl h-10 ${palette.btn} font-bold hover:text-white transition-all">${!enrolled ? "Tham gia học" : waitingPlacement ? "Làm placement test" : "Continue Journey"}</button>`;
 
     const btn = card.querySelector(".rm-open-subject");
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
+      if (typeof onOpenSubject === "function") {
+        await onOpenSubject(subject, active, waitingPlacement);
+        return;
+      }
       localStorage.setItem(KEYS.subjectId, String(subject.id));
       if (!enrolled) {
-        nav("/checkout", "checkout.html");
+        nav(`/learning-roadmap?subjectId=${subject.id}`, `roadmap.html?subjectId=${subject.id}`);
         return;
       }
       if (waitingPlacement) {
         nav(`/placement-test?subjectId=${subject.id}`, `placementTest.html?subjectId=${subject.id}`);
         return;
       }
-      nav(`/learning-roadmap?subjectId=${subject.id}`, `coursesDetail.html?subjectId=${subject.id}`);
+      nav(`/learning-roadmap?subjectId=${subject.id}`, `roadmap.html?subjectId=${subject.id}`);
     });
 
     grid.appendChild(card);
@@ -285,6 +289,28 @@ function askSubscribeWhenNoRoadmap() {
         resolve(false);
       });
       content.querySelector("#rm-choice-yes").addEventListener("click", () => {
+        close();
+        resolve(true);
+      });
+    });
+  });
+}
+
+function askPlacementRequired(subjectName) {
+  return new Promise((resolve) => {
+    openRoadmapChoiceModal((content, close) => {
+      content.innerHTML = `
+        <h3 style="font-size:20px;font-weight:800;color:#0f172a;margin:0;">Cần làm placement test trước</h3>
+        <p style="margin:8px 0 14px 0;color:#475569;font-size:14px;">Môn <strong>${escapeHtml(subjectName || "này")}</strong> chưa có kết quả placement test. Bạn cần hoàn thành bài kiểm tra đầu vào trước khi vào roadmap.</p>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button id="rm-placement-later" type="button" style="padding:9px 14px;border:1px solid #e2e8f0;background:#fff;border-radius:8px;font-weight:700;color:#334155;cursor:pointer;">Để sau</button>
+          <button id="rm-placement-start" type="button" style="padding:9px 14px;border:none;background:#2563eb;color:#fff;border-radius:8px;font-weight:700;cursor:pointer;">Làm placement test</button>
+        </div>`;
+      content.querySelector("#rm-placement-later").addEventListener("click", () => {
+        close();
+        resolve(false);
+      });
+      content.querySelector("#rm-placement-start").addEventListener("click", () => {
         close();
         resolve(true);
       });
@@ -372,25 +398,50 @@ async function initRoadmapDashboard() {
   let latestSubjects = [];
   let latestActiveMap = new Map();
   let latestLearningStats = { rank: 0, totalLearners: 1, studyStreakDays: 0 };
+  const placementStatusCache = new Map();
 
-  const openSubjectByStatus = (subject) => {
-    const active = latestActiveMap.get(Number(subject.id));
+  const hasPlacementResult = async (subjectId) => {
+    const key = Number(subjectId);
+    if (placementStatusCache.has(key)) return placementStatusCache.get(key);
+    try {
+      const status = await api(`/api/subjects/${key}/placement-result-status`, "GET", null, true);
+      const okResult = !!(status && status.hasPlacementResult);
+      placementStatusCache.set(key, okResult);
+      return okResult;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const openSubjectByStatus = async (subject, givenActive, waitingPlacementFlag) => {
+    const active = givenActive || latestActiveMap.get(Number(subject.id));
     localStorage.setItem(KEYS.subjectId, String(subject.id));
+    const waitingPlacement = typeof waitingPlacementFlag === "boolean"
+      ? waitingPlacementFlag
+      : !!(active && active.phase === "WAITING_PLACEMENT");
+    const okResult = await hasPlacementResult(subject.id);
+    if (!okResult || waitingPlacement) {
+      const goPlacement = await askPlacementRequired(subject.name || subject.code || "môn học");
+      if (goPlacement) {
+        nav(`/placement-test?subjectId=${subject.id}`, `placementTest.html?subjectId=${subject.id}`);
+      }
+      return;
+    }
     if (!active) {
-      nav("/checkout", "checkout.html");
+      nav(`/learning-roadmap?subjectId=${subject.id}`, `roadmap.html?subjectId=${subject.id}`);
       return;
     }
     if (active.phase === "WAITING_PLACEMENT") {
       nav(`/placement-test?subjectId=${subject.id}`, `placementTest.html?subjectId=${subject.id}`);
       return;
     }
-    nav(`/learning-roadmap?subjectId=${subject.id}`, `coursesDetail.html?subjectId=${subject.id}`);
+    nav(`/learning-roadmap?subjectId=${subject.id}`, `roadmap.html?subjectId=${subject.id}`);
   };
 
   const openFirstAvailable = async () => {
     const enrolledSubjects = latestSubjects.filter((s) => latestActiveMap.has(Number(s.id)));
     if (enrolledSubjects.length === 1) {
-      openSubjectByStatus(enrolledSubjects[0]);
+      await openSubjectByStatus(enrolledSubjects[0]);
       return;
     }
     if (enrolledSubjects.length >= 2) {
@@ -398,7 +449,7 @@ async function initRoadmapDashboard() {
       if (!selectedId) return;
       const selected = enrolledSubjects.find((s) => Number(s.id) === Number(selectedId));
       if (!selected) return;
-      openSubjectByStatus(selected);
+      await openSubjectByStatus(selected);
       return;
     }
     if (!latestSubjects.length) {
@@ -455,7 +506,12 @@ async function initRoadmapDashboard() {
 
     const searchInput = document.getElementById("rm-search-input");
     const render = () => {
-      const stats = renderSubjects(latestSubjects, latestActiveMap, searchInput ? searchInput.value : "");
+      const stats = renderSubjects(
+        latestSubjects,
+        latestActiveMap,
+        searchInput ? searchInput.value : "",
+        openSubjectByStatus
+      );
       updateTopStats(stats, latestLearningStats);
     };
 

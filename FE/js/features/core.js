@@ -22,7 +22,9 @@ function pageName() {
   if (p.endsWith("/placement-result") || p.includes("placementtestresult.html")) return "result";
   if (p.endsWith("/checkout") || p.includes("checkout.html")) return "checkout";
   if (p.endsWith("/roadmap-dashboard") || p.includes("roadmapdashboard.html")) return "roadmapDashboard";
-  if (p.endsWith("/learning-roadmap") || p.includes("coursesdetail.html")) return "roadmap";
+  if (p.endsWith("/learning-roadmap") || p.includes("coursesdetail.html") || p.endsWith("/roadmap") || p.includes("roadmap.html")) return "roadmap";
+  if (p.endsWith("/roadmap-tutor") || p.includes("roadmaptutor.html")) return "roadmapTutor";
+  if (p.endsWith("/learning-ai") || p.includes("learningai.html")) return "learningAi";
   if (p.endsWith("/history") || p.includes("history.html")) return "history";
   if (p.endsWith("/dashboard") || p.includes("dashboard.html")) return "dashboard";
   if (p.endsWith("/profile") || p.includes("profile.html")) return "profile";
