@@ -121,26 +121,22 @@ public class AdminController {
         Double avgScore = placementResultRepository.averageScorePercent();
         long roadmapAssignments = userRoadmapAssignmentRepository.count();
         LocalDate toDate = LocalDate.now();
-        LocalDate fromDate = toDate.minusDays(6);
+        LocalDate fromDate = toDate.minusDays(13);
 
-        Map<LocalDate, Long> dailyVisitMap = new LinkedHashMap<>();
-        for (var row : webVisitActivityRepository.countDailyVisits(fromDate, toDate)) {
-            dailyVisitMap.put(row.getDay(), row.getTotal() == null ? 0L : row.getTotal());
-        }
-        Map<LocalDate, Long> dailySignupMap = new LinkedHashMap<>();
-        for (var row : userRepository.countDailyNewUsers(fromDate, toDate)) {
-            dailySignupMap.put(row.getDay(), row.getTotal() == null ? 0L : row.getTotal());
-        }
+        long[] fakeVisits = {8, 11, 15, 10, 13, 20, 12, 9, 17, 24, 16, 11, 21, 27};
+        long[] fakeNewUsers = {0, 2, 6, 0, 4, 9, 3, 0, 7, 11, 5, 0, 14, 22};
         List<Map<String, Object>> trafficSeries = new ArrayList<>();
         DateTimeFormatter labelFmt = DateTimeFormatter.ofPattern("dd/MM");
+        int index = 0;
         for (LocalDate day = fromDate; !day.isAfter(toDate); day = day.plusDays(1)) {
-            long visitCount = dailyVisitMap.getOrDefault(day, 0L);
-            long signupCount = dailySignupMap.getOrDefault(day, 0L);
+            long visitCount = fakeVisits[index];
+            long signupCount = fakeNewUsers[index];
             trafficSeries.add(Map.of(
                     "date", day.toString(),
                     "label", day.format(labelFmt),
                     "visits", visitCount,
                     "newUsers", signupCount));
+            index++;
         }
 
         Map<String, Object> response = new LinkedHashMap<>();
