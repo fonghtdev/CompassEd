@@ -11,6 +11,60 @@ import {
   toast
 } from "./core.js";
 
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function renderMathText(value) {
+  return escapeHtml(value).replace(/\r?\n/g, "<br>");
+}
+
+let mathJaxReadyPromise = null;
+
+function waitForMathJaxReady() {
+  if (mathJaxReadyPromise) return mathJaxReadyPromise;
+  mathJaxReadyPromise = new Promise((resolve) => {
+    let attempts = 0;
+    const tick = () => {
+      const mathJax = window.MathJax;
+      if (mathJax && typeof mathJax.typesetPromise === "function") {
+        if (mathJax.startup && mathJax.startup.promise) {
+          mathJax.startup.promise.finally(resolve);
+          return;
+        }
+        resolve();
+        return;
+      }
+      attempts += 1;
+      if (attempts >= 80) {
+        resolve();
+        return;
+      }
+      window.setTimeout(tick, 100);
+    };
+    tick();
+  });
+  return mathJaxReadyPromise;
+}
+
+async function typesetMath(elements) {
+  const targets = (Array.isArray(elements) ? elements : [elements]).filter(Boolean);
+  if (!targets.length) return;
+  await waitForMathJaxReady();
+  const mathJax = window.MathJax;
+  if (!mathJax || typeof mathJax.typesetPromise !== "function") return;
+  try {
+    await mathJax.typesetPromise(targets);
+  } catch (err) {
+    console.warn("MathJax typeset failed:", err);
+  }
+}
+
 function isUnauthorizedError(message) {
   const msg = String(message || "").toLowerCase();
   return msg.includes("http 401") || msg.includes("\"status\":401") || msg.includes("unauthorized") || msg.includes("invalid token");
@@ -99,6 +153,7 @@ function renderPlacementOptions(options, selected, onSelect) {
   const wrap = document.getElementById("placement-options");
   if (!wrap) return;
   wrap.innerHTML = "";
+  const mathTargets = [];
   options.forEach((text, idx) => {
     const letter = String.fromCharCode(65 + idx);
     const label = document.createElement("label");
@@ -107,11 +162,14 @@ function renderPlacementOptions(options, selected, onSelect) {
       <input class="peer sr-only" type="radio" name="placement-answer" value="${letter}" ${selected === letter ? "checked" : ""} />
       <div class="p-5 rounded-xl border-2 border-border-light bg-surface-light hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5 transition-all duration-200 flex items-center gap-4">
         <div class="size-8 rounded-full border-2 border-border-light flex items-center justify-center text-sm font-bold text-text-secondary-light peer-checked:bg-primary peer-checked:border-primary peer-checked:text-white">${letter}</div>
-        <span class="text-lg font-medium">${text}</span>
+        <span class="placement-option-text text-lg font-medium">${renderMathText(text)}</span>
       </div>`;
     label.querySelector("input").addEventListener("change", (e) => onSelect(e.target.value));
     wrap.appendChild(label);
+    const optionText = label.querySelector(".placement-option-text");
+    if (optionText) mathTargets.push(optionText);
   });
+  void typesetMath(mathTargets);
 }
 
 // Add detailed logging for debugging
@@ -372,7 +430,7 @@ async function initPlacement() {
     function rerender() {
       const q = paper[index];
       if (!q) return;
-      questionEl.textContent = q.q || `Question ${index + 1}`;
+      questionEl.innerHTML = renderMathText(q.q || `Question ${index + 1}`);
       if (descEl) descEl.textContent = "Choose one answer.";
       const options = (q.options || []).map((x) => String(x).replace(/^[A-D]\.\s*/, ""));
       renderPlacementOptions(options, answers[String(q.id)], (value) => {
@@ -395,6 +453,7 @@ async function initPlacement() {
       prevBtn.disabled = index === 0;
       nextBtn.textContent = index === paper.length - 1 ? "Submit Test" : "Next Question";
       renderQuestionGrid();
+      void typesetMath(questionEl);
     }
 
     prevBtn.addEventListener("click", () => {

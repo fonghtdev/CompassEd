@@ -217,7 +217,7 @@ function renderWeeklyProgress(roadmap) {
   if (spentEl) spentEl.textContent = formatHoursMinutes(totalMinutes);
 
   const lessonsEl = document.getElementById("road-lessons-completed");
-  if (lessonsEl) lessonsEl.textContent = "4";
+  if (lessonsEl) lessonsEl.textContent = String(completedLessons.length);
 
   const weights = [0.18, 0.23, 0.2, 0.25, 0.05, 0.05, 0.04];
   const dayMinutes = weights.map((w) => Math.round(totalMinutes * w));
@@ -453,6 +453,145 @@ function buildLessonPlanRows(row) {
   return out;
 }
 
+function lessonContentCacheKey(subjectId, moduleNo, lessonNo) {
+  return `compassed_ai_lesson_v2_${Number(subjectId || 0)}_${Number(moduleNo || 0)}_${Number(lessonNo || 0)}`;
+}
+
+function readCachedLessonContent(subjectId, moduleNo, lessonNo) {
+  try {
+    return JSON.parse(localStorage.getItem(lessonContentCacheKey(subjectId, moduleNo, lessonNo)) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedLessonContent(subjectId, moduleNo, lessonNo, payload) {
+  localStorage.setItem(lessonContentCacheKey(subjectId, moduleNo, lessonNo), JSON.stringify(payload || null));
+}
+
+function ensureLessonModal() {
+  let overlay = document.getElementById("road-lesson-modal");
+  if (overlay) return overlay;
+  overlay = document.createElement("div");
+  overlay.id = "road-lesson-modal";
+  overlay.className = "fixed inset-0 z-[120] hidden bg-slate-950/65 px-4 py-6";
+  overlay.innerHTML = `
+    <div class="mx-auto flex h-full max-w-5xl items-center justify-center">
+      <div class="relative flex h-full max-h-[88vh] w-full flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div class="flex items-start justify-between gap-4 border-b border-border-light px-6 py-5">
+          <div>
+            <p id="road-lesson-module-label" class="text-xs font-bold uppercase tracking-[0.18em] text-primary">AI Lesson</p>
+            <h3 id="road-lesson-title" class="mt-2 text-2xl font-black text-text-main">Lesson</h3>
+            <p id="road-lesson-summary" class="mt-2 text-sm text-text-sub"></p>
+          </div>
+          <button id="road-lesson-close" type="button" class="rounded-full border border-border-light p-2 text-text-sub hover:bg-background-light">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div id="road-lesson-body" class="flex-1 overflow-y-auto px-6 py-6"></div>
+        <div class="flex items-center justify-between gap-3 border-t border-border-light bg-background-light px-6 py-4">
+          <button id="road-lesson-cancel" type="button" class="rounded-lg border border-border-light bg-white px-4 py-2 text-sm font-semibold text-text-main hover:bg-slate-50">Đóng</button>
+          <button id="road-lesson-complete" type="button" class="rounded-lg bg-primary px-5 py-2 text-sm font-bold text-white hover:bg-primary-dark">Đánh dấu hoàn thành</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const close = () => overlay.classList.add("hidden");
+  overlay.querySelector("#road-lesson-close")?.addEventListener("click", close);
+  overlay.querySelector("#road-lesson-cancel")?.addEventListener("click", close);
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) close();
+  });
+  return overlay;
+}
+
+function renderLessonModalContent(overlay, payload) {
+  const moduleLabel = overlay.querySelector("#road-lesson-module-label");
+  const title = overlay.querySelector("#road-lesson-title");
+  const summary = overlay.querySelector("#road-lesson-summary");
+  const body = overlay.querySelector("#road-lesson-body");
+  if (moduleLabel) moduleLabel.textContent = `Module ${payload.moduleNo || "-"} • Lesson ${payload.lessonNo || "-"}`;
+  if (title) title.textContent = payload.lessonTitle || "Lesson";
+  if (summary) summary.textContent = [payload.duration, payload.lessonSummary].filter(Boolean).join(" • ");
+  if (!body) return;
+
+  const objectives = Array.isArray(payload.learningObjectives) ? payload.learningObjectives : [];
+  const sections = Array.isArray(payload.lessonSections) ? payload.lessonSections : [];
+  const practiceTasks = Array.isArray(payload.practiceTasks) ? payload.practiceTasks : [];
+  const takeaways = Array.isArray(payload.keyTakeaways) ? payload.keyTakeaways : [];
+
+  body.innerHTML = `
+    <div class="space-y-6">
+      ${objectives.length ? `
+        <section class="rounded-2xl border border-sky-100 bg-sky-50 px-5 py-4">
+          <h4 class="text-sm font-extrabold uppercase tracking-wide text-sky-700">Mục tiêu bài học</h4>
+          <ul class="mt-3 space-y-2 text-sm text-slate-700">
+            ${objectives.map((item) => `<li class="flex gap-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-sky-500"></span><span>${escapeHtml(item)}</span></li>`).join("")}
+          </ul>
+        </section>` : ""}
+      ${sections.map((section, index) => `
+        <section class="rounded-2xl border border-border-light bg-white px-5 py-5 shadow-sm">
+          <p class="text-xs font-bold uppercase tracking-[0.16em] text-primary">Phần ${index + 1}</p>
+          <h4 class="mt-2 text-xl font-bold text-text-main">${escapeHtml(section.heading || `Nội dung ${index + 1}`)}</h4>
+          <p class="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">${escapeHtml(section.body || "")}</p>
+          ${Array.isArray(section.bullets) && section.bullets.length ? `
+            <ul class="mt-4 space-y-2 text-sm text-slate-700">
+              ${section.bullets.map((item) => `<li class="flex gap-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary"></span><span>${escapeHtml(item)}</span></li>`).join("")}
+            </ul>` : ""}
+        </section>`).join("")}
+      ${practiceTasks.length ? `
+        <section class="rounded-2xl border border-emerald-100 bg-emerald-50 px-5 py-4">
+          <h4 class="text-sm font-extrabold uppercase tracking-wide text-emerald-700">Bài tập tự luyện</h4>
+          <ul class="mt-3 space-y-2 text-sm text-slate-700">
+            ${practiceTasks.map((item) => `<li class="flex gap-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-500"></span><span>${escapeHtml(item)}</span></li>`).join("")}
+          </ul>
+        </section>` : ""}
+      ${takeaways.length ? `
+        <section class="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4">
+          <h4 class="text-sm font-extrabold uppercase tracking-wide text-amber-700">Key Takeaways</h4>
+          <ul class="mt-3 space-y-2 text-sm text-slate-700">
+            ${takeaways.map((item) => `<li class="flex gap-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-amber-500"></span><span>${escapeHtml(item)}</span></li>`).join("")}
+          </ul>
+        </section>` : ""}
+      ${payload.reflectionPrompt ? `
+        <section class="rounded-2xl border border-violet-100 bg-violet-50 px-5 py-4">
+          <h4 class="text-sm font-extrabold uppercase tracking-wide text-violet-700">Tự phản tư</h4>
+          <p class="mt-3 text-sm leading-7 text-slate-700">${escapeHtml(payload.reflectionPrompt)}</p>
+        </section>` : ""}
+      ${payload.homework ? `
+        <section class="rounded-2xl border border-rose-100 bg-rose-50 px-5 py-4">
+          <h4 class="text-sm font-extrabold uppercase tracking-wide text-rose-700">Homework</h4>
+          <p class="mt-3 text-sm leading-7 text-slate-700">${escapeHtml(payload.homework)}</p>
+        </section>` : ""}
+    </div>`;
+}
+
+async function openAiLessonModal(subjectId, moduleNo, lessonNo, onComplete) {
+  const overlay = ensureLessonModal();
+  const body = overlay.querySelector("#road-lesson-body");
+  const completeBtn = overlay.querySelector("#road-lesson-complete");
+  overlay.classList.remove("hidden");
+  if (body) {
+    body.innerHTML = '<div class="rounded-2xl border border-border-light bg-background-light px-5 py-10 text-center text-sm text-text-sub">Đang tải giáo trình AI cho bài học này...</div>';
+  }
+
+  let payload = readCachedLessonContent(subjectId, moduleNo, lessonNo);
+  if (!payload) {
+    payload = await api(`/api/me/subjects/${subjectId}/ai-roadmap/lessons?moduleNo=${moduleNo}&lessonNo=${lessonNo}`, "GET", null, true);
+    writeCachedLessonContent(subjectId, moduleNo, lessonNo, payload);
+  }
+  renderLessonModalContent(overlay, payload || {});
+
+  if (completeBtn) {
+    const nextBtn = completeBtn.cloneNode(true);
+    completeBtn.parentNode.replaceChild(nextBtn, completeBtn);
+    nextBtn.addEventListener("click", () => {
+      overlay.classList.add("hidden");
+      if (typeof onComplete === "function") onComplete();
+    });
+  }
+}
+
 function renderLegacyRoadmapBlocks(rows, selectedIndex, onSelect, roadmapInitialized) {
   const richRows = enrichRows(rows);
   const topCards = document.querySelector(".grid.grid-cols-1.sm\\:grid-cols-3.gap-4.mb-8");
@@ -583,14 +722,20 @@ function renderLegacyRoadmapBlocks(rows, selectedIndex, onSelect, roadmapInitial
     ${nextModuleCta}`;
 
   pathWrap.querySelectorAll(".lesson-start-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const idx = Number(btn.getAttribute("data-lesson-index") || -1);
       if (idx !== completedCount) return;
-      setCompletedLessonCount(row.userId, row.subjectId, row.index, completedCount + 1);
-      renderLegacyRoadmapBlocks(rows, selectedIndex, onSelect, roadmapInitialized);
-      const startBtn = document.getElementById("roadmap-start-lesson-btn");
-      if (startBtn) startBtn.textContent = roadmapActionLabel("LESSONS");
-      toast("Đã hoàn thành bài học, mở khóa bài tiếp theo.");
+      try {
+        await openAiLessonModal(row.subjectId, Number(row.index) + 1, idx + 1, () => {
+          setCompletedLessonCount(row.userId, row.subjectId, row.index, completedCount + 1);
+          renderLegacyRoadmapBlocks(rows, selectedIndex, onSelect, roadmapInitialized);
+          const startBtn = document.getElementById("roadmap-start-lesson-btn");
+          if (startBtn) startBtn.textContent = roadmapActionLabel("LESSONS");
+          toast("Đã hoàn thành bài học, mở khóa bài tiếp theo.");
+        });
+      } catch (err) {
+        toast(`Không thể tải bài học AI: ${err.message}`, "error");
+      }
     });
   });
 
