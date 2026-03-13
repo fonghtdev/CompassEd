@@ -53,7 +53,6 @@ public class AiServiceImpl implements AiService {
 
   @Override
   public String analyzeSkills(String subjectCode, String paperJson, String answersJson) {
-
     String prompt = """
         Bạn là hệ thống AI chấm bài học sinh THPT.
         Môn: %s
@@ -124,27 +123,27 @@ public class AiServiceImpl implements AiService {
     String subjectRoadmapPrompt = loadRoadmapPromptBySubject(subjectCode);
 
     String prompt = """
-        Bạn là AI học tập cho CompassED.
-        Hãy sinh roadmap hướng dẫn học tập CÁ NHÂN HÓA cho học sinh theo thông tin sau:
+        Ban la AI hoc tap cua CompassED. Sinh 1 roadmap ca nhan hoa bang JSON thuan, khong markdown.
 
-        - Môn: %s
-        - Level hiện tại: %s
-        - Hệ/lớp: %s (GRADE_11/GRADE_12/UNI_PREP)
-        - Điểm placement: %.1f
-        - Danh sách kỹ năng/chủ đề có trong QuestionBank (JSON): %s
+        Dau vao:
+        - Mon: %s
+        - Level: %s
+        - He/lop: %s
+        - Diem placement: %.1f
+        - Skill input (JSON ngan gon): %s
 
-        Prompt chuẩn theo môn (PHẢI tuân thủ và xem là nguồn thiết kế roadmap gốc):
+        Khung roadmap goc theo mon, phai bam sat:
         ---- BEGIN ROADMAP PROMPT FILE ----
         %s
         ---- END ROADMAP PROMPT FILE ----
 
-        Yêu cầu bắt buộc:
-        1) Bám đúng prompt chuẩn theo môn ở trên để tạo module và lesson.
-        2) Chỉ bám theo level hiện tại (ví dụ L2 thì chỉ nội dung phù hợp L2).
-        3) Chỉ bám theo hệ/lớp hiện tại (ví dụ GRADE_11 thì nội dung lớp 11).
-        4) Trả về đúng 5 module trong roadmapSteps (moduleNo 1..5).
-        5) Mỗi module phải có lessonPlan tối thiểu 10 bài học.
-        6) Trả về JSON thuần (không markdown) theo format:
+        Rang buoc:
+        1) Dung dung level va he/lop hien tai.
+        2) Tra ve dung 5 module trong roadmapSteps, moduleNo 1..5.
+        3) Moi module co it nhat 10 lesson trong lessonPlan.
+        4) FocusSkills va lesson uu tien chon tu skill input.
+        5) Noi dung ngan gon, tranh giai thich dai.
+        6) Tra ve dung schema sau:
         {
           "objective": "...",
           "roadmapSteps": [
@@ -154,9 +153,9 @@ public class AiServiceImpl implements AiService {
               "focusSkills": ["..."],
               "studyGuide": "...",
               "targetScore": 0-100,
-              "duration": "2 tuần",
+              "duration": "2 tuan",
               "lessonPlan": [
-                { "lessonNo": 1, "title": "...", "summary": "...", "duration": "45 phút" }
+                { "lessonNo": 1, "title": "...", "summary": "...", "duration": "45 phut" }
               ]
             }
           ],
@@ -186,13 +185,13 @@ public class AiServiceImpl implements AiService {
     String code = normalizeSubjectCode(subjectCode);
     String fileName = ROADMAP_PROMPT_FILE_BY_SUBJECT.get(code);
     if (fileName == null || fileName.isBlank()) {
-      return "Không có file prompt riêng cho môn này. Hãy tự tạo roadmap chuẩn theo level/lớp và danh sách kỹ năng.";
+      return "Khong co file prompt rieng cho mon nay. Hay tu tao roadmap chuan theo level/lop va danh sach ky nang.";
     }
 
     String content = readPromptFileFromRepoRoot(fileName);
     if (content == null || content.isBlank()) {
-      return "Không đọc được file prompt môn " + code
-          + ". Hãy tự tạo roadmap chuẩn theo level/lớp và danh sách kỹ năng.";
+      return "Khong doc duoc file prompt mon " + code
+          + ". Hay tu tao roadmap chuan theo level/lop va danh sach ky nang.";
     }
     return content;
   }
@@ -222,29 +221,6 @@ public class AiServiceImpl implements AiService {
       return "";
     }
     return subjectCode.trim().toUpperCase(Locale.ROOT);
-  }
-
-  // ===== JSON GIẢ =====
-  private String mockSkillAnalysis(String subjectCode) {
-    return """
-        {
-          "mode": "MOCK",
-          "subject": "%s",
-          "overall_level": "average",
-          "skills": [
-            { "name": "Kiến thức cơ bản", "score": 65, "note": "Nắm được kiến thức nền tảng" },
-            { "name": "Kỹ năng làm bài", "score": 60, "note": "Cần luyện thêm dạng bài" }
-          ],
-          "weak_topics": [
-            "Dạng bài vận dụng",
-            "Câu hỏi suy luận"
-          ],
-          "recommendations": [
-            "Học lại các phần yếu trong roadmap",
-            "Làm thêm bài tập mức độ trung bình"
-          ]
-        }
-        """.formatted(subjectCode);
   }
 
   private void persistAiLog(String taskType, String subjectCode, String inputPrompt, String outputText) {
