@@ -269,6 +269,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             throw new RuntimeException("Subject_Code is required");
         }
         Subject subject = resolveSubjectByLegacyCode(subjectCode);
+        boolean mathSubject = isMathSubject(subject);
 
         Level level = parseLegacyLevel(row.get("Level"));
         String legacyClassRaw = text(row, "Class");
@@ -278,16 +279,16 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             gradeBand = "UNI_PREP";
         }
 
-        String questionText = text(row, "Question_Text");
+        String questionText = normalizeImportedText(text(row, "Question_Text"), mathSubject);
         if (questionText.isBlank()) {
             throw new RuntimeException("Question_Text is required");
         }
 
         List<String> options = new ArrayList<>();
-        addOption(options, "A", text(row, "Option_A"));
-        addOption(options, "B", text(row, "Option_B"));
-        addOption(options, "C", text(row, "Option_C"));
-        addOption(options, "D", text(row, "Option_D"));
+        addOption(options, "A", normalizeImportedText(text(row, "Option_A"), mathSubject));
+        addOption(options, "B", normalizeImportedText(text(row, "Option_B"), mathSubject));
+        addOption(options, "C", normalizeImportedText(text(row, "Option_C"), mathSubject));
+        addOption(options, "D", normalizeImportedText(text(row, "Option_D"), mathSubject));
         if (options.isEmpty()) {
             throw new RuntimeException("At least one option is required (Option_A...Option_D)");
         }
@@ -309,9 +310,87 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         req.setQuestionText(questionText);
         req.setOptions(objectMapper.writeValueAsString(options));
         req.setCorrectAnswer(correct);
-        req.setExplanation(text(row, "Explanation"));
+        req.setExplanation(normalizeImportedText(text(row, "Explanation"), mathSubject));
         req.setDifficulty(difficulty);
         return req;
+    }
+
+    private boolean isMathSubject(Subject subject) {
+        if (subject == null || subject.getCode() == null) {
+            return false;
+        }
+        String code = subject.getCode().trim().toUpperCase(Locale.ROOT);
+        return code.equals("MATH") || code.equals("M");
+    }
+
+    private String normalizeImportedText(String raw, boolean mathSubject) {
+        String text = raw == null ? "" : raw.trim();
+        if (!mathSubject || text.isEmpty()) {
+            return text;
+        }
+        return normalizeMathLatex(text);
+    }
+
+    private String normalizeMathLatex(String raw) {
+        StringBuilder out = new StringBuilder();
+        int i = 0;
+        while (i < raw.length()) {
+            char ch = raw.charAt(i);
+            if ((ch == '^' || ch == '_') && i + 1 < raw.length()) {
+                char next = raw.charAt(i + 1);
+                if (next == '{') {
+                    out.append(ch);
+                    i += 1;
+                    continue;
+                }
+                if (next == '(') {
+                    int end = findClosingParen(raw, i + 1);
+                    if (end > i + 1) {
+                        out.append(ch).append('{').append(raw, i + 2, end).append('}');
+                        i = end + 1;
+                        continue;
+                    }
+                }
+                int tokenEnd = readMathTokenEnd(raw, i + 1);
+                if (tokenEnd > i + 1) {
+                    out.append(ch).append('{').append(raw, i + 1, tokenEnd).append('}');
+                    i = tokenEnd;
+                    continue;
+                }
+            }
+            out.append(ch);
+            i += 1;
+        }
+        return out.toString();
+    }
+
+    private int findClosingParen(String raw, int openIndex) {
+        int depth = 0;
+        for (int i = openIndex; i < raw.length(); i++) {
+            char ch = raw.charAt(i);
+            if (ch == '(') {
+                depth += 1;
+            } else if (ch == ')') {
+                depth -= 1;
+                if (depth == 0) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private int readMathTokenEnd(String raw, int start) {
+        int i = start;
+        while (i < raw.length()) {
+            char ch = raw.charAt(i);
+            if (Character.isLetterOrDigit(ch) || ch == '\\') {
+                i += 1;
+                continue;
+            }
+            break;
+        }
+        return i;
     }
 
     private Subject resolveSubjectByLegacyCode(String rawSubjectCode) {

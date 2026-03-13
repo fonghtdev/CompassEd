@@ -23,7 +23,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: mysql
       GOOGLE_CLIENT_ID: 418581116582-qet8ant9k0t319hkd3640dtsa54eg07v.apps.googleusercontent.com
-      OPENAI_API_KEY: "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"
+      OPENAI_API_KEY: "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"
       MAIL_HOST: smtp.gmail.com
       MAIL_PORT: 587
       MAIL_USERNAME: fonght.dev@gmail.com

@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.compassed.compassed_api.api.dto.AiGeneratedRoadmapResponse;
+import com.compassed.compassed_api.api.dto.AiRoadmapLessonResponse;
 import com.compassed.compassed_api.api.dto.ChangeMyPasswordRequest;
 import com.compassed.compassed_api.api.dto.UpdateMyProfileRequest;
 import com.compassed.compassed_api.domain.entity.PlacementResult;
@@ -319,13 +320,7 @@ public class UserPortalController {
                 .distinct()
                 .toList();
         RoadmapFramework framework = resolveFramework(placement.getLevel().name(), academicTrack, subject.getCode());
-        String skillsJson = toJsonQuietly(Map.of(
-                "availableSkills", skills,
-                "framework", Map.of(
-                        "code", framework.code(),
-                        "title", framework.title(),
-                        "description", framework.description(),
-                        "modules", framework.modules())));
+        String skillsJson = buildRoadmapPromptInput(framework, skills);
 
         String actionNormalized = action == null ? "auto" : action.trim().toLowerCase();
         boolean subscribed = subscriptionRepository.existsByUserIdAndSubjectIdAndIsActiveTrue(userId, subjectId);
@@ -339,7 +334,18 @@ public class UserPortalController {
 
         String guide = initialized ? state.getRoadmapGuideJson() : null;
         if ("view".equals(actionNormalized)) {
-            // keep cached guide only; do not generate new roadmap on first view
+            if (initialized && !isUsableRoadmapGuide(guide)) {
+                guide = generateRoadmapGuideSafely(
+                        subject.getCode(),
+                        placement.getLevel().name(),
+                        academicTrack,
+                        placement.getScorePercent() == null ? 0.0 : placement.getScorePercent(),
+                        skillsJson,
+                        framework,
+                        skills);
+                state = saveRoadmapState(user, subject, state, guide, refreshCountUsed, false);
+                initialized = true;
+            }
         } else if ("initialize".equals(actionNormalized)) {
             if (!initialized) {
                 guide = generateRoadmapGuideSafely(
@@ -439,6 +445,61 @@ public class UserPortalController {
         return response;
     }
 
+    @GetMapping("/subjects/{subjectId}/ai-roadmap/lessons")
+    public AiRoadmapLessonResponse generateAiRoadmapLesson(
+            @PathVariable Long subjectId,
+            @RequestParam Integer moduleNo,
+            @RequestParam Integer lessonNo) {
+        Long userId = currentUserService.requireCurrentUserId();
+        User user = getUser(userId);
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new RuntimeException("Subject not found"));
+        UserProfile profile = getOrCreateProfile(user);
+        String academicTrack = normalizeAcademicTrack(profile.getAcademicTrack());
+
+        PlacementResult placement = placementResultRepository
+                .findTopByUser_IdAndSubject_IdOrderByCreatedAtDesc(userId, subjectId)
+                .orElseThrow(() -> new RuntimeException("Need placement result before generating lesson"));
+
+        UserAiRoadmapState state = userAiRoadmapStateRepository
+                .findByUser_IdAndSubject_Id(userId, subjectId)
+                .orElseThrow(() -> new RuntimeException("ROADMAP_NOT_INITIALIZED: Please initialize roadmap first"));
+        if (state.getRoadmapGuideJson() == null || state.getRoadmapGuideJson().isBlank()) {
+            throw new RuntimeException("ROADMAP_NOT_INITIALIZED: Please initialize roadmap first");
+        }
+
+        com.compassed.compassed_api.domain.QuestionBank.Level qbLevel = com.compassed.compassed_api.domain.QuestionBank.Level
+                .valueOf(placement.getLevel().name());
+        List<com.compassed.compassed_api.domain.QuestionBank> qb = questionBankRepository
+                .findBySubjectIdAndLevelAndGradeBandAndIsActiveTrue(subjectId, qbLevel, academicTrack);
+        if (qb.isEmpty()) {
+            qb = questionBankRepository.findBySubjectIdAndLevelAndIsActiveTrue(subjectId, qbLevel);
+        }
+        List<String> skills = qb.stream()
+                .map(com.compassed.compassed_api.domain.QuestionBank::getSkillType)
+                .filter(s -> s != null && !s.isBlank())
+                .distinct()
+                .toList();
+
+        RoadmapFramework framework = resolveFramework(placement.getLevel().name(), academicTrack, subject.getCode());
+        List<AiGeneratedRoadmapResponse.RoadmapModuleItem> modules = normalizeRoadmapModules(
+                extractRoadmapModulesFromGuide(state.getRoadmapGuideJson()),
+                placement.getLevel().name(),
+                framework.modules(),
+                skills);
+        AiGeneratedRoadmapResponse.RoadmapModuleItem module = modules.stream()
+                .filter(x -> x != null && x.getModuleNo() != null && x.getModuleNo().equals(moduleNo))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Module not found in AI roadmap"));
+        AiGeneratedRoadmapResponse.LessonPlanItem lesson = Optional.ofNullable(module.getLessonPlan()).orElse(List.of())
+                .stream()
+                .filter(x -> x != null && x.getLessonNo() != null && x.getLessonNo().equals(lessonNo))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Lesson not found in AI roadmap module"));
+
+        return buildFallbackLessonContent(subject, placement.getLevel().name(), academicTrack, module, lesson);
+    }
+
     @GetMapping(value = "/tests/export", produces = "text/csv")
     public ResponseEntity<String> exportTestsCsv() {
         Long userId = currentUserService.requireCurrentUserId();
@@ -489,15 +550,37 @@ public class UserPortalController {
             RoadmapFramework framework,
             List<String> skills) {
         try {
-            return aiService.generatePersonalizedRoadmapGuide(
+            String guide = aiService.generatePersonalizedRoadmapGuide(
                     subjectCode,
                     level,
                     academicTrack,
                     placementScorePercent,
                     availableSkillsJson);
+            if (!isUsableRoadmapGuide(guide)) {
+                return buildFallbackRoadmapGuideJson(level, framework, skills);
+            }
+            return extractJsonPayload(guide);
         } catch (Exception ex) {
             return buildFallbackRoadmapGuideJson(level, framework, skills);
         }
+    }
+
+    private String buildRoadmapPromptInput(RoadmapFramework framework, List<String> skills) {
+        List<String> compactSkills = Optional.ofNullable(skills)
+                .orElse(List.of())
+                .stream()
+                .map(skill -> skill == null ? "" : skill.trim())
+                .filter(skill -> !skill.isBlank())
+                .limit(12)
+                .toList();
+        Map<String, Object> compactFramework = Map.of(
+                "code", framework.code(),
+                "title", framework.title(),
+                "modules", framework.modules());
+        return toJsonQuietly(Map.of(
+                "availableSkills", compactSkills,
+                "skillCount", Optional.ofNullable(skills).orElse(List.of()).size(),
+                "framework", compactFramework));
     }
 
     private String buildFallbackRoadmapGuideJson(String level, RoadmapFramework framework, List<String> skills) {
@@ -545,6 +628,353 @@ public class UserPortalController {
         payload.put("miniTestBlueprint", Map.of("questionCount", 10));
         payload.put("finalTestBlueprint", Map.of("questionCount", 20));
         return toJsonQuietly(payload);
+    }
+
+    private AiRoadmapLessonResponse parseLessonContentOrFallback(
+            String rawContent,
+            Subject subject,
+            String level,
+            String academicTrack,
+            AiGeneratedRoadmapResponse.RoadmapModuleItem module,
+            AiGeneratedRoadmapResponse.LessonPlanItem lesson) {
+        try {
+            JsonNode root = objectMapper.readTree(extractJsonPayload(rawContent));
+            AiRoadmapLessonResponse response = new AiRoadmapLessonResponse();
+            response.setSubjectId(subject.getId());
+            response.setSubjectCode(subject.getCode());
+            response.setSubjectName(subject.getName());
+            response.setLevel(level);
+            response.setAcademicTrack(academicTrack);
+            response.setModuleNo(module.getModuleNo());
+            response.setModuleTitle(module.getTitle());
+            response.setLessonNo(lesson.getLessonNo());
+            response.setLessonTitle(lesson.getTitle());
+            response.setLessonSummary(lesson.getSummary());
+            response.setDuration(lesson.getDuration());
+            response.setLearningObjectives(readStringList(root.path("learningObjectives")));
+            response.setLessonSections(readLessonSections(root.path("lessonSections")));
+            response.setPracticeTasks(readStringList(root.path("practiceTasks")));
+            response.setKeyTakeaways(readStringList(root.path("keyTakeaways")));
+            response.setReflectionPrompt(root.path("reflectionPrompt").asText(""));
+            response.setHomework(root.path("homework").asText(""));
+            if (!response.getLessonSections().isEmpty()) {
+                return response;
+            }
+        } catch (Exception ignored) {
+        }
+        return buildFallbackLessonContent(subject, level, academicTrack, module, lesson);
+    }
+
+    private AiRoadmapLessonResponse buildFallbackLessonContent(
+            Subject subject,
+            String level,
+            String academicTrack,
+            AiGeneratedRoadmapResponse.RoadmapModuleItem module,
+            AiGeneratedRoadmapResponse.LessonPlanItem lesson) {
+        return buildStructuredFallbackLessonContent(subject, level, academicTrack, module, lesson);
+    }
+
+    private AiRoadmapLessonResponse buildStructuredFallbackLessonContent(
+            Subject subject,
+            String level,
+            String academicTrack,
+            AiGeneratedRoadmapResponse.RoadmapModuleItem module,
+            AiGeneratedRoadmapResponse.LessonPlanItem lesson) {
+        AiRoadmapLessonResponse response = new AiRoadmapLessonResponse();
+        response.setSubjectId(subject.getId());
+        response.setSubjectCode(subject.getCode());
+        response.setSubjectName(subject.getName());
+        response.setLevel(level);
+        response.setAcademicTrack(academicTrack);
+        response.setModuleNo(module.getModuleNo());
+        response.setModuleTitle(module.getTitle());
+        response.setLessonNo(lesson.getLessonNo());
+        response.setLessonTitle(lesson.getTitle());
+        response.setLessonSummary(lesson.getSummary());
+        response.setDuration(lesson.getDuration());
+        if (System.currentTimeMillis() >= 0) {
+        response.setLearningObjectives(fallbackLearningObjectives(level, module, lesson));
+        List<AiRoadmapLessonResponse.LessonSectionItem> structuredSections = new ArrayList<>();
+        structuredSections.add(section(
+                "Ban se hoc gi trong bai nay",
+                fallbackLessonIntro(subject.getName(), level, lesson.getTitle(), lesson.getSummary()),
+                fallbackLessonIntroBullets(level, academicTrack)));
+        structuredSections.add(section(
+                "Khung kien thuc cot loi",
+                fallbackCoreKnowledge(level, module, lesson),
+                fallbackKnowledgeBullets(level, Optional.ofNullable(module.getFocusSkills()).orElse(List.of("Ky nang trong tam")))));
+        structuredSections.add(section(
+                "Cach trien khai bai hoc",
+                fallbackLearningFlow(level, lesson),
+                fallbackLearningFlowBullets(level)));
+        structuredSections.add(section(
+                "Vi du va huong van dung",
+                fallbackExampleGuide(subject.getCode(), level, lesson.getTitle(), module.getFocusSkills()),
+                fallbackExampleBullets(subject.getCode(), level)));
+        response.setLessonSections(structuredSections);
+        response.setPracticeTasks(fallbackPracticeTasks(subject.getCode(), level, module, lesson));
+        response.setKeyTakeaways(fallbackKeyTakeaways(level, module, lesson));
+        response.setReflectionPrompt("Sau bai nay, em co the tu giai thich lai kien thuc bang loi cua minh hay chua? Phan nao con mo ho nhat?");
+        response.setHomework(fallbackHomework(subject.getCode(), level, lesson));
+        return response;
+        }
+        response.setLearningObjectives(List.of(
+                "Nắm đúng mục tiêu trọng tâm của bài học này.",
+                "Hiểu cách áp dụng kiến thức vào dạng bài thuộc module hiện tại.",
+                "Chuẩn bị nền để làm mini test của module."));
+
+        List<AiRoadmapLessonResponse.LessonSectionItem> sections = new ArrayList<>();
+        sections.add(section(
+                "Mục tiêu bài học",
+                lesson.getSummary() == null || lesson.getSummary().isBlank()
+                        ? "Bài học này được AI roadmap xác định là mắt xích cần thiết trong lộ trình hiện tại của bạn."
+                        : lesson.getSummary(),
+                List.of(
+                        "Môn: " + subject.getName(),
+                        "Level: " + level,
+                        "Lộ trình: " + academicTrack)));
+        sections.add(section(
+                "Kiến thức trọng tâm",
+                module.getStudyGuide() == null || module.getStudyGuide().isBlank()
+                        ? "Tập trung bám sát kiến thức lõi của module và luyện đúng nhóm kỹ năng ưu tiên."
+                        : module.getStudyGuide(),
+                Optional.ofNullable(module.getFocusSkills()).orElse(List.of("Kỹ năng trọng tâm"))));
+        sections.add(section(
+                "Cách học bài này",
+                "Hãy đọc phần lý thuyết, tự tóm tắt lại bằng ngôn ngữ của mình, sau đó giải 2-3 ví dụ ngắn trước khi chuyển sang bài tiếp theo.",
+                List.of(
+                        "Tóm tắt ý chính sau mỗi phần",
+                        "Đối chiếu với lỗi thường gặp của bạn",
+                        "Hoàn thành bài trong đúng thời lượng đề xuất")));
+        response.setLessonSections(sections);
+        response.setPracticeTasks(List.of(
+                "Viết lại 3 ý chính quan trọng nhất của bài học.",
+                "Làm 2 ví dụ tự luyện theo đúng kỹ năng trọng tâm của module.",
+                "Tự đánh giá phần nào còn chưa chắc để hỏi lại AI Tutor."));
+        response.setKeyTakeaways(List.of(
+                "Hiểu đúng mục tiêu của bài hiện tại trong toàn bộ roadmap.",
+                "Biết mình đang cần luyện kỹ năng nào trước.",
+                "Sẵn sàng mở bài tiếp theo sau khi hoàn thành phần tự luyện."));
+        response.setReflectionPrompt("Sau bài này, phần nào bạn thấy còn mơ hồ nhất và cần ôn lại ngay?");
+        response.setHomework("Hoàn thành ghi chú cá nhân và làm ít nhất 2 bài luyện tập ngắn bám đúng kỹ năng trọng tâm.");
+        return response;
+    }
+
+    private AiRoadmapLessonResponse.LessonSectionItem section(String heading, String body, List<String> bullets) {
+        AiRoadmapLessonResponse.LessonSectionItem item = new AiRoadmapLessonResponse.LessonSectionItem();
+        item.setHeading(heading);
+        item.setBody(body);
+        item.setBullets(bullets);
+        return item;
+    }
+
+    private List<String> readStringList(JsonNode node) {
+        if (node == null || !node.isArray() || node.isEmpty()) {
+            return List.of();
+        }
+        List<String> out = new ArrayList<>();
+        node.forEach(item -> {
+            String value = item.asText("");
+            if (!value.isBlank()) {
+                out.add(value);
+            }
+        });
+        return out;
+    }
+
+    private List<AiRoadmapLessonResponse.LessonSectionItem> readLessonSections(JsonNode node) {
+        if (node == null || !node.isArray() || node.isEmpty()) {
+            return List.of();
+        }
+        List<AiRoadmapLessonResponse.LessonSectionItem> out = new ArrayList<>();
+        for (int i = 0; i < node.size(); i++) {
+            JsonNode item = node.get(i);
+            AiRoadmapLessonResponse.LessonSectionItem section = new AiRoadmapLessonResponse.LessonSectionItem();
+            section.setHeading(item.path("heading").asText(""));
+            section.setBody(item.path("body").asText(""));
+            section.setBullets(readStringList(item.path("bullets")));
+            if ((section.getHeading() != null && !section.getHeading().isBlank())
+                    || (section.getBody() != null && !section.getBody().isBlank())
+                    || !section.getBullets().isEmpty()) {
+                out.add(section);
+            }
+        }
+        return out;
+    }
+
+    private boolean isUsableRoadmapGuide(String guideJson) {
+        if (guideJson == null || guideJson.isBlank()) return false;
+        try {
+            JsonNode root = objectMapper.readTree(extractJsonPayload(guideJson));
+            JsonNode steps = root.path("roadmapSteps");
+            return steps.isArray() && !steps.isEmpty();
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    private String extractJsonPayload(String raw) {
+        if (raw == null) return "";
+        String text = raw.trim();
+        if (text.startsWith("```")) {
+            text = text.replaceFirst("^```(?:json)?\\s*", "");
+            text = text.replaceFirst("\\s*```$", "");
+        }
+        int objStart = text.indexOf('{');
+        int objEnd = text.lastIndexOf('}');
+        if (objStart >= 0 && objEnd > objStart) {
+            return text.substring(objStart, objEnd + 1);
+        }
+        return text;
+    }
+
+    private String fallbackModuleStudyGuide(String level, int moduleNo, String title, List<String> focus) {
+        String focusText = (focus == null || focus.isEmpty()) ? "ky nang trong tam" : String.join(", ", focus);
+        return switch (level == null ? "L1" : level) {
+            case "L3" -> "Module " + moduleNo + " phat trien chuyen sau tu chu de " + title
+                    + ", uu tien xu ly bai kho, toi uu toc do va do chinh xac cho cac nhom " + focusText + ".";
+            case "L2" -> "Module " + moduleNo + " mo rong va ket noi cac dang bai cua " + title
+                    + ", giup hoc sinh luyen chac phan " + focusText + " truoc khi vao checkpoint.";
+            default -> "Module " + moduleNo + " xay nen cho " + title
+                    + ", tap trung nam khai niem dung, lam duoc vi du mau va tranh sai sot co ban o cac nhom " + focusText + ".";
+        };
+    }
+
+    private List<String> fallbackLearningObjectives(String level,
+            AiGeneratedRoadmapResponse.RoadmapModuleItem module,
+            AiGeneratedRoadmapResponse.LessonPlanItem lesson) {
+        return switch (level == null ? "L1" : level) {
+            case "L3" -> List.of(
+                    "Hieu ban chat cua dang bai " + safeText(lesson.getTitle(), "nang cao") + ".",
+                    "Biet chon chien luoc giai nhanh nhung van kiem soat loi.",
+                    "San sang ap dung vao cau van dung hoac cau phan hoa.");
+            case "L2" -> List.of(
+                    "Nam chac quy trinh lam bai " + safeText(lesson.getTitle(), "trong tam") + ".",
+                    "Biet phan biet cac bien the thuong gap de chon huong giai phu hop.",
+                    "Tang do on dinh truoc khi sang bai luyen kho hon.");
+            default -> List.of(
+                    "Hieu dung khai niem va muc tieu cua bai " + safeText(lesson.getTitle(), "nen tang") + ".",
+                    "Lam duoc vi du mau theo tung buoc ro rang.",
+                    "Tao nen de hoc tiep cac bai sau trong module.");
+        };
+    }
+
+    private String fallbackLessonIntro(String subjectName, String level, String lessonTitle, String lessonSummary) {
+        String title = safeText(lessonTitle, "bai hoc hien tai");
+        String summary = safeText(lessonSummary, "");
+        String base = "Bai nay thuoc mon " + subjectName + " o muc " + level + ". Trong tam la " + title + ".";
+        if (!summary.isBlank()) {
+            base += " Muc tieu gan nhat la: " + summary;
+        }
+        return base;
+    }
+
+    private List<String> fallbackLessonIntroBullets(String level, String academicTrack) {
+        return List.of(
+                "Level hien tai: " + safeText(level, "L1"),
+                "Lo trinh hoc: " + safeText(academicTrack, "GRADE_11"),
+                "Hoc theo dung nhip do cua roadmap ca nhan");
+    }
+
+    private String fallbackCoreKnowledge(String level,
+            AiGeneratedRoadmapResponse.RoadmapModuleItem module,
+            AiGeneratedRoadmapResponse.LessonPlanItem lesson) {
+        String focusText = String.join(", ", Optional.ofNullable(module.getFocusSkills()).orElse(List.of("ky nang trong tam")));
+        return switch (level == null ? "L1" : level) {
+            case "L3" -> "Phan nay can di tu ban chat den chien luoc xu ly. Em nen xac dinh dau hieu nhan dien dang bai, cong thuc hoac cau truc then chot, sau do luyen cach bien doi ngan gon. Trong tam bai nay xoay quanh: " + focusText + ".";
+            case "L2" -> "Phan nay can hieu quy trinh lam bai mot cach co he thong: nhan dien dang, chon huong lam, kiem tra dieu kien va rut kinh nghiem tu loi sai. Trong tam bai nay xoay quanh: " + focusText + ".";
+            default -> "Phan nay can nam chac khai niem co ban, ky hieu quan trong va vi du mau. Muc tieu la hieu dung truoc, lam dung sau, chua can tang toc qua som. Trong tam bai nay xoay quanh: " + focusText + ".";
+        };
+    }
+
+    private List<String> fallbackKnowledgeBullets(String level, List<String> focusSkills) {
+        List<String> out = new ArrayList<>(focusSkills);
+        if ("L3".equals(level)) out.add("Uu tien cau van dung va toi uu toc do");
+        else if ("L2".equals(level)) out.add("Tap trung lam chac cac bien the thuong gap");
+        else out.add("Uu tien hieu dung khai niem cot loi");
+        return out;
+    }
+
+    private String fallbackLearningFlow(String level, AiGeneratedRoadmapResponse.LessonPlanItem lesson) {
+        return switch (level == null ? "L1" : level) {
+            case "L3" -> "Hay doc nhanh phan ly thuyet de xac dinh cong cu chinh, sau do chuyen ngay sang vi du dien hinh. Moi vi du can tu giai thich vi sao chon cach lam do, roi moi luyen cau bien the tuong tu.";
+            case "L2" -> "Hay hoc theo 3 buoc: doc vi du mau, tu lam lai khong nhin loi giai, roi luyen them mot bien the gan giong. Sau moi lan lam, so sanh loi sai de tranh lap lai.";
+            default -> "Hay hoc cham va chac: doc khai niem, xem vi du mau, ghi lai quy tac bang loi cua minh, roi lam 1-2 bai ap dung co ban truoc khi chuyen sang phan tiep theo.";
+        };
+    }
+
+    private List<String> fallbackLearningFlowBullets(String level) {
+        return switch (level == null ? "L1" : level) {
+            case "L3" -> List.of("Nhan dien dang bai", "Chon chien luoc toi uu", "Tu kiem loi sau moi vi du");
+            case "L2" -> List.of("Lam lai vi du mau", "So sanh cac bien the", "Ghi lai loi sai thuong gap");
+            default -> List.of("Nam dinh nghia/ky hieu", "Lam vi du tung buoc", "Tu tom tat quy tac chinh");
+        };
+    }
+
+    private String fallbackExampleGuide(String subjectCode, String level, String lessonTitle, List<String> focusSkills) {
+        String subject = safeText(subjectCode, "");
+        String focus = String.join(", ", focusSkills == null ? List.of() : focusSkills);
+        if ("ENGLISH".equalsIgnoreCase(subject) || "E".equalsIgnoreCase(subject)) {
+            return "Voi bai " + safeText(lessonTitle, "nay") + ", hay tu tao 3 cau vi du chua diem ngu phap/tu vung trong tam roi doi chieu xem minh da dung dung cau truc chua. Uu tien cac nhom: " + focus + ".";
+        }
+        if ("LITERATURE".equalsIgnoreCase(subject) || "L".equalsIgnoreCase(subject)) {
+            return "Voi bai " + safeText(lessonTitle, "nay") + ", hay tu viet dan y ngan hoac neu 2-3 luan diem chinh, sau do doi chieu xem cac dan chung da bam dung yeu cau chua. Uu tien cac nhom: " + focus + ".";
+        }
+        return "Voi bai " + safeText(lessonTitle, "nay") + ", hay lam 1 vi du mau day du tung buoc roi thu bien doi du kien de tao them 1 bai tuong tu. Uu tien cac nhom: " + focus + ".";
+    }
+
+    private List<String> fallbackExampleBullets(String subjectCode, String level) {
+        if ("ENGLISH".equalsIgnoreCase(subjectCode) || "E".equalsIgnoreCase(subjectCode)) {
+            return List.of("Tu tao cau vi du", "Kiem tra cau truc va loi ngu phap", "Doc lai de cung co phan xa");
+        }
+        if ("LITERATURE".equalsIgnoreCase(subjectCode) || "L".equalsIgnoreCase(subjectCode)) {
+            return List.of("Tom tat y chinh", "Chon dan chung phu hop", "Viet lai bang dien dat cua minh");
+        }
+        return List.of("Lam vi du mau tung buoc", "Doi chieu dap an", "Tao them bai bien the de tu luyen");
+    }
+
+    private List<String> fallbackPracticeTasks(String subjectCode, String level,
+            AiGeneratedRoadmapResponse.RoadmapModuleItem module,
+            AiGeneratedRoadmapResponse.LessonPlanItem lesson) {
+        if ("ENGLISH".equalsIgnoreCase(subjectCode) || "E".equalsIgnoreCase(subjectCode)) {
+            return List.of(
+                    "Viet 5 cau hoac 1 doan ngan ap dung dung diem ngon ngu cua bai.",
+                    "Tu sua lai cac cau chua chuan va ghi ro loi sai.",
+                    "Doc lai to thanh tieng de tang ghi nho.");
+        }
+        if ("LITERATURE".equalsIgnoreCase(subjectCode) || "L".equalsIgnoreCase(subjectCode)) {
+            return List.of(
+                    "Viet tom tat 3 y chinh cua bai bang loi cua em.",
+                    "Lap dan y ngan cho 1 cau hoi gan voi trong tam bai hoc.",
+                    "Bo sung 2 dan chung hoac chi tiet tieu bieu.");
+        }
+        return List.of(
+                "Lam 2 bai ap dung truc tiep theo dung mau vua hoc.",
+                "Tu giai thich lai vi sao chon cach lam do o moi buoc.",
+                "Ghi lai 1 loi sai de gap va cach tranh.");
+    }
+
+    private List<String> fallbackKeyTakeaways(String level,
+            AiGeneratedRoadmapResponse.RoadmapModuleItem module,
+            AiGeneratedRoadmapResponse.LessonPlanItem lesson) {
+        return List.of(
+                "Bai nay la mot mat xich trong module " + safeText(module.getTitle(), "hien tai") + ".",
+                "Trong tam can nho la " + safeText(lesson.getTitle(), "kien thuc cua bai hoc") + ".",
+                "Hoan thanh tot bai nay se giup em hoc nhanh hon o bai tiep theo.");
+    }
+
+    private String fallbackHomework(String subjectCode, String level, AiGeneratedRoadmapResponse.LessonPlanItem lesson) {
+        if ("ENGLISH".equalsIgnoreCase(subjectCode) || "E".equalsIgnoreCase(subjectCode)) {
+            return "Viet them 8-10 cau ap dung noi dung cua bai " + safeText(lesson.getTitle(), "nay") + " va tu ra loi ngu phap/tu vung.";
+        }
+        if ("LITERATURE".equalsIgnoreCase(subjectCode) || "L".equalsIgnoreCase(subjectCode)) {
+            return "Hoan thien 1 doan van ngan hoac 1 dan y hoan chinh dua tren trong tam cua bai " + safeText(lesson.getTitle(), "nay") + ".";
+        }
+        return "Lam them 3 bai tu luyen ngan cho bai " + safeText(lesson.getTitle(), "nay") + " va ghi lai buoc giai chuan.";
+    }
+
+    private String safeText(String value, String fallback) {
+        return (value == null || value.isBlank()) ? fallback : value;
     }
 
     private boolean isFallbackGuide(String guideJson) {
