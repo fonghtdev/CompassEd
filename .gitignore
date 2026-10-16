@@ -1,1 +1,11 @@
 node_modules/
+
+# Local secrets
+.env
+scripts/dev-env.ps1
+
+# Python / logs
+__pycache__/
+*.pyc
+*.log
+.m2/

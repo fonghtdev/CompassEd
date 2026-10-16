@@ -4,7 +4,7 @@ param(
   [string]$MySqlUser = "root",
   [string]$MySqlPassword = "1234",
   [string]$Database = "compassed",
-  [string]$JwtSecret = "***REMOVED***",
+  [string]$JwtSecret = $env:JWT_SECRET,
   [string]$AdminEmail = "",
   [string]$AdminPassword = "",
   [string]$MailHost = "smtp.gmail.com",

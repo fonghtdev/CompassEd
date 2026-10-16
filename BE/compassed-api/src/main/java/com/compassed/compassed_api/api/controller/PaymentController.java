@@ -152,7 +152,6 @@ public class PaymentController {
     @PermitAll
     public ResponseEntity<?> payosCallback(@RequestBody(required = false) Map<String, Object> payload) {
         try {
-            log.info("Received PayOS callback: {}", payload);
             Map<String, Object> result = paymentService.handlePayOsWebhook(payload);
             return ResponseEntity.ok(result);
         } catch (Exception e) {

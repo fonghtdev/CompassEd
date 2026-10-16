@@ -23,26 +23,26 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: mysql
       GOOGLE_CLIENT_ID: 418581116582-qet8ant9k0t319hkd3640dtsa54eg07v.apps.googleusercontent.com
-      OPENAI_API_KEY: "***REMOVED***"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       MAIL_HOST: smtp.gmail.com
       MAIL_PORT: 587
-      MAIL_USERNAME: fonght.dev@gmail.com
-      MAIL_PASSWORD: ***REMOVED***
-      MAIL_FROM: fonght.dev@gmail.com
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
       MYSQL_URL: jdbc:mysql://mysql:3306/compassed?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       MYSQL_USER: root
-      MYSQL_PASSWORD: 1234
-      JWT_SECRET: ***REMOVED***
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
       SERVER_PORT: 8080
       CHECKOUT_QR_IMAGE_URL: https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=CompassED_Payment_Placeholder
       CHECKOUT_QR_ACCOUNT_NAME: COMPASSED
       CHECKOUT_QR_ACCOUNT_NO: 8990186866886
       CHECKOUT_QR_BANK: VietQR
       CHECKOUT_QR_BANK_BIN: 970422
-      PAYOS_ENABLED: "true"
-      PAYOS_CLIENT_ID: "***REMOVED***"
-      PAYOS_API_KEY: "***REMOVED***"
-      PAYOS_CHECKSUM_KEY: "***REMOVED***"
+      PAYOS_ENABLED: ${PAYOS_ENABLED:-false}
+      PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID:-}
+      PAYOS_API_KEY: ${PAYOS_API_KEY:-}
+      PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY:-}
       PAYOS_BASE_URL: https://api-merchant.payos.vn
       PAYOS_RETURN_URL: https://compassed.io.vn/checkout
       PAYOS_CANCEL_URL: https://compassed.io.vn/checkout
@@ -55,14 +55,14 @@ services:
     container_name: compassed-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
       MYSQL_DATABASE: compassed
     ports:
       - "3307:3306"
     volumes:
       - compassed_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "mysql", "-uroot", "-p1234"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "mysql", "-uroot", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
       retries: 10
