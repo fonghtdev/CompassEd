@@ -36,6 +36,7 @@ class QuestionBankServiceImportTests {
 
         when(subjectRepository.findByCode("M")).thenReturn(Optional.empty());
         when(subjectRepository.findByCode("MATH")).thenReturn(Optional.of(math));
+        when(subjectRepository.findById(1L)).thenReturn(Optional.of(math));
         when(questionBankRepository.save(any(QuestionBank.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         String rawJson = """
