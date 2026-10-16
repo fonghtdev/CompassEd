@@ -1,102 +1,81 @@
-## Run Project
-# START -->
+# CompassEd
 
-1. (Optional) Start MySQL container:
-docker compose up -d mysql
+Nền tảng học tập có bài kiểm tra xếp lớp (placement test), lộ trình học cá nhân hóa (có AI), mini test, final test và thanh toán gói học.
 
-2. Configure env once:
-Edit `scripts/dev-env.ps1`
+| Phần | Công nghệ | Thư mục |
+|---|---|---|
+| Backend | Spring Boot 4, Java 17, JWT, Flyway | `BE/compassed-api` |
+| Frontend | HTML/JS tĩnh, phục vụ bằng Flask | `FE` |
+| Database | MySQL 8 | `docker-compose.yml` |
+| Tích hợp | Google OAuth, OpenAI, PayOS / VNPay, SMTP (Gmail) | biến môi trường |
 
-3. Run Backend:
-.\scripts\run-be.ps1
+## Chạy nhanh với Docker
 
-4. Run Frontend:
-.\scripts\run-fe.ps1
-
-5. Run both in 2 terminals:
-.\scripts\run-all.ps1
-
-## END <--
-
-<!-- # CompassEd
-
-## Run Project (MySQL + FE)
-
-This project currently runs with:
-- Backend: Spring Boot (`BE/compassed-api`)
-- Frontend: Flask static host (`FE/Extensions.py`)
-- Database: MySQL 8 (Docker Compose or local MySQL)
-
-## 1) Start MySQL
-
-### Option A: Docker Compose (recommended)
-
-```powershell
-cd D:\FPT\CompassEd
-docker compose up -d mysql
+```bash
+cp .env.example .env     # điền MYSQL_ROOT_PASSWORD, JWT_SECRET (>= 32 ký tự), các key còn lại
+docker compose up -d --build
 ```
 
-Current compose defaults:
-- database: `compassed`
-- root user: `root`
-- root password: `1234`
-- host port: `3307` (container `3306`)
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8080
+- MySQL: `localhost:3307`
 
-Important:
-- Do not set `MYSQL_USER=root` in compose.
-- Root login is handled by `MYSQL_ROOT_PASSWORD`.
+Tạo `JWT_SECRET`: `openssl rand -hex 32`. Backend không khởi động nếu thiếu biến này.
 
-### Option B: Local MySQL service
+## Chạy cục bộ không Docker
 
-If you already run MySQL locally (for example port `3306`), use that directly.
+Cần Java 17, Python 3 và MySQL 8.
 
-## 2) Start Backend (profile mysql)
+```bash
+# Backend
+cd BE/compassed-api
+export MYSQL_URL="jdbc:mysql://localhost:3306/compassed?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+export MYSQL_USER=root MYSQL_PASSWORD=<mật khẩu> JWT_SECRET=<chuỗi >= 32 ký tự>
+./mvnw spring-boot:run
 
-### Fast way (script)
-
-```powershell
-cd D:\FPT\CompassEd\BE\compassed-api
-.\scripts\run-mysql.ps1 -MySqlHost localhost -MySqlPort 3307 -MySqlUser root -MySqlPassword 1234 -Database compassed
+# Frontend (terminal khác)
+cd FE
+python3 -m pip install -r requirements.txt
+python3 Extensions.py      # mặc định cổng 3000 (đổi bằng FE_PORT), API_BASE trong FE/config.js
 ```
 
-If your local MySQL is on port `3306`, run:
+Trên Windows dùng `scripts/*.ps1`: sao chép `scripts/dev-env.example.ps1` thành `scripts/dev-env.ps1` (đã bị gitignore), điền giá trị rồi chạy `scripts/run-all.ps1`.
 
-```powershell
-.\scripts\run-mysql.ps1 -MySqlHost localhost -MySqlPort 3306 -MySqlUser root -MySqlPassword 1234 -Database compassed
+## Biến môi trường
+
+Xem `.env.example`. Mọi secret đặt trong `.env` hoặc biến môi trường, **không commit**.
+
+| Biến | Bắt buộc | Ghi chú |
+|---|---|---|
+| `JWT_SECRET` | Có | >= 32 ký tự, không có giá trị mặc định |
+| `MYSQL_URL`, `MYSQL_USER`, `MYSQL_PASSWORD` | Có | |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Không | Nếu đặt, `DataSeeder` tạo tài khoản admin lúc khởi động |
+| `OPENAI_API_KEY` | Không | Tạo lộ trình bằng AI |
+| `GOOGLE_CLIENT_ID` | Không | Đăng nhập Google |
+| `MAIL_*` | Không | Gửi email xác thực đăng ký |
+| `PAYOS_*` | Không | Thanh toán PayOS (`PAYOS_ENABLED=true` để bật) |
+
+## Cấu trúc
+
+```
+BE/compassed-api/   API Spring Boot (controller, service, repository, security)
+  src/main/resources/db/migration/   Flyway migrations
+FE/                 Trang tĩnh (template/, js/, css/) và Extensions.py (Flask)
+scripts/            Script chạy trên Windows (PowerShell)
+docker-compose.yml  fe + be + mysql
 ```
 
-Backend URL:
-- `http://localhost:8080`
+## Test
 
-### Manual env way (alternative)
-
-```powershell
-cd D:\FPT\CompassEd\BE\compassed-api
-$env:SPRING_PROFILES_ACTIVE="mysql"
-$env:MYSQL_URL="jdbc:mysql://localhost:3307/compassed?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
-$env:MYSQL_USER="root"
-$env:MYSQL_PASSWORD="1234"
-$env:JWT_SECRET="***REMOVED***"
-$env:SERVER_PORT="8080"
-.\mvnw.cmd spring-boot:run
+```bash
+cd BE/compassed-api
+JWT_SECRET=<chuỗi >= 32 ký tự> ./mvnw test
 ```
 
-## 3) Start Frontend
+Trên JDK 25, Lombok cũ không biên dịch được: thêm `-Dlombok.version=1.18.42`.
+Một số test hiện có (`contextLoads`, `LocalFlowBusinessRulesTests`, `QuestionBankServiceImportTests`) đang fail từ trước và cần được sửa riêng.
 
-```powershell
-cd D:\FPT\CompassEd\FE
-python -m pip install flask requests
-python .\Extensions.py
-```
+## Bảo mật
 
-Frontend URL:
-- `http://127.0.0.1:5000`
-- Landing page: `http://127.0.0.1:5000/template/landingPage.html`
-
-## Notes
-
-- Backend MySQL config is read from:
-  - `BE/compassed-api/src/main/resources/application-mysql.yml`
-- DB schema is managed by Flyway:
-  - `BE/compassed-api/src/main/resources/db/migration`
-- If FE cannot call BE, check `FE/config.js` (`API_BASE` should be `http://localhost:8080`). -->
+- Tạo tài khoản admin qua `ADMIN_EMAIL`/`ADMIN_PASSWORD` hoặc SQL, không có endpoint công khai nào cấp quyền admin.
+- Nếu một key bị lộ vào git, hãy thu hồi và cấp lại ngay; xóa file là không đủ.

@@ -281,7 +281,6 @@ public class PaymentService {
             log.info("PayOS webhook: empty payload, ignored");
             return Map.of("ok", true, "message", "ignored");
         }
-        log.info("PayOS webhook received: {}", payload);
         Object dataObj = payload.get("data");
         if (!(dataObj instanceof Map<?, ?> rawData)) {
             log.warn("PayOS webhook has no 'data' object, ignoring");
