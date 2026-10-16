@@ -1,18 +1,18 @@
 # CompassEd
 
-Nền tảng học tập có bài kiểm tra xếp lớp (placement test), lộ trình học cá nhân hóa (có AI), mini test, final test và thanh toán gói học.
+A learning platform with placement tests, personalized (AI-assisted) learning roadmaps, mini tests, final tests and paid study plans.
 
-| Phần | Công nghệ | Thư mục |
+| Part | Technology | Directory |
 |---|---|---|
 | Backend | Spring Boot 4, Java 17, JWT, Flyway | `BE/compassed-api` |
-| Frontend | HTML/JS tĩnh, phục vụ bằng Flask | `FE` |
+| Frontend | Static HTML/JS served by Flask | `FE` |
 | Database | MySQL 8 | `docker-compose.yml` |
-| Tích hợp | Google OAuth, OpenAI, PayOS / VNPay, SMTP (Gmail) | biến môi trường |
+| Integrations | Google OAuth, OpenAI, PayOS / VNPay, SMTP (Gmail) | environment variables |
 
-## Chạy nhanh với Docker
+## Quick start with Docker
 
 ```bash
-cp .env.example .env     # điền MYSQL_ROOT_PASSWORD, JWT_SECRET (>= 32 ký tự), các key còn lại
+cp .env.example .env     # fill in MYSQL_ROOT_PASSWORD, JWT_SECRET (>= 32 chars) and the other keys
 docker compose up -d --build
 ```
 
@@ -20,67 +20,67 @@ docker compose up -d --build
 - Backend: http://localhost:8080
 - MySQL: `localhost:3307`
 
-Tạo `JWT_SECRET`: `openssl rand -hex 32`. Backend không khởi động nếu thiếu biến này.
+Generate a `JWT_SECRET` with `openssl rand -hex 32`. The backend will not start without it.
 
-## Chạy cục bộ không Docker
+## Run locally without Docker
 
-Cần Java 17, Python 3 và MySQL 8.
+Requires Java 17, Python 3 and MySQL 8.
 
 ```bash
 # Backend
 cd BE/compassed-api
 export MYSQL_URL="jdbc:mysql://localhost:3306/compassed?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
-export MYSQL_USER=root MYSQL_PASSWORD=<mật khẩu> JWT_SECRET=<chuỗi >= 32 ký tự>
+export MYSQL_USER=root MYSQL_PASSWORD=<password> JWT_SECRET=<string of >= 32 chars>
 ./mvnw spring-boot:run
 
-# Frontend (terminal khác)
+# Frontend (another terminal)
 cd FE
 python3 -m pip install -r requirements.txt
-python3 Extensions.py      # mặc định cổng 3000 (đổi bằng FE_PORT), API_BASE trong FE/config.js
+python3 Extensions.py      # listens on port 3000 by default (override with FE_PORT); API_BASE is set in FE/config.js
 ```
 
-Trên Windows dùng `scripts/*.ps1`: sao chép `scripts/dev-env.example.ps1` thành `scripts/dev-env.ps1` (đã bị gitignore), điền giá trị rồi chạy `scripts/run-all.ps1`.
+On Windows use `scripts/*.ps1`: copy `scripts/dev-env.example.ps1` to `scripts/dev-env.ps1` (git-ignored), fill in the values, then run `scripts/run-all.ps1`.
 
-## Biến môi trường
+## Environment variables
 
-Xem `.env.example`. Mọi secret đặt trong `.env` hoặc biến môi trường, **không commit**.
+See `.env.example`. Keep every secret in `.env` or in real environment variables, and **never commit them**.
 
-| Biến | Bắt buộc | Ghi chú |
+| Variable | Required | Notes |
 |---|---|---|
-| `JWT_SECRET` | Có | >= 32 ký tự, không có giá trị mặc định |
-| `MYSQL_URL`, `MYSQL_USER`, `MYSQL_PASSWORD` | Có | |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Không | Nếu đặt, `DataSeeder` tạo tài khoản admin lúc khởi động |
-| `OPENAI_API_KEY` | Không | Tạo lộ trình bằng AI |
-| `GOOGLE_CLIENT_ID` | Không | Đăng nhập Google |
-| `MAIL_*` | Không | Gửi email xác thực đăng ký |
-| `PAYOS_*` | Không | Thanh toán PayOS (`PAYOS_ENABLED=true` để bật) |
+| `JWT_SECRET` | Yes | >= 32 chars, no default value |
+| `MYSQL_URL`, `MYSQL_USER`, `MYSQL_PASSWORD` | Yes | |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | No | If set, `DataSeeder` creates an admin account at startup |
+| `OPENAI_API_KEY` | No | AI roadmap generation |
+| `GOOGLE_CLIENT_ID` | No | Google sign-in |
+| `MAIL_*` | No | Sends registration verification emails |
+| `PAYOS_*` | No | PayOS payments (`PAYOS_ENABLED=true` to turn on) |
 
-## Cấu trúc
+## Project layout
 
 ```
-BE/compassed-api/   API Spring Boot (controller, service, repository, security)
-  src/main/resources/db/migration/   SQL migrations (chưa được áp dụng tự động, xem Ghi chú)
-FE/                 Trang tĩnh (template/, js/, css/) và Extensions.py (Flask)
-scripts/            Script chạy trên Windows (PowerShell)
+BE/compassed-api/   Spring Boot API (controller, service, repository, security)
+  src/main/resources/db/migration/   SQL migrations (not applied automatically yet, see Technical notes)
+FE/                 Static pages (template/, js/, css/) and Extensions.py (Flask)
+scripts/            Windows (PowerShell) run scripts
 docker-compose.yml  fe + be + mysql
 ```
 
-## Test
+## Tests
 
 ```bash
 cd BE/compassed-api
-JWT_SECRET=<chuỗi >= 32 ký tự> ./mvnw test
+JWT_SECRET=<string of >= 32 chars> ./mvnw test
 ```
 
-Trên JDK 25, Lombok cũ không biên dịch được: thêm `-Dlombok.version=1.18.42`.
-`contextLoads` cần MySQL chạy sẵn; `LocalFlowBusinessRulesTests` kiểm thử code chế độ local đã tắt (`@Profile("removed-local")`) và đang fail.
+On JDK 25 the older Lombok cannot compile the project: add `-Dlombok.version=1.18.42`.
+`contextLoads` needs a running MySQL; `LocalFlowBusinessRulesTests` exercises the disabled local-mode code (`@Profile("removed-local")`) and currently fails.
 
-## Bảo mật
+## Security
 
-- Tạo tài khoản admin qua `ADMIN_EMAIL`/`ADMIN_PASSWORD` hoặc SQL, không có endpoint công khai nào cấp quyền admin.
-- Nếu một key bị lộ vào git, hãy thu hồi và cấp lại ngay; xóa file là không đủ.
+- Create admin accounts through `ADMIN_EMAIL`/`ADMIN_PASSWORD` or SQL; no public endpoint grants the admin role.
+- If a key ever leaks into git, revoke and reissue it immediately; deleting the file is not enough.
 
-## Ghi chú kỹ thuật
+## Technical notes
 
-- Schema hiện do Hibernate tạo (`ddl-auto: update`). Flyway không chạy: khi chạy thật trên MySQL trống không có bảng `flyway_schema_history` (nghi do Spring Boot 4 cần `spring-boot-starter-flyway`, chưa kiểm chứng). Thư mục migration còn hai file `V2__` và hai file `V3__` trùng version. Cần dọn migration trước khi bật Flyway hoặc chuyển sang `ddl-auto: validate`.
-- Thanh toán đang dùng PayOS. Callback VNPay bị tắt cho tới khi đặt `vnpay.hash-secret`.
+- The schema is currently created by Hibernate (`ddl-auto: update`). Flyway does not run: on an empty MySQL a real start-up produced no `flyway_schema_history` table (suspected cause: Spring Boot 4 needs `spring-boot-starter-flyway`, not verified). The migration folder also contains two `V2__` files and two `V3__` files with duplicate versions. Clean up the migrations before enabling Flyway or switching to `ddl-auto: validate`.
+- Payments currently use PayOS. The VNPay callback is disabled until `vnpay.hash-secret` is set.
