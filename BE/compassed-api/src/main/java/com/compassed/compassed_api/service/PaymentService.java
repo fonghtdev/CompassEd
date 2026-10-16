@@ -64,7 +64,7 @@ public class PaymentService {
     @Value("${vnpay.tmn-code:DEMO}")
     private String vnpTmnCode;
 
-    @Value("${vnpay.hash-secret:DEMO_SECRET_KEY}")
+    @Value("${vnpay.hash-secret:}")
     private String vnpHashSecret;
 
     @Value("${vnpay.url:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}")
@@ -152,6 +152,9 @@ public class PaymentService {
 
     @Transactional
     public Map<String, Object> verifyPaymentCallback(Map<String, String> params) {
+        if (isBlank(vnpHashSecret)) {
+            return Map.of("success", false, "message", "VNPay is not configured");
+        }
         try {
             String vnpSecureHash = params.get("vnp_SecureHash");
             params.remove("vnp_SecureHashType");

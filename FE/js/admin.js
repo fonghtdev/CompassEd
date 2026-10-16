@@ -130,6 +130,9 @@
 
     // ========== USER MANAGEMENT ==========
 
+    const escapeHtml = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const emailById = new Map();
+
     async function loadUsers() {
         const tbody = document.getElementById("users-tbody");
         if (!tbody) return;
@@ -144,17 +147,19 @@
                 return;
             }
 
+            emailById.clear();
+            users.forEach(u => emailById.set(u.id, u.email));
             tbody.innerHTML = users.map(u => `
                 <tr class="border-b hover:bg-slate-50">
                     <td class="px-4 py-3 text-sm">${u.id}</td>
-                    <td class="px-4 py-3 text-sm">${u.email}</td>
-                    <td class="px-4 py-3 text-sm">${u.fullName || '-'}</td>
+                    <td class="px-4 py-3 text-sm">${escapeHtml(u.email)}</td>
+                    <td class="px-4 py-3 text-sm">${escapeHtml(u.fullName || '-')}</td>
                     <td class="px-4 py-3">
                         <span class="px-2 py-1 text-xs rounded ${u.role === 'ADMIN' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">
                             ${u.role}
                         </span>
                     </td>
-                    <td class="px-4 py-3 text-sm">${u.provider || 'local'}</td>
+                    <td class="px-4 py-3 text-sm">${escapeHtml(u.provider || 'local')}</td>
                     <td class="px-4 py-3 text-center">
                         <button onclick="window.editUser(${u.id})" 
                                 class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 mr-1">
@@ -164,11 +169,11 @@
                                 class="px-3 py-1 text-xs ${u.role === 'ADMIN' ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600'} text-white rounded mr-1">
                             ${u.role === 'ADMIN' ? '<i class="fas fa-user-minus"></i> Hủy Admin' : '<i class="fas fa-user-shield"></i> Set Admin'}
                         </button>
-                        <button onclick="window.changePassword(${u.id}, '${u.email}')" 
+                        <button onclick="window.changePassword(${u.id})" 
                                 class="px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 mr-1">
                             <i class="fas fa-key"></i> Đổi MK
                         </button>
-                        <button onclick="window.deleteUser(${u.id}, '${u.email}')" 
+                        <button onclick="window.deleteUser(${u.id})" 
                                 class="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">
                             <i class="fas fa-trash"></i> Xóa
                         </button>
@@ -177,7 +182,7 @@
             `).join('');
 
         } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-red-500">❌ ${err.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-red-500">❌ ${escapeHtml(err.message)}</td></tr>`;
         }
     }
 
@@ -208,7 +213,8 @@
         });
     };
 
-    window.changePassword = function(userId, email) {
+    window.changePassword = function(userId) {
+        const email = emailById.get(userId);
         document.getElementById("change-pwd-user-id").value = userId;
         document.getElementById("change-pwd-email-display").textContent = email;
         document.getElementById("change-pwd-new").value = "";
@@ -217,7 +223,8 @@
         document.getElementById("change-password-modal").classList.remove("hidden");
     };
 
-    window.deleteUser = async function(userId, email) {
+    window.deleteUser = async function(userId) {
+        const email = emailById.get(userId);
         if (!confirm(`⚠️ XÓA VĨNH VIỄN user "${email}"?\n\nHành động này KHÔNG THỂ HOÀN TÁC!`)) return;
 
         try {

@@ -59,7 +59,7 @@ Xem `.env.example`. Mọi secret đặt trong `.env` hoặc biến môi trườn
 
 ```
 BE/compassed-api/   API Spring Boot (controller, service, repository, security)
-  src/main/resources/db/migration/   Flyway migrations
+  src/main/resources/db/migration/   SQL migrations (chưa được áp dụng tự động, xem Ghi chú)
 FE/                 Trang tĩnh (template/, js/, css/) và Extensions.py (Flask)
 scripts/            Script chạy trên Windows (PowerShell)
 docker-compose.yml  fe + be + mysql
@@ -73,9 +73,14 @@ JWT_SECRET=<chuỗi >= 32 ký tự> ./mvnw test
 ```
 
 Trên JDK 25, Lombok cũ không biên dịch được: thêm `-Dlombok.version=1.18.42`.
-Một số test hiện có (`contextLoads`, `LocalFlowBusinessRulesTests`, `QuestionBankServiceImportTests`) đang fail từ trước và cần được sửa riêng.
+`contextLoads` cần MySQL chạy sẵn; `LocalFlowBusinessRulesTests` kiểm thử code chế độ local đã tắt (`@Profile("removed-local")`) và đang fail.
 
 ## Bảo mật
 
 - Tạo tài khoản admin qua `ADMIN_EMAIL`/`ADMIN_PASSWORD` hoặc SQL, không có endpoint công khai nào cấp quyền admin.
 - Nếu một key bị lộ vào git, hãy thu hồi và cấp lại ngay; xóa file là không đủ.
+
+## Ghi chú kỹ thuật
+
+- Schema hiện do Hibernate tạo (`ddl-auto: update`). Flyway không chạy: khi chạy thật trên MySQL trống không có bảng `flyway_schema_history` (nghi do Spring Boot 4 cần `spring-boot-starter-flyway`, chưa kiểm chứng). Thư mục migration còn hai file `V2__` và hai file `V3__` trùng version. Cần dọn migration trước khi bật Flyway hoặc chuyển sang `ddl-auto: validate`.
+- Thanh toán đang dùng PayOS. Callback VNPay bị tắt cho tới khi đặt `vnpay.hash-secret`.

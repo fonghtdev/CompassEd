@@ -27,4 +27,10 @@ class SecurityHardeningTests {
         String yml = Files.readString(Path.of("src/main/resources/application.yml"));
         assertFalse(yml.contains("JWT_SECRET:"), "JWT_SECRET must come from the environment only");
     }
+
+    @Test
+    void vnpayHashSecretHasNoPublicDefault() throws Exception {
+        String src = Files.readString(Path.of("src/main/java/com/compassed/compassed_api/service/PaymentService.java"));
+        assertFalse(src.contains("DEMO_SECRET_KEY"), "anyone could forge VNPay callbacks with a known secret");
+    }
 }
