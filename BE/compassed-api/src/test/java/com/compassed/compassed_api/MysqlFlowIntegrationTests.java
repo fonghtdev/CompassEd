@@ -14,9 +14,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -24,6 +26,11 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import com.compassed.compassed_api.domain.QuestionBank;
+import com.compassed.compassed_api.domain.entity.User;
+import com.compassed.compassed_api.repository.QuestionBankRepository;
+import com.compassed.compassed_api.repository.SubjectRepository;
+import com.compassed.compassed_api.repository.UserRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -50,6 +57,15 @@ class MysqlFlowIntegrationTests {
     @LocalServerPort
     int port;
 
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    SubjectRepository subjectRepository;
+
+    @Autowired
+    QuestionBankRepository questionBankRepository;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
@@ -57,15 +73,22 @@ class MysqlFlowIntegrationTests {
     void mysqlProfileShouldRunEndToEndFlowWithJwt() throws Exception {
         String email = "mysql_it_" + UUID.randomUUID() + "@compassed.local";
 
-        Map<String, Object> registerReq = new HashMap<>();
-        registerReq.put("email", email);
-        registerReq.put("password", "secret123");
-        registerReq.put("fullName", "MySQL IT");
-        HttpResponse<String> registerResp = post("/api/auth/register", registerReq, null);
-        assertTrue(registerResp.statusCode() >= 200 && registerResp.statusCode() < 300);
-        Map<String, Object> registerBody = objectMapper.readValue(registerResp.body(), new TypeReference<Map<String, Object>>() {
+        // Registration needs an emailed code, so seed an already-verified user and log in.
+        User user = new User();
+        user.setEmail(email);
+        user.setFullName("MySQL IT");
+        user.setPasswordHash(new BCryptPasswordEncoder().encode("secret123"));
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        Map<String, Object> loginReq = new HashMap<>();
+        loginReq.put("email", email);
+        loginReq.put("password", "secret123");
+        HttpResponse<String> loginResp = post("/api/auth/login", loginReq, null);
+        assertTrue(loginResp.statusCode() >= 200 && loginResp.statusCode() < 300);
+        Map<String, Object> loginBody = objectMapper.readValue(loginResp.body(), new TypeReference<Map<String, Object>>() {
         });
-        String token = String.valueOf(registerBody.get("token"));
+        String token = String.valueOf(loginBody.get("token"));
         assertNotNull(token);
 
         HttpResponse<String> unauthorizedRoadmap = get("/api/subjects/1/roadmap", null);
@@ -77,6 +100,11 @@ class MysqlFlowIntegrationTests {
         List<Map<String, Object>> subjects = objectMapper.readValue(subjectsResp.body(), new TypeReference<List<Map<String, Object>>>() {
         });
         assertFalse(subjects.isEmpty());
+
+        // A placement paper draws 20 L1, 20 L2 and 10 L3 questions for the user's grade band.
+        seedQuestions(QuestionBank.Level.L1, 20);
+        seedQuestions(QuestionBank.Level.L2, 20);
+        seedQuestions(QuestionBank.Level.L3, 10);
 
         HttpResponse<String> startPlacementResp = post("/api/subjects/1/placement-tests", null, token);
         assertTrue(startPlacementResp.statusCode() >= 200 && startPlacementResp.statusCode() < 300);
@@ -105,6 +133,22 @@ class MysqlFlowIntegrationTests {
         });
         assertTrue((Boolean) roadmap.get("subscribed"));
         assertNotNull(roadmap.get("phase"));
+    }
+
+    private void seedQuestions(QuestionBank.Level level, int count) {
+        for (int i = 0; i < count; i++) {
+            QuestionBank q = new QuestionBank();
+            q.setSubject(subjectRepository.findById(1L).orElseThrow());
+            q.setLevel(level);
+            q.setGradeLevel(11);
+            q.setGradeBand("GRADE_11");
+            q.setSkillType("Algebra");
+            q.setQuestionType(QuestionBank.QuestionType.MULTIPLE_CHOICE);
+            q.setQuestionText(level + " question " + i);
+            q.setOptions("[\"A. 1\", \"B. 2\", \"C. 3\", \"D. 4\"]");
+            q.setCorrectAnswer("A");
+            questionBankRepository.save(q);
+        }
     }
 
     private HttpResponse<String> get(String path, String token) throws Exception {
