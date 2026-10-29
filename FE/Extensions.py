@@ -89,7 +89,7 @@ def admin_question_bank():
 if __name__ == "__main__":
     app.run(
         host=os.getenv("FE_HOST", "0.0.0.0"),
-        debug=True,
+        debug=os.getenv("FLASK_DEBUG") == "1",
         port=int(os.getenv("FE_PORT", "3000")),
     )
 
