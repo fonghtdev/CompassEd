@@ -1,9 +1,11 @@
 package com.compassed.compassed_api;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -27,10 +29,13 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.compassed.compassed_api.domain.QuestionBank;
+import com.compassed.compassed_api.domain.entity.Payment;
 import com.compassed.compassed_api.domain.entity.User;
+import com.compassed.compassed_api.repository.PaymentRepository;
 import com.compassed.compassed_api.repository.QuestionBankRepository;
 import com.compassed.compassed_api.repository.SubjectRepository;
 import com.compassed.compassed_api.repository.UserRepository;
+import com.compassed.compassed_api.service.PaymentService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -65,6 +70,12 @@ class MysqlFlowIntegrationTests {
 
     @Autowired
     QuestionBankRepository questionBankRepository;
+
+    @Autowired
+    PaymentRepository paymentRepository;
+
+    @Autowired
+    PaymentService paymentService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient = HttpClient.newHttpClient();
@@ -124,6 +135,11 @@ class MysqlFlowIntegrationTests {
         assertTrue(submitResp.statusCode() >= 200 && submitResp.statusCode() < 300);
 
         Map<String, Object> checkoutReq = Map.of("subjectIds", List.of(1));
+        HttpResponse<String> unpaidCheckoutResp = post("/api/subscriptions/checkout", checkoutReq, token);
+        assertEquals(HttpStatus.FORBIDDEN.value(), unpaidCheckoutResp.statusCode());
+
+        payForSubject(user.getId(), 1L);
+
         HttpResponse<String> checkoutResp = post("/api/subscriptions/checkout", checkoutReq, token);
         assertTrue(checkoutResp.statusCode() >= 200 && checkoutResp.statusCode() < 300);
 
@@ -133,6 +149,15 @@ class MysqlFlowIntegrationTests {
         });
         assertTrue((Boolean) roadmap.get("subscribed"));
         assertNotNull(roadmap.get("phase"));
+    }
+
+    private void payForSubject(Long userId, Long subjectId) {
+        Payment payment = new Payment();
+        payment.setUserId(userId);
+        payment.setSubjectId(subjectId);
+        payment.setAmount(BigDecimal.valueOf(100000));
+        payment.setStatus("PENDING");
+        paymentService.approveManualPayment(paymentRepository.save(payment).getId());
     }
 
     private void seedQuestions(QuestionBank.Level level, int count) {

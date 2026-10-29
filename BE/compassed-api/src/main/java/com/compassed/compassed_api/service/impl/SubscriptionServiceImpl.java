@@ -15,7 +15,6 @@ import com.compassed.compassed_api.api.dto.SubscribeResponse;
 import com.compassed.compassed_api.domain.entity.PlacementResult;
 import com.compassed.compassed_api.domain.entity.Roadmap;
 import com.compassed.compassed_api.domain.entity.Subject;
-import com.compassed.compassed_api.domain.entity.Subscription;
 import com.compassed.compassed_api.domain.entity.User;
 import com.compassed.compassed_api.domain.entity.UserRoadmapAssignment;
 import com.compassed.compassed_api.domain.enums.Level;
@@ -81,27 +80,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         // Tính tiền theo số môn (1/2/3)
         long totalAmount = pricingService.calculateTotalAmountVnd(subjectIds.size());
 
-        // V1: giả lập payment OK luôn (sau này gắn VNPay)
-        // tạo/active subscription từng môn
+        // Chỉ PaymentService tạo subscription khi thanh toán thành công; ở đây chỉ kiểm tra
+        for (Subject subject : subjects) {
+            if (!subscriptionRepository.existsByUserIdAndSubjectIdAndIsActiveTrue(userId, subject.getId())) {
+                throw new RuntimeException("Forbidden: subject " + subject.getId() + " has not been paid for");
+            }
+        }
+
         List<SubscribeItemResponse> items = new ArrayList<>();
 
         for (Subject subject : subjects) {
-            Subscription sub = subscriptionRepository.findByUserIdAndSubjectId(userId, subject.getId())
-                    .orElseGet(() -> Subscription.builder()
-                            .userId(userId)
-                            .subjectId(subject.getId())
-                            .packageId(0L) // TODO: Get from actual package
-                            .paymentId(0L) // TODO: Get from actual payment
-                            .startDate(LocalDateTime.now())
-                            .endDate(LocalDateTime.now().plusYears(1))
-                            .isActive(true)
-                            .placementUnlocked(false)
-                            .createdAt(LocalDateTime.now())
-                            .build());
-            
-            sub.setIsActive(true);
-            sub.setUpdatedAt(LocalDateTime.now());
-            subscriptionRepository.save(sub);
 
             // Nếu có placement thì assign roadmap theo level
             Optional<PlacementResult> lastPlacementOpt = placementResultRepository
